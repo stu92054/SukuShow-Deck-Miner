@@ -95,7 +95,7 @@ def run_game_simulation(
                 else:
                     player.combo_add("PERFECT", c.AllNoteSize)
 
-                if player.ap >= cardnow.cost and player.CDavailable:
+                if cardnow and player.ap >= cardnow.cost and player.CDavailable:
                     player.ap -= cardnow.cost
                     conditions, effects = d.topskill()
                     UseCardSkill(player, effects, conditions, cardnow)
@@ -106,7 +106,7 @@ def run_game_simulation(
 
             case "CDavailable":
                 player.CDavailable = True
-                if player.ap >= cardnow.cost:
+                if cardnow and player.ap >= cardnow.cost:
                     player.ap -= cardnow.cost
                     conditions, effects = d.topskill()
                     UseCardSkill(player, effects, conditions, cardnow)

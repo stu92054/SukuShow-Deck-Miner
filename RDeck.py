@@ -149,6 +149,9 @@ class Deck():
         for card in self.cards:
             if not card.is_except:
                 self.queue.append(card)
+        if len(self.queue) == 0:
+            self.queue.append(None)
+            # 卡组全部除外时特殊处理
 
     def topcard(self):
         if len(self.queue) == 0:
