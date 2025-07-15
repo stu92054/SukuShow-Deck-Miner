@@ -1,6 +1,6 @@
 # SukuShow Deck Miner
 
-A deck simulator and optimizer for the rhythm game mode, School Idol Stage (スクショウ), within [Link\! Like\! LoveLive\!](https://www.lovelive-anime.jp/hasunosora/system/) (リンクラ).
+A deck simulator and optimizer for the rhythm game mode, School Idol Show (スクショウ), within [Link\! Like\! LoveLive\!](https://www.lovelive-anime.jp/hasunosora/system/) (リンクラ).
 
 ---
 
@@ -13,7 +13,7 @@ A deck simulator and optimizer for the rhythm game mode, School Idol Stage (ス�
 ### 🛞 Prerequisites
 
 - **Python Version**:  
-  This project **requires Python 3.10 or newer** due to the use of `match ... case ...` statements.  
+  This project **requires Python 3.10 or newer** because it uses `match ... case ...` statements.  
   **For optimal performance, running with Python 3.11 or later is highly recommended.**
 
 - **Dependencies**:  
@@ -33,7 +33,7 @@ A deck simulator and optimizer for the rhythm game mode, School Idol Stage (ス�
 
 ### ▶ Run Core Scripts
 
-Choose and run the following files based on your needs:
+Choose and run the following files depending on what you need:
 
 - `MainBatch.py`: **Batch Simulation**. Input your card pool and target song to automatically generate decks and run batch simulations to find the **optimal deck for a single song**.
 - `MainSingle.py`: **Single Simulation**. Input a specific deck and target song to run a single simulation and output the detailed simulation process.
@@ -44,7 +44,7 @@ Choose and run the following files based on your needs:
 You can adjust the configurations in the following files as needed:
 
 - `CardLevelConfig.py`: Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.
-- `DeckGen.py`: Handles deck generation logic. You can configure **card conflict rules** (`CARD_CONFLICT_RULES`) here to further optimize deck generation by pruning.
+- `DeckGen.py`: Implements the deck generation logic. You can configure **card conflict rules** (`CARD_CONFLICT_RULES`) here to further optimize deck generation by pruning.
 
 ---
 
@@ -61,8 +61,8 @@ You can adjust the configurations in the following files as needed:
 >
 > As a precautionary measure, you can modify the line `num_processes = os.cpu_count() or 1` in `MainBatch.py` to `num_processes = 12`. The value `12` is an example; you can replace it with **any other value less than your CPU's total thread count** to reduce performance pressure.
 
-- **Resource Considerations**: Technically, you could include all available cards in the card pool for batch simulation. However, this demands **extremely powerful CPU performance, massive RAM, and ample simulation time**. Due to potential unforeseen issues, this approach is **not recommended**.
-- **Memory Accumulation**: Although deck generation and simulation stages in batch processing operate as a pipeline, which somewhat alleviates immediate memory pressure, **the simulation results for all decks will accumulate in memory until completion**. Therefore, it's advised not to include too many cards in the card pool to prevent out-of-memory errors.
+- **Performance Considerations**: Technically, you could include all available cards in the card pool for batch simulation. However, this demands **extremely powerful CPU performance, a large amount of RAM, and ample simulation time**. Due to potential unforeseen issues, this approach is **not recommended**.
+- **Memory Accumulation**: In batch processing, the deck generation and simulation stages run in a pipeline, which somewhat reduces immediate memory pressure. However, **the simulation results for all decks will accumulate in memory until completion**. Therefore, it's advised not to include too many cards in the card pool to prevent out-of-memory errors.
 
 ---
 
@@ -78,7 +78,7 @@ You can adjust the configurations in the following files as needed:
 ### ⏰ Possible Sources of Error
 
 **Logic Inconsistencies**  
-Failure to perfectly replicate the original game logic may lead to significant discrepancies in skill processing and score calculation results compared to actual play.
+Because the simulator doesn’t perfectly replicate the game logic, there may be significant differences in skill processing and score calculation results compared to actual play.
 If you can provide **actual play recordings, detailed deck levels, and song Master Lv. information**, I might attempt to verify the inconsistencies and provide fixes.
 
 **Missing Hold Note Judgment Points**  
@@ -94,7 +94,7 @@ In extreme cases, skills might activate just before Fever in simulation but only
 The simulator only processes notes at their precise `just` timing in the chart, regardless of whether the judgment is Perfect.
 However, in-game judgment has a **time window**. When AP is not enough, this might cause skill activation timings in actual play to be slightly earlier/later, potentially leading to one more/less skill activation than in simulation in extreme cases.  
 For notes that fall on the same beat as the start/end of Fever, frame-by-frame "optimizing" can sometimes allow them to receive the double Voltage bonus from Fever. However, the recorded timestamp of these notes in the chart is usually a few decimal places off from the actual Fever transition time, which might lead to them not being processed within Fever during simulation.  
-The table below shows judgment timings as of Ver.4.0.1, for reference only:
+The table below shows judgment timings as of Ver.4.0.1.
 
 <table>
   <thead>

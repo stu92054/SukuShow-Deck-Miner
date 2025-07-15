@@ -1,6 +1,6 @@
 # SukuShow Deck Miner
 
-适用于 [Link！Like！LoveLive！](https://www.lovelive-anime.jp/hasunosora/system/) (リンクラ) 中的音游模式 School Idol Stage (スクショウ) 的卡组模拟器和优化求解器。 
+适用于 [Link！Like！LoveLive！](https://www.lovelive-anime.jp/hasunosora/system/) (リンクラ) 中的音游模式 School Idol Show (スクショウ) 的卡组模拟器和优化求解器。 
 
 ---
 
@@ -10,7 +10,7 @@
 
 ## 🚀 快速开始
 
-### 🛞 前置条件
+### 🛞 环境要求
 
 - **Python 版本**:
   由于代码中使用了 `match ... case ...` 语句，项目**最低要求 Python 3.10**。  
