@@ -90,7 +90,6 @@ if __name__ == "__main__":
             centercard = card
             for target, effect in centercard.get_center_attribute():
                 ApplyCenterAttribute(player, effect, target)
-            break  # 默认p吟在最前，遍历到c位成员时一定经过吟子
 
     logging.debug("\n--- C位特性应用完毕 ---")
     for card in d.cards:
@@ -123,7 +122,7 @@ if __name__ == "__main__":
                     # 模拟开局挂机到背水时需向combo_add()传入note类型(即event)
                     # 卡组有p吟时自动模拟背水
                     player.combo_add("MISS", c.AllNoteSize, event)
-
+                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 elif combo_count in [45, 65, 99, 105, 169, 194, 323, 340, 344]:
                     player.combo_add("GREAT", c.AllNoteSize)
                     # 连击计数、AP速度更新、回复AP、扣血

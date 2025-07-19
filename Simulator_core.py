@@ -65,7 +65,6 @@ def run_game_simulation(
             centercard = card
             for target, effect in centercard.get_center_attribute():
                 ApplyCenterAttribute(player, effect, target)
-            break
 
     d.appeal_calc(c.music.MusicType)
 
