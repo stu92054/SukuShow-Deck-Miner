@@ -42,6 +42,8 @@ def generic_yaml_to_json(
                 logger.debug(f"{logger_prefix}Error loading entry {entry}: {e}")
         result_dict[LastSkillIdLv] = unit
 
+    result_dict.pop(0, None)
+
     with open(output_path, 'w', encoding='utf-8') as out:
         json.dump(result_dict, out, ensure_ascii=False, indent=2)
 
