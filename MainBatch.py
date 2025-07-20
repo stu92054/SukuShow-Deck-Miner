@@ -31,7 +31,7 @@ def score2pt(results):
     return results
 
 
-def save_simulation_results(results_data: list, filename: str = "log\\simulation_results.json"):
+def save_simulation_results(results_data: list, filename: str = "log\\simulation_results.json", calc_pt=False):
     """
     将模拟结果数据保存到 JSON 文件，只保留最高分的顺序。
     results_data: 包含每个卡组及其得分的字典列表。
@@ -59,8 +59,11 @@ def save_simulation_results(results_data: list, filename: str = "log\\simulation
 
     # Convert the unique decks dictionary back to a list of results
     processed_results = list(unique_decks_best_scores.values())
-    processed_results = score2pt(processed_results)
-    processed_results.sort(key=lambda i: i["pt"], reverse=True)
+    if calc_pt:
+        processed_results = score2pt(processed_results)
+        processed_results.sort(key=lambda i: i["pt"], reverse=True)
+    else:
+        processed_results.sort(key=lambda i: i["score"], reverse=True)
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(processed_results, f, ensure_ascii=False, indent=0)
@@ -128,6 +131,11 @@ if __name__ == "__main__":
     center_override = None  # 1032
     color_override = None  # 1 # 1=Smile 2=Pure 3=Cool
 
+    # 新增：批次大小和临时文件目录
+    BATCH_SIZE = 1_000_000  # 每100万条结果保存一个文件
+    TEMP_OUTPUT_DIR = "temp_simulation_results"
+    FINAL_OUTPUT_DIR = "log"
+
     try:
         pre_initialized_chart = Chart(MUSIC_DB, fixed_music_id, fixed_difficulty)
         if center_override:
@@ -158,6 +166,9 @@ if __name__ == "__main__":
         decks_generator, pre_initialized_chart, fixed_player_master_level
     )
 
+    os.makedirs(TEMP_OUTPUT_DIR, exist_ok=True)
+    os.makedirs(FINAL_OUTPUT_DIR, exist_ok=True)
+
     # Use multiprocessing.Pool with imap_unordered
     num_processes = os.cpu_count() or 1
     logger.info(f"Starting parallel simulations using {num_processes} processes...")
@@ -165,7 +176,10 @@ if __name__ == "__main__":
     highest_score_deck_info = None  # 存储最佳卡组的完整信息
     best_log = []
 
-    all_simulation_results = []
+    current_batch_results = []  # 存储当前批次的结果
+    temp_files = []            # 存储所有临时文件的路径
+    batch_counter = 0          # 批次计数器
+    results_processed_count = 0  # 已处理结果的总数
 
     with multiprocessing.Pool(processes=num_processes) as pool:
         # imap_unordered returns results as they are completed, in no particular order.
@@ -179,10 +193,11 @@ if __name__ == "__main__":
             deck_card_ids = result['deck_card_ids']
 
             # 记录当前卡组的得分和卡牌ID，添加到结果列表中
-            all_simulation_results.append({
+            current_batch_results.append({
                 "deck_card_ids": deck_card_ids,  # 使用卡牌ID列表
                 "score": current_score
             })
+            results_processed_count += 1
 
             if current_score > highest_score_overall:
                 highest_score_overall = current_score
@@ -195,13 +210,33 @@ if __name__ == "__main__":
                 logger.info(f"\nNEW HIGH SCORE! Deck Index: {original_index}, Score: {current_score}")
                 logger.info(f"  Deck: {deck_card_ids}")
 
+            if len(current_batch_results) >= BATCH_SIZE:
+                batch_counter += 1
+                temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
+                save_simulation_results(current_batch_results, temp_filename)
+                temp_files.append(temp_filename)
+                current_batch_results = []  # 清空当前批次列表
+
+        # --- 处理最后一批可能不满BATCH_SIZE的结果 ---
+        if current_batch_results:
+            batch_counter += 1
+            temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
+            save_simulation_results(current_batch_results, temp_filename)
+            temp_files.append(temp_filename)
+            current_batch_results = []  # 清空
+
     end_time = time.time()
     logger.info("--- All simulations completed! ---")
     logger.info(f"Total simulation time: {end_time - start_time:.2f} seconds")
 
     # --- Step 4: Save all results to JSON ---
+    all_simulation_results = []
+    for temp_file in tqdm(temp_files, desc="Merging Files", ascii=True):
+        with open(temp_file, 'r') as f:
+            all_simulation_results.extend(json.load(f))
+        os.remove(temp_file)
     json_output_filename = f"log\\simulation_results_{fixed_music_id}_{fixed_difficulty}.json"
-    save_simulation_results(all_simulation_results, json_output_filename)
+    save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True)
 
     # --- Step 5: Final Summary ---
     logger.info(f"\n--- Final Simulation Summary ---")
