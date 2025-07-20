@@ -488,7 +488,7 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
         case SkillEffectType.VoltagePointChange:
             # Voltage point change, value is direct points
             voltage_rate = 100
-            if change_factor == 1 or True:  # 疑似bug，扣电也吃电加成
+            if change_factor == 1:
                 if len(player_attrs.next_voltage_gain_rate):
                     voltage_rate += player_attrs.next_voltage_gain_rate.pop(0)
                     logger.debug(f"电加成: * {voltage_rate:.2f}%")
