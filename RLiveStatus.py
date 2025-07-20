@@ -114,10 +114,16 @@ class Mental:
     def __init__(self) -> None:
         self.current_hp: int = 100
         self.max_hp: int = 100
+        self.badMinus: int = 30
+        self.missMinus: int = 50
+        self.traceMinus: int = 20
 
     def set_hp(self, deck: Deck):
         self.max_hp = deck.mental_calc()
         self.current_hp = self.max_hp
+        self.badMinus += int(self.max_hp * 0.03)
+        self.missMinus += int(self.max_hp * 0.05)
+        self.traceMinus += int(self.max_hp * 0.02)
 
     def sub(self, value, note_type=None):
         if type(value) is int:
@@ -128,11 +134,11 @@ class Mental:
             match value:
                 case "MISS":
                     if note_type in ["Trace", "HoldMid"]:
-                        self.current_hp = max(0, self.current_hp - ceil(self.max_hp / 15 - self.max_hp / 25))
+                        self.current_hp = max(0, self.current_hp - self.traceMinus)
                     else:
-                        self.current_hp = max(0, self.current_hp - ceil(self.max_hp / 15))
+                        self.current_hp = max(0, self.current_hp - self.missMinus)
                 case "BAD":
-                    self.current_hp = max(0, self.current_hp - ceil(self.max_hp / 25))
+                    self.current_hp = max(0, self.current_hp - self.badMinus)
                 case _:
                     pass
 
