@@ -155,7 +155,7 @@ if __name__ == "__main__":
     # 3. 获取卡组生成器
     # 这里调用 DeckGen.py 中的生成器函数，它不会立即生成所有卡组
     decks_generator = generate_decks_with_sequential_priority_pruning(
-        card_ids
+        card_ids, pre_initialized_chart.music.CenterCharacterId
     )
     total_decks_to_simulate = decks_generator.total_decks
     logger.info(f"预计算总共将模拟 {total_decks_to_simulate} 个卡组。")

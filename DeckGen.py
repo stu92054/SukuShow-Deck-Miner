@@ -4,7 +4,7 @@ from collections import defaultdict
 from RCardData import db_load
 
 CHAR_ORDERED_PRIORITIES = [
-    1011,  # 默认沙知优先级最高
+    # 1011,  # 默认沙知优先级最高
     # 1041,  # 其次P吟，模拟其他吟子时需删除
 ]
 
@@ -65,9 +65,9 @@ def has_card_conflict(card_ids_in_deck: set[int]) -> bool:
 
 
 class DeckGeneratorWithCount:
-    def __init__(self, card_ids_to_consider: list[int]):  # <--- 不再接收 card_data_full
+    def __init__(self, card_ids_to_consider: list[int], center_char = None):  # <--- 不再接收 card_data_full
         self.card_ids_to_consider = card_ids_to_consider
-
+        self.center_char = center_char
         self.char_id_to_cards = defaultdict(list)
         # 现在，我们遍历 card_ids_to_consider，直接解析出 CharactersId 和 Rarity
         for card_id in self.card_ids_to_consider:
@@ -95,6 +95,8 @@ class DeckGeneratorWithCount:
 
         count = 0
         for chosen_char_ids_tuple in itertools.combinations(self.all_available_chars, 6):
+            if self.center_char and self.center_char not in chosen_char_ids_tuple:
+                continue
             chosen_char_ids_for_this_deck = list(chosen_char_ids_tuple)
 
             def _count_recursive(current_permutation_card_ids: list[int], current_permutation_char_ids_set: set[int], depth: int):
@@ -105,13 +107,14 @@ class DeckGeneratorWithCount:
                     return
 
                 highest_priority_remaining_char_in_deck = None
-                min_rank = float('inf')
-                for char_id in chosen_char_ids_for_this_deck:
-                    if char_id not in current_permutation_char_ids_set:
-                        rank = get_char_priority_rank(char_id)
-                        if rank < min_rank:
-                            min_rank = rank
-                            highest_priority_remaining_char_in_deck = char_id
+                if CHAR_ORDERED_PRIORITIES:
+                    min_rank = float('inf')
+                    for char_id in chosen_char_ids_for_this_deck:
+                        if char_id not in current_permutation_char_ids_set:
+                            rank = get_char_priority_rank(char_id)
+                            if rank < min_rank:
+                                min_rank = rank
+                                highest_priority_remaining_char_in_deck = char_id
 
                 if highest_priority_remaining_char_in_deck is not None and \
                    highest_priority_remaining_char_in_deck in CHAR_ORDERED_PRIORITIES:
@@ -158,6 +161,8 @@ class DeckGeneratorWithCount:
             return
 
         for chosen_char_ids_tuple in itertools.combinations(self.all_available_chars, 6):
+            if self.center_char and self.center_char not in chosen_char_ids_tuple:
+                continue
             chosen_char_ids_for_this_deck = list(chosen_char_ids_tuple)
 
             def _generate_recursive(current_permutation_card_ids: list[int], current_permutation_char_ids_set: set[int], depth: int):
@@ -166,13 +171,14 @@ class DeckGeneratorWithCount:
                     return
 
                 highest_priority_remaining_char_in_deck = None
-                min_rank = float('inf')
-                for char_id in chosen_char_ids_for_this_deck:
-                    if char_id not in current_permutation_char_ids_set:
-                        rank = get_char_priority_rank(char_id)
-                        if rank < min_rank:
-                            min_rank = rank
-                            highest_priority_remaining_char_in_deck = char_id
+                if CHAR_ORDERED_PRIORITIES:
+                    min_rank = float('inf')
+                    for char_id in chosen_char_ids_for_this_deck:
+                        if char_id not in current_permutation_char_ids_set:
+                            rank = get_char_priority_rank(char_id)
+                            if rank < min_rank:
+                                min_rank = rank
+                                highest_priority_remaining_char_in_deck = char_id
 
                 if highest_priority_remaining_char_in_deck is not None and \
                    highest_priority_remaining_char_in_deck in CHAR_ORDERED_PRIORITIES:
@@ -215,8 +221,8 @@ class DeckGeneratorWithCount:
 # 对外暴露的函数，返回一个 DeckGeneratorWithCount 实例
 
 
-def generate_decks_with_sequential_priority_pruning(card_ids_to_consider: list[int]):  # <--- 不再接收 card_data_full
-    return DeckGeneratorWithCount(card_ids_to_consider)
+def generate_decks_with_sequential_priority_pruning(card_ids_to_consider: list[int], center_char: int = None):  # <--- 不再接收 card_data_full
+    return DeckGeneratorWithCount(card_ids_to_consider, center_char)
 
 
 if __name__ == "__main__":

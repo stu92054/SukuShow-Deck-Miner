@@ -132,7 +132,7 @@ if __name__ == "__main__":
                     # 连击计数、AP速度更新、回复AP、扣血
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 # AP足够 且 冷却完毕 时打出技能
-                if card and player.ap >= cardnow.cost and player.CDavailable:
+                if cardnow and player.ap >= cardnow.cost and player.CDavailable:
                     player.ap -= cardnow.cost
                     logger.debug(f"\n打出技能: {cardnow.full_name}\t时间: {timestamp}")
                     conditions, effects = d.topskill()
@@ -146,7 +146,7 @@ if __name__ == "__main__":
             case "CDavailable":
                 player.CDavailable = True
                 logger.timing(f"[CD结束]\t总分: {player.score}\t时间: {timestamp}")
-                if card and player.ap >= cardnow.cost:
+                if cardnow and player.ap >= cardnow.cost:
                     player.ap -= cardnow.cost
                     logger.debug(f"\n打出技能: {cardnow.full_name}\t时间: {timestamp}")
                     conditions, effects = d.topskill()
