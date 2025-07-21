@@ -5,7 +5,7 @@ from RChart import Chart, MusicDB
 from RDeck import Deck
 from RLiveStatus import PlayerAttributes
 from SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
-from CardLevelConfig import convert_deck_to_simulator_format
+from CardLevelConfig import convert_deck_to_simulator_format, DEATH_NOTE
 
 logger = logging.getLogger(__name__)
 
@@ -82,10 +82,11 @@ if __name__ == "__main__":
 
     logging.debug("\n--- 应用C位特性 ---")
     centercard = None
-    flag_party_ginko = False
+    afk_mental = 0
     for card in d.cards:
-        if card.card_id == "1041513":
-            flag_party_ginko = True
+        cid = int(card.card_id)
+        if cid in DEATH_NOTE:
+            afk_mental = DEATH_NOTE[cid]
         if card.characters_id == c.music.CenterCharacterId:
             centercard = card
             for target, effect in centercard.get_center_attribute():
@@ -117,10 +118,10 @@ if __name__ == "__main__":
                     player.combo_add("GOOD", c.AllNoteSize)
                     # player.combo_add("BAD", c.AllNoteSize, event)
 
-                elif player.mental.get_rate() >= 10 and flag_party_ginko:
+                elif afk_mental and player.mental.get_rate() >= afk_mental:
                     # 不同note类型和判定会影响扣血多少
                     # 模拟开局挂机到背水时需向combo_add()传入note类型(即event)
-                    # 卡组有p吟时自动模拟背水
+                    # 卡组有p吟/BR吟时自动模拟背水，可在DEATH_NOTE中添加其他背水血线
                     player.combo_add("MISS", c.AllNoteSize, event)
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 elif combo_count in [45, 65, 99, 105, 169, 194, 323, 340, 344]:

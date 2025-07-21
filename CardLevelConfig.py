@@ -36,6 +36,15 @@ CARD_CACHE: dict[int, list[int]] = {
     # 1052503: [120, 12, 12], #十六夜塞
 }
 
+# 用于配置卡组包含特定卡牌时的背水血线
+# 卡组中如有多张背水，以最右边的背水卡的血线为准
+# 开局会自动挂机miss到这个血量
+# 格式: 卡牌id: 血线,
+DEATH_NOTE: dict[int, int] = {
+    1041513: 10,
+    1041901: 25,
+}
+
 
 def convert_deck_to_simulator_format(
     deck_card_ids_list: list[int]

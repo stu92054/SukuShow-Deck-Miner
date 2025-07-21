@@ -6,6 +6,7 @@ from RChart import Chart, MusicDB
 from RDeck import Deck
 from RLiveStatus import PlayerAttributes
 from SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
+from CardLevelConfig import DEATH_NOTE
 
 # --- Configure logging (for the module itself if needed, or rely on main script's config) ---
 # 注意：子进程会继承父进程的logger配置，但为了独立运行和测试，可以保留或简化这里的logger
@@ -57,10 +58,11 @@ def run_game_simulation(
     player.set_deck(d)
 
     centercard = None
-    flag_party_ginko = False
+    afk_mental = 0
     for card in d.cards:
-        if card.card_id == "1041513":
-            flag_party_ginko = True
+        cid = int(card.card_id)
+        if cid in DEATH_NOTE:
+            afk_mental = DEATH_NOTE[cid]
         if card.characters_id == c.music.CenterCharacterId:
             centercard = card
             for target, effect in centercard.get_center_attribute():
@@ -87,14 +89,14 @@ def run_game_simulation(
                 combo_count += 1
                 if combo_count in []:
                     player.combo_add("GOOD", c.AllNoteSize)
-                elif player.mental.get_rate() >= 10 and flag_party_ginko:
+                elif afk_mental and player.mental.get_rate() >= afk_mental:
                     player.combo_add("MISS", c.AllNoteSize, event)
                 elif combo_count in []:
                     player.combo_add("GREAT", c.AllNoteSize)
                 else:
                     player.combo_add("PERFECT", c.AllNoteSize)
 
-                if cardnow and player.ap >= cardnow.cost and player.CDavailable:
+                if player.CDavailable and cardnow and player.ap >= cardnow.cost:
                     player.ap -= cardnow.cost
                     conditions, effects = d.topskill()
                     UseCardSkill(player, effects, conditions, cardnow)
