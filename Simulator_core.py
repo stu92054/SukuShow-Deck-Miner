@@ -1,4 +1,5 @@
 import logging
+import os
 from enum import Enum
 # 导入所有 R 模块和 db_load 函数
 from RCardData import db_load
@@ -16,10 +17,10 @@ logger = logging.getLogger(__name__)
 # 这些DBs也应该在模块的顶层被加载，确保它们在子进程中是可访问的
 try:
     MUSIC_DB = MusicDB()
-    DB_CARDDATA = db_load("Data\\CardDatas.json")
-    DB_SKILL = db_load("Data\\RhythmGameSkills.json")
-    DB_SKILL.update(db_load("Data\\CenterSkills.json"))
-    DB_SKILL.update(db_load("Data\\CenterAttributes.json"))
+    DB_CARDDATA = db_load(os.path.join("Data", "CardDatas.json"))
+    DB_SKILL = db_load(os.path.join("Data", "RhythmGameSkills.json"))
+    DB_SKILL.update(db_load(os.path.join("Data", "CenterSkills.json")))
+    DB_SKILL.update(db_load(os.path.join("Data", "CenterAttributes.json")))
     logger.info("Simulator core databases loaded.")
 except ImportError as e:
     logger.error(f"Failed to import required R modules in simulator_core. Error: {e}")
@@ -53,7 +54,7 @@ def run_game_simulation(
     deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids = task_args
 
     d = Deck(DB_CARDDATA, DB_SKILL, deck_card_data)
-    c = chart_obj
+    c: Chart = chart_obj
     player = PlayerAttributes(masterlv=player_master_level)
     player.set_deck(d)
 
@@ -134,8 +135,6 @@ def run_game_simulation(
     return {
         "final_score": player.score,
         "cards_played_log": d.card_log,
-        "num_skills_used": len(d.card_log),
-        "deck_appeal": player.deck.appeal,
         "original_deck_index": original_deck_index,
         "deck_card_ids": deck_card_ids
     }

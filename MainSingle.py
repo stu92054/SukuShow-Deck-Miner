@@ -1,5 +1,6 @@
 import logging
 import time
+import os
 from RCardData import db_load
 from RChart import Chart, MusicDB
 from RDeck import Deck
@@ -30,14 +31,14 @@ logging.basicConfig(
 if __name__ == "__main__":
     # 读取歌曲、卡牌、技能db
     musicdb = MusicDB()
-    db_carddata = db_load("Data\\CardDatas.json")
-    db_skill = db_load("Data\\RhythmGameSkills.json")
-    db_skill.update(db_load("Data\\CenterSkills.json"))
-    db_skill.update(db_load("Data\\CenterAttributes.json"))
+    db_carddata = db_load(os.path.join("Data", "CardDatas.json"))
+    db_skill = db_load(os.path.join("Data", "RhythmGameSkills.json"))
+    db_skill.update(db_load(os.path.join("Data", "CenterSkills.json")))
+    db_skill.update(db_load(os.path.join("Data", "CenterAttributes.json")))
 
     # 配置卡组、练度
     # 完整格式: (CardSeriesId, [卡牌等级, C位技能等级, 技能等级])
-
+    
     d = Deck(db_carddata, db_skill, [(1011501, [120, 1, 9]),  # 沙知
                                      (1021523, [120, 7, 7]),  # 银河梢
                                      (1023901, [80, 1, 7]),  # BR慈
@@ -124,7 +125,7 @@ if __name__ == "__main__":
                     # 卡组有p吟/BR吟时自动模拟背水，可在DEATH_NOTE中添加其他背水血线
                     player.combo_add("MISS", c.AllNoteSize, event)
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
-                elif combo_count in [45, 65, 99, 105, 169, 194, 323, 340, 344]:
+                elif combo_count in []:
                     player.combo_add("GREAT", c.AllNoteSize)
                     # 连击计数、AP速度更新、回复AP、扣血
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")

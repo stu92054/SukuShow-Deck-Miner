@@ -1,6 +1,7 @@
 import yaml
 import json
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ def generic_yaml_to_json(
 ):
     logger.debug(f"{logger_prefix}Loading from {filepath}...")
     with open(filepath, 'r', encoding='utf-8') as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, yaml.CLoader)
         if not isinstance(data, list):
             raise ValueError(f"Expected a list in {filepath}, but got {type(data)}")
 
@@ -51,8 +52,8 @@ def generic_yaml_to_json(
 def convert_all_yaml_files():
     # RhythmGameSkills
     generic_yaml_to_json(
-        filepath="Data\\RhythmGameSkills.yaml",
-        output_path="Data\\RhythmGameSkills.json",
+        filepath=os.path.join("Data", "RhythmGameSkills.yaml"),
+        output_path=os.path.join("Data", "RhythmGameSkills.json"),
         id_key="Id",
         group_id_from="Id",
         fixed_keys=["RhythmGameSkillSeriesId", "RhythmGameSkillName", "ConsumeAP", "Description"],
@@ -62,8 +63,8 @@ def convert_all_yaml_files():
 
     # CenterSkills
     generic_yaml_to_json(
-        filepath="Data\\CenterSkills.yaml",
-        output_path="Data\\CenterSkills.json",
+        filepath=os.path.join("Data", "CenterSkills.yaml"),
+        output_path=os.path.join("Data", "CenterSkills.json"),
         id_key="Id",
         group_id_from="Id",
         fixed_keys=["CenterSkillSeriesId", "CenterSkillName", "Description"],
@@ -73,8 +74,8 @@ def convert_all_yaml_files():
 
     # CenterAttributes
     generic_yaml_to_json(
-        filepath="Data\\CenterAttributes.yaml",
-        output_path="Data\\CenterAttributes.json",
+        filepath=os.path.join("Data","CenterAttributes.yaml"),
+        output_path=os.path.join("Data", "CenterAttributes.json"),
         id_key="Id",
         group_id_from="Id",
         fixed_keys=["CenterAttributeSeriesId", "CenterAttributeName", "Description"],
@@ -84,8 +85,8 @@ def convert_all_yaml_files():
 
     # CardDatas
     generic_yaml_to_json(
-        filepath="Data\\CardDatas.yaml",
-        output_path="Data\\CardDatas.json",
+        filepath=os.path.join("Data", "CardDatas.yaml"),
+        output_path=os.path.join("Data", "CardDatas.json"),
         id_key="Id",
         group_id_from="CardSeriesId",
         fixed_keys=["CardSeriesId", "Name", "Description", "CharactersId", "Rarity", "CenterSkillSeriesId", "CenterAttributeSeriesId"],

@@ -72,7 +72,7 @@ class Music:
 
 
 class MusicDB:
-    def __init__(self, yaml_filepath: str = r"Data\Musics.yaml") -> None:
+    def __init__(self, yaml_filepath: str = os.path.join("Data", "Musics.yaml")) -> None:
         self.db: List[Music] = []  # Stores all Music objects
         self._id_map: Dict[int, Music] = {}  # Optimized for ID lookups
 
@@ -296,7 +296,7 @@ class Chart:
         self._initevents()
 
     def _loadbytes(self, Tier):
-        bytes_path = "Data\\bytes\\rhythmgame_chart_" + str(self.music.Id) + "_" + str(Tier) + ".bytes"
+        bytes_path = os.path.join("Data", "bytes", f"rhythmgame_chart_{self.music.Id}_{Tier}.bytes")
         try:
             with open(bytes_path, 'rb') as f:
                 compressed_data = f.read()
@@ -362,7 +362,7 @@ class Chart:
         self.ChartNoteTime.sort(key=float)
 
     def _loadcsv(self):
-        csv_path = "Data\\csv\\" + "musicscore_" + str(self.music.Id) + ".csv"
+        csv_path = os.path.join("Data", "csv", f"musicscore_{self.music.Id}.csv")
         try:
             with open(csv_path, 'r', encoding="UTF-8") as f:
                 csv_data = csv.DictReader(f)
@@ -638,7 +638,7 @@ if __name__ == "__main__":
         break
 
     import os
-    files = os.listdir(r"Data\bytes")
+    files = os.listdir(os.path.join("Data", "bytes"))
     # logger.debug(files)
     bytes = set()
     for file in files:

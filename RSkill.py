@@ -1,13 +1,14 @@
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 
 class Skill:
-    def __init__(self, db, series_id, lv=14) -> None:
+    def __init__(self, db, series_id: int, lv=14) -> None:
         self.condition: list[str] = []
         self.effect: list[int] = []
-        self.skill_id = f"{series_id}{lv:0>2}"
+        self.skill_id = str(series_id*100 + lv)
         self.cost = db[self.skill_id]["ConsumeAP"]
         self.condition = db[self.skill_id]["RhythmGameSkillConditionIds"]
         self.effect = db[self.skill_id]["RhythmGameSkillEffectId"]
@@ -24,13 +25,13 @@ class Skill:
 
 
 class CenterSkill:
-    def __init__(self, db, series_id, lv=14) -> None:
+    def __init__(self, db, series_id: int, lv=14) -> None:
         self.condition: list[str] = []
         self.effect: list[int] = []
         self.skill_id: str = "0"
         if series_id == 0:
             return
-        self.skill_id = f"{series_id}{lv:0>2}"
+        self.skill_id = str(series_id*100 + lv)
         self.condition = db[self.skill_id]["CenterSkillConditionIds"]
         self.effect = db[self.skill_id]["CenterSkillEffectId"]
 
@@ -43,13 +44,13 @@ class CenterSkill:
 
 
 class CenterAttribute:
-    def __init__(self, db, series_id) -> None:
+    def __init__(self, db, series_id: int) -> None:
         self.target: list[str] = []
         self.effect: list[int] = []
         self.skill_id: str = "0"
         if series_id == 0:
             return
-        self.skill_id = f"{series_id+1}"
+        self.skill_id = str(series_id + 1)
         self.target = db[self.skill_id].get("TargetIds", None)
         self.effect = db[self.skill_id].get("CenterAttributeEffectId", None)
 
@@ -63,9 +64,9 @@ class CenterAttribute:
 
 if __name__ == "__main__":
     import RCardData
-    db_skill = RCardData.db_load("Data\\RhythmGameSkills.json")
-    db_skill.update(RCardData.db_load("Data\\CenterSkills.json"))
-    db_skill.update(RCardData.db_load("Data\\CenterAttributes.json"))
+    db_skill = RCardData.db_load(os.path.join("Data", "RhythmGameSkills.json"))
+    db_skill.update(RCardData.db_load(os.path.join("Data", "CenterSkills.json")))
+    db_skill.update(RCardData.db_load(os.path.join("Data", "CenterAttributes.json")))
     skill1 = Skill(db_skill, 30324122)
     logger.debug(skill1)
     skill1.costchange(-5)

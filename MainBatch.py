@@ -31,7 +31,7 @@ def score2pt(results):
     return results
 
 
-def save_simulation_results(results_data: list, filename: str = "log\\simulation_results.json", calc_pt=False):
+def save_simulation_results(results_data: list, filename: str = os.path.join("log", "simulation_results.json"), calc_pt=False):
     """
     将模拟结果数据保存到 JSON 文件，只保留最高分的顺序。
     results_data: 包含每个卡组及其得分的字典列表。
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     # 新增：批次大小和临时文件目录
     BATCH_SIZE = 1_000_000  # 每100万条结果保存一个文件
-    TEMP_OUTPUT_DIR = "temp_simulation_results"
+    TEMP_OUTPUT_DIR = "temp"
     FINAL_OUTPUT_DIR = "log"
 
     try:
@@ -186,7 +186,7 @@ if __name__ == "__main__":
         # This is perfect for checking high scores on the fly.
         results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize=500)
 
-        for result in tqdm(results_iterator, total=total_decks_to_simulate, desc="Simulating Decks"):
+        for result in tqdm(results_iterator, total=total_decks_to_simulate):
             current_score = result['final_score']
             original_index = result['original_deck_index']
             current_log = result["cards_played_log"]
@@ -207,7 +207,7 @@ if __name__ == "__main__":
                     "score": current_score
                 }
                 best_log = current_log
-                logger.info(f"\nNEW HIGH SCORE! Deck Index: {original_index}, Score: {current_score}")
+                logger.info(f"\nNEW HI-SCORE! Deck: {original_index}, Score: {current_score}")
                 logger.info(f"  Deck: {deck_card_ids}")
 
             if len(current_batch_results) >= BATCH_SIZE:
@@ -231,11 +231,11 @@ if __name__ == "__main__":
 
     # --- Step 4: Save all results to JSON ---
     all_simulation_results = []
-    for temp_file in tqdm(temp_files, desc="Merging Files", ascii=True):
+    for temp_file in tqdm(temp_files, desc="Merging Files"):
         with open(temp_file, 'r') as f:
             all_simulation_results.extend(json.load(f))
         os.remove(temp_file)
-    json_output_filename = f"log\\simulation_results_{fixed_music_id}_{fixed_difficulty}.json"
+    json_output_filename = os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
     save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True)
 
     # --- Step 5: Final Summary ---

@@ -1,4 +1,5 @@
 import logging
+import os
 from RSkill import *
 from math import ceil
 from enum import Enum
@@ -94,7 +95,7 @@ class Card():
         self.center_skill_level: int = lv_list[1]
         self.center_skill: CenterSkill = CenterSkill(db_skill, db_card[self.card_id]["CenterSkillSeriesId"], self.center_skill_level)
         self.skill_level: int = lv_list[2]
-        self.skill_unit: Skill = Skill(db_skill, f"3{self.card_id[1:]}{self.evolution}", self.skill_level)
+        self.skill_unit: Skill = Skill(db_skill, int(f"3{self.card_id[1:]}{self.evolution}"), self.skill_level)
         self.cost: int = self.skill_unit.cost
         self.active_count: int = 0
         self.is_except: bool = False
@@ -191,10 +192,10 @@ class Deck():
 
 if __name__ == "__main__":
     import RCardData
-    db_carddata = RCardData.db_load("Data\\CardDatas.json")
-    db_skill = RCardData.db_load("Data\\RhythmGameSkills.json")
-    db_skill.update(RCardData.db_load("Data\\CenterSkills.json"))
-    db_skill.update(RCardData.db_load("Data\\CenterAttributes.json"))
+    db_carddata = RCardData.db_load(os.path.join("Data", "CardDatas.json"))
+    db_skill = RCardData.db_load(os.path.join("Data", "RhythmGameSkills.json"))
+    db_skill.update(RCardData.db_load(os.path.join("Data", "CenterSkills.json")))
+    db_skill.update(RCardData.db_load(os.path.join("Data", "CenterAttributes.json")))
 
     d = Deck(db_carddata, db_skill, [(1011501, None),
                                      (1021523, None),
