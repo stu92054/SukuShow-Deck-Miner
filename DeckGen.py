@@ -71,14 +71,8 @@ class DeckGeneratorWithCount:
         self.char_id_to_cards = defaultdict(list)
         # 现在，我们遍历 card_ids_to_consider，直接解析出 CharactersId 和 Rarity
         for card_id in self.card_ids_to_consider:
-            try:
-                characters_id, rarity = parse_card_id_for_char_and_rarity(card_id)
-                self.char_id_to_cards[characters_id].append(card_id)
-                # 只有符合特定稀有度的卡牌才会被考虑
-                # if rarity in ALLOWED_RARITIES: # 使用你定义的 ALLOWED_RARITIES
-                #     self.char_id_to_cards[characters_id].append(card_id) # <--- 存储 CardSeriesId
-            except ValueError as e:
-                print(f"Warning: Skipping card_id {card_id} due to parsing error: {e}")
+            char_id = card_id // 1000
+            self.char_id_to_cards[char_id].append(card_id)
 
         self.all_available_chars = list(self.char_id_to_cards.keys())
 

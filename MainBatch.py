@@ -7,6 +7,7 @@ import json
 from tqdm import tqdm
 from RChart import Chart
 from DeckGen import generate_decks_with_sequential_priority_pruning
+from DeckGen2 import generate_decks_with_double_cards
 from CardLevelConfig import convert_deck_to_simulator_format
 from Simulator_core import run_game_simulation, MUSIC_DB
 
@@ -154,7 +155,7 @@ if __name__ == "__main__":
 
     # 3. 获取卡组生成器
     # 这里调用 DeckGen.py 中的生成器函数，它不会立即生成所有卡组
-    decks_generator = generate_decks_with_sequential_priority_pruning(
+    decks_generator = generate_decks_with_double_cards(
         card_ids, pre_initialized_chart.music.CenterCharacterId
     )
     total_decks_to_simulate = decks_generator.total_decks
