@@ -154,7 +154,6 @@ if __name__ == "__main__":
     logger.info("开始生成卡组并提交到模拟池...")
 
     # 3. 获取卡组生成器
-    # 这里调用 DeckGen.py 中的生成器函数，它不会立即生成所有卡组
     decks_generator = generate_decks_with_double_cards(
         card_ids, pre_initialized_chart.music.CenterCharacterId
     )

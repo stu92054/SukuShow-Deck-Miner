@@ -4,7 +4,7 @@ import time
 from collections import defaultdict, Counter
 
 from RChart import Chart, MusicDB
-from RSkill import Skill
+from RDeck import Rarity
 from Simulator_core import DB_CARDDATA, DB_SKILL
 from SkillResolver import SkillEffectType
 
@@ -28,15 +28,16 @@ def has_card_conflict(card_ids_in_deck: set[int]) -> bool:
 
 DB_TAG = {}
 """
-卡牌id -> 技能效果类型
+卡牌id -> 技能效果类型、稀有度
 多段同类效果只记录一个tag
 """
 for data in DB_CARDDATA.values():
     skill_series_id = data["RhythmGameSkillSeriesId"][-1]
-    skill_unit = Skill(DB_SKILL, skill_series_id, lv=14)
+    skill_effect = DB_SKILL[str(skill_series_id * 100 + 14)]["RhythmGameSkillEffectId"]
     tag = set()
-    for effect in skill_unit.effect:
+    for effect in skill_effect:
         tag.add(SkillEffectType(effect // 100000000))
+    tag.add(Rarity(data["Rarity"]))
     DB_TAG[data["CardSeriesId"]] = tag
 
 
@@ -67,13 +68,14 @@ def count_skill_tags(card_ids_input: list[int]):
 def check_skill_tags(tag_counts: Counter):
     """
     检查卡组中的技能类型是否符合给定条件。
-    默认检查洗牌、分、电、分加成、电加成均不为0
+    默认检查洗牌、分、电、分加成、电加成均不为0，且DR数量<=1。
     """
     if tag_counts[SkillEffectType.DeckReset] and \
             tag_counts[SkillEffectType.ScoreGain] and \
             tag_counts[SkillEffectType.VoltagePointChange] and \
             tag_counts[SkillEffectType.NextAPGainRateChange] and \
-            tag_counts[SkillEffectType.NextVoltageGainRateChange]:
+            tag_counts[SkillEffectType.NextVoltageGainRateChange] and \
+            tag_counts[Rarity.DR] <= 1:
         return True
     return False
 
@@ -140,6 +142,11 @@ class DeckGeneratorWithDoubleCards:
                 continue
             if check_skill_tags(count_skill_tags(deck)):
                 for perm in itertools.permutations(deck):
+                    # 去除分位于左一、洗牌位于最后两张的卡组
+                    if SkillEffectType.ScoreGain in DB_TAG[perm[1]] or \
+                        SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
+                        SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
+                        continue
                     yield perm
 
     def _count_decks_for_distribution(self, char_distribution):
@@ -161,10 +168,13 @@ class DeckGeneratorWithDoubleCards:
                 deck.extend(item)
             if has_card_conflict(set(deck)):
                 continue
-            if not check_skill_tags(count_skill_tags(deck)):
-                continue
-            # 所有卡牌唯一 → 6! 种排列
-            total += math.factorial(len(deck))
+            if check_skill_tags(count_skill_tags(deck)):
+                for perm in itertools.permutations(deck):
+                    if SkillEffectType.ScoreGain in DB_TAG[perm[1]] or \
+                        SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
+                        SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
+                        continue
+                    total += 1
         return total
 
     def compute_total_count(self):
