@@ -1,5 +1,7 @@
 import itertools
-import math
+import json
+import logging
+import os
 import time
 from collections import defaultdict, Counter
 
@@ -7,11 +9,13 @@ from RChart import Chart, MusicDB
 from RDeck import Rarity
 from Simulator_core import DB_CARDDATA, DB_SKILL
 from SkillResolver import SkillEffectType
+logger = logging.getLogger(__name__)
 
 CARD_CONFLICT_RULES = {
-    1041513: {1031530, 1032528, 1033524},  # P吟 → idome
-    1043515: {1031530, 1032528, 1033524},  # blast芽 → idome
-    1042515: {1031530, 1032528, 1033524},  # 暧昧mayday → idome
+    # P吟、Blast芽、暧昧Mayday、水果帆、水果吟、太阳沙、COCO夏芽
+    1031530: {1041513, 1042515, 1043515, 1031531, 1041516, 1032529, 1043516},  # idome帆
+    1032528: {1041513, 1042515, 1043515, 1031531, 1041516, 1032529, 1043516},  # idome沙
+    1033524: {1041513, 1042515, 1043515, 1031531, 1041516, 1032529, 1043516},  # idome乃
 }
 
 
@@ -65,7 +69,7 @@ def count_skill_tags(card_ids_input: list[int]):
     return tag_counts
 
 
-def check_skill_tags(tag_counts: Counter):
+def check_skill_tags(tag_counts: Counter, force_dr=False):
     """
     检查卡组中的技能类型是否符合给定条件。
     默认检查洗牌、分、电、分加成、电加成均不为0，且DR数量<=1。
@@ -76,7 +80,10 @@ def check_skill_tags(tag_counts: Counter):
             tag_counts[SkillEffectType.NextAPGainRateChange] and \
             tag_counts[SkillEffectType.NextVoltageGainRateChange] and \
             tag_counts[Rarity.DR] <= 1:
-        return True
+        if not force_dr:
+            return True
+        elif tag_counts[Rarity.DR] == 1:
+            return True
     return False
 
 
@@ -101,11 +108,26 @@ def generate_role_distributions(all_characters):
     return list(set(results))
 
 
+def load_simulated_decks(path: str):
+    simulated_decks = set()
+    if os.path.exists(path):
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        for result in data:
+            current_deck_card_ids = result['deck_card_ids']
+            sorted_card_ids_tuple = tuple(sorted(current_deck_card_ids))
+            simulated_decks.add(sorted_card_ids_tuple)
+        logger.info(f"{len(simulated_decks)} simulation results loaded.")
+    return simulated_decks
+
+
 class DeckGeneratorWithDoubleCards:
-    def __init__(self, card_ids_to_consider: list[int], center_char=None):
+    def __init__(self, card_ids_to_consider: list[int], center_char=None, force_dr=False, log_path: str = None):
         self.card_ids_to_consider = card_ids_to_consider
         self.center_char = center_char
         self.char_id_to_cards = defaultdict(list)
+        self.force_dr = force_dr
+        self.simulated_decks = load_simulated_decks(log_path)
         for card_id in self.card_ids_to_consider:
             char_id = card_id // 1000
             self.char_id_to_cards[char_id].append(card_id)
@@ -138,14 +160,16 @@ class DeckGeneratorWithDoubleCards:
             deck = []
             for item in combo:
                 deck.extend(item)
+            if tuple(sorted(deck)) in self.simulated_decks:
+                continue
             if has_card_conflict(set(deck)):
                 continue
-            if check_skill_tags(count_skill_tags(deck)):
+            if check_skill_tags(count_skill_tags(deck), self.force_dr):
                 for perm in itertools.permutations(deck):
                     # 去除分位于左一、洗牌位于最后两张的卡组
                     if SkillEffectType.ScoreGain in DB_TAG[perm[1]] or \
-                        SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
-                        SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
+                            SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
+                            SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
                         continue
                     yield perm
 
@@ -166,13 +190,15 @@ class DeckGeneratorWithDoubleCards:
             deck = []
             for item in combo:
                 deck.extend(item)
+            if tuple(sorted(deck)) in self.simulated_decks:
+                continue
             if has_card_conflict(set(deck)):
                 continue
-            if check_skill_tags(count_skill_tags(deck)):
+            if check_skill_tags(count_skill_tags(deck), self.force_dr):
                 for perm in itertools.permutations(deck):
                     if SkillEffectType.ScoreGain in DB_TAG[perm[1]] or \
-                        SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
-                        SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
+                            SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
+                            SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
                         continue
                     total += 1
         return total
@@ -188,11 +214,11 @@ class DeckGeneratorWithDoubleCards:
         return total
 
 
-def generate_decks_with_double_cards(card_ids_to_consider: list[int], center_char: int = None):
+def generate_decks_with_double_cards(card_ids_to_consider: list[int], center_char: int = None, force_dr: bool = False, log_path: str = None):
     """
     外部接口函数，返回支持双卡规则的卡组生成器
     """
-    return DeckGeneratorWithDoubleCards(card_ids_to_consider, center_char)
+    return DeckGeneratorWithDoubleCards(card_ids_to_consider, center_char, force_dr, log_path)
 
 
 if __name__ == "__main__":

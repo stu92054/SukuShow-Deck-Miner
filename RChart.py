@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional  # Import necessary types
-from RChartPatch import ChartPatch
 
 logger = logging.getLogger(__name__)
 
@@ -393,12 +392,6 @@ class Chart:
             self.ChartEvents.append((note.just, NoteTypes(note.Type).name))
             for timestamp in note.holds:
                 self.ChartEvents.append((timestamp, "HoldMid"))
-
-        # 人工补全重新计算后缺失的长条判定点
-        patch_id = f"{self.music.Id}_{self.tier}"
-        if patch_id in ChartPatch:
-            for time in ChartPatch[patch_id]:
-                self.ChartEvents.append((time, "HoldMid"))
 
         self.ChartEvents.append((str(self.FeverEndTime), "FeverEnd"))
         self.ChartEvents.append((str(self.music.PlayTime / 1000), "LiveEnd"))

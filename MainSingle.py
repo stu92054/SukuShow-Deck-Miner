@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     # 配置卡组、练度
     # 完整格式: (CardSeriesId, [卡牌等级, C位技能等级, 技能等级])
-    
+
     d = Deck(db_carddata, db_skill, [(1011501, [120, 1, 9]),  # 沙知
                                      (1021523, [120, 7, 7]),  # 银河梢
                                      (1023901, [80, 1, 7]),  # BR慈
@@ -87,11 +87,17 @@ if __name__ == "__main__":
     for card in d.cards:
         cid = int(card.card_id)
         if cid in DEATH_NOTE:
-            afk_mental = DEATH_NOTE[cid]
+            if afk_mental:
+                afk_mental = min(afk_mental, DEATH_NOTE[cid])
+            else:
+                afk_mental = DEATH_NOTE[cid]
         if card.characters_id == c.music.CenterCharacterId:
-            centercard = card
-            for target, effect in centercard.get_center_attribute():
-                ApplyCenterAttribute(player, effect, target)
+            # DR优先C位，无DR则靠左为C位
+            if not centercard or card.card_id[4] == "8":
+                centercard = card
+    if centercard:
+        for target, effect in centercard.get_center_attribute():
+            ApplyCenterAttribute(player, effect, target)
 
     logging.debug("\n--- C位特性应用完毕 ---")
     for card in d.cards:

@@ -63,11 +63,17 @@ def run_game_simulation(
     for card in d.cards:
         cid = int(card.card_id)
         if cid in DEATH_NOTE:
-            afk_mental = DEATH_NOTE[cid]
+            if afk_mental:
+                afk_mental = min(afk_mental, DEATH_NOTE[cid])
+            else:
+                afk_mental = DEATH_NOTE[cid]
         if card.characters_id == c.music.CenterCharacterId:
-            centercard = card
-            for target, effect in centercard.get_center_attribute():
-                ApplyCenterAttribute(player, effect, target)
+            # DR优先C位，无DR则靠左为C位
+            if not centercard or card.card_id[4] == "8":
+                centercard = card
+    if centercard:
+        for target, effect in centercard.get_center_attribute():
+            ApplyCenterAttribute(player, effect, target)
 
     d.appeal_calc(c.music.MusicType)
 
@@ -136,5 +142,6 @@ def run_game_simulation(
         "final_score": player.score,
         "cards_played_log": d.card_log,
         "original_deck_index": original_deck_index,
-        "deck_card_ids": deck_card_ids
+        "deck_card_ids": deck_card_ids,
+        "center_card": int(centercard.card_id)
     }

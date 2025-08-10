@@ -8,7 +8,7 @@ from tqdm import tqdm
 from RChart import Chart
 from DeckGen import generate_decks_with_sequential_priority_pruning
 from DeckGen2 import generate_decks_with_double_cards
-from CardLevelConfig import convert_deck_to_simulator_format
+from CardLevelConfig import convert_deck_to_simulator_format, CARD_CACHE
 from Simulator_core import run_game_simulation, MUSIC_DB
 
 logger = logging.getLogger(__name__)
@@ -19,15 +19,27 @@ logging.basicConfig(
 
 BONUS_SFL = 1
 CENTERCHAR = None
+LIMITBREAK_BONUS = {
+    1: 1, 2: 1, 3: 1, 4: 1, 5: 1,
+    6: 1, 7: 1, 8: 1, 9: 1, 10: 1,
+    11: 1.2,
+    12: 1.3,
+    13: 1.35,
+    14: 1.4
+}
 
 
 def score2pt(results):
+    card_limitbreak = dict()
     for deck in results:
-        card_chars = {str(card_id)[:4] for card_id in deck['deck_card_ids']}
         bonus = BONUS_SFL
-
-        if CENTERCHAR in card_chars:
-            bonus *= 1.4
+        centercard = result["center_card"]
+        if centercard:
+            limitbreak = card_limitbreak.get(centercard, None)
+            if limitbreak == None:
+                levels = CARD_CACHE[centercard]
+                limitbreak = max(levels[1:])
+            bonus *= LIMITBREAK_BONUS[limitbreak]
         deck['pt'] = int(deck['score'] * bonus)  # 实际为向上取整而非截断
     return results
 
@@ -62,6 +74,10 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
     processed_results = list(unique_decks_best_scores.values())
     if calc_pt:
         processed_results = score2pt(processed_results)
+        # 合并既有log
+        if os.path.exists(filename):
+            with open(filename, 'r', encoding='utf-8') as f:
+                processed_results.extend(json.load(f))
         processed_results.sort(key=lambda i: i["pt"], reverse=True)
     else:
         processed_results.sort(key=lambda i: i["score"], reverse=True)
@@ -97,10 +113,10 @@ if __name__ == "__main__":
         1023520, 1023701, 1023901,  # 慈: 银河 LR BR
         1031519, 1031530, 1031901,  # 帆: 舞会 IDOME BR(2024)
         1032518, 1032528, 1032901,  # 沙: 舞会 IDOME BR
-        1033514, 1033524, 1033901,  # 乃: 舞会 IDOME BR
+        1033514, 1033524, 1033525, 1033901,  # 乃: 舞会 IDOME COCO夏 BR
         1041513,  # 吟: 舞会
-        # 1042515, # 1042512,  # 铃: 暧昧mayday 舞会
-        1043515,  # 芽: BLAST 舞会1043512
+        1042516, 1042801, 1042802, # 1042515, # 1042512,  # 铃: 太阳 EA OE 暧昧mayday 舞会
+        1043515, 1043516, 1043801, 1043802,  # 芽: BLAST COCO夏 EA OE 舞会1043512
         # 1051503, #1051501, 1051502,  # 泉: 天地黎明 DB RF
         1052901, 1052503,  # 1052504  # 塞: BR 十六夜 天地黎明
     ]
@@ -124,7 +140,7 @@ if __name__ == "__main__":
     ]
 
     # --- Step 2: Prepare simulation tasks ---
-    fixed_music_id = "305107"  # IDOME
+    fixed_music_id = "405104"  # 投票
     fixed_difficulty = "02"
     fixed_player_master_level = 50
 
@@ -143,7 +159,7 @@ if __name__ == "__main__":
             pre_initialized_chart.music.CenterCharacterId = center_override
         if color_override:
             pre_initialized_chart.music.MusicType = color_override
-        logger.info(f"Chart object for Music ID {fixed_music_id} and Difficulty {fixed_difficulty} pre-initialized.")
+        logger.info(f"Chart for {pre_initialized_chart.music.Title} (ID: {fixed_music_id}) and Difficulty {fixed_difficulty} pre-initialized.")
     except Exception as e:
         logger.error(f"Failed to pre-initialize Chart object: {e}")
         exit()
@@ -151,14 +167,32 @@ if __name__ == "__main__":
     BONUS_SFL = (len(pre_initialized_chart.music.SingerCharacterId) + 1) * 0.7 + 1
     CENTERCHAR = str(pre_initialized_chart.music.CenterCharacterId)
 
-    logger.info("开始生成卡组并提交到模拟池...")
+    # 预处理卡池，移除非C位角色DR
+    temp = list()
+    force_dr = False
+    for card in card_ids:
+        card_str = str(card)
+        if card_str[4] != "8":
+            temp.append(card)
+        elif card_str[0:4] == CENTERCHAR:
+            temp.append(card)
+            force_dr = True
+    if force_dr:
+        card_ids = temp
+        logger.info(f"DR of Non-Center Characters removed, remaining {len(card_ids)} cards.")
+        logger.info("DR of Center Character detected, all decks will contain 1 DR card.")
+
+    logger.info("Pre-calculating deck amount...")
 
     # 3. 获取卡组生成器
     decks_generator = generate_decks_with_double_cards(
-        card_ids, pre_initialized_chart.music.CenterCharacterId
+        card_ids,
+        pre_initialized_chart.music.CenterCharacterId,
+        force_dr,
+        os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
     )
     total_decks_to_simulate = decks_generator.total_decks
-    logger.info(f"预计算总共将模拟 {total_decks_to_simulate} 个卡组。")
+    logger.info(f"{total_decks_to_simulate} decks to be simulated.")
 
     # 4. 创建模拟任务生成器
     # task_generator_func 会按需从 generated_decks_generator 中拉取卡组

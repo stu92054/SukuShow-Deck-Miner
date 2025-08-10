@@ -9,9 +9,9 @@ class Skill:
         self.condition: list[str] = []
         self.effect: list[int] = []
         self.skill_id = str(series_id*100 + lv)
-        self.cost = db[self.skill_id]["ConsumeAP"]
-        self.condition = db[self.skill_id]["RhythmGameSkillConditionIds"]
-        self.effect = db[self.skill_id]["RhythmGameSkillEffectId"]
+        self.cost: int = db[self.skill_id]["ConsumeAP"]
+        self.condition: list[str] = db[self.skill_id]["RhythmGameSkillConditionIds"]
+        self.effect: list[int] = db[self.skill_id]["RhythmGameSkillEffectId"]
 
     def __str__(self) -> str:
         return (
