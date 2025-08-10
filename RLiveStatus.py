@@ -62,8 +62,9 @@ class Voltage:
         while self._current_points < Voltage._points_needed_for_level(self._current_level) and self._current_level > 0:
             self._current_level -= 1
 
-        if old_level != self._current_level:
-            logger.debug(f"  Voltage等级变化: 从 Lv.{old_level} -> Lv.{self._current_level}")
+        if logger.isEnabledFor(logging.DEBUG):
+            if old_level != self._current_level:
+                logger.debug(f"  Voltage等级变化: 从 Lv.{old_level} -> Lv.{self._current_level}")
 
     def add_points(self, amount: int):
         """
@@ -75,8 +76,8 @@ class Voltage:
         self._current_points += amount
         if self._current_points < 0:  # VoltagePt不能低于0
             self._current_points = 0
-
-        logger.debug(f"  VoltagePt {'+' if amount >= 0 else '-'}{abs(amount)} 点 (当前: {self._current_points} Pt)")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"  VoltagePt {'+' if amount >= 0 else '-'}{abs(amount)} 点 (当前: {self._current_points} Pt)")
         self._update_level()
 
     def set_points(self, new_points: int):
@@ -88,7 +89,8 @@ class Voltage:
 
         old_points = self._current_points
         self._current_points = new_points
-        logger.debug(f"  VoltagePt 从 {old_points} -> {self._current_points} 点")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"  VoltagePt 从 {old_points} -> {self._current_points} 点")
         self._update_level()
 
     def get_points(self) -> int:
