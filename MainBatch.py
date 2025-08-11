@@ -17,7 +17,7 @@ logging.basicConfig(
     format='%(message)s'
 )
 
-BONUS_SFL = 1
+BONUS_SFL = 6.6
 CENTERCHAR = None
 LIMITBREAK_BONUS = {
     1: 1, 2: 1, 3: 1, 4: 1, 5: 1,
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         logger.error(f"Failed to pre-initialize Chart object: {e}")
         exit()
 
-    BONUS_SFL = (len(pre_initialized_chart.music.SingerCharacterId) + 1) * 0.7 + 1
+    #BONUS_SFL = (len(pre_initialized_chart.music.SingerCharacterId) + 1) * 0.7 + 1
     CENTERCHAR = str(pre_initialized_chart.music.CenterCharacterId)
 
     # 预处理卡池，移除非C位角色DR
