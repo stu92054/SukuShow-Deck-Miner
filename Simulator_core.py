@@ -76,6 +76,7 @@ def run_game_simulation(
             ApplyCenterAttribute(player, effect, target)
 
     d.appeal_calc(c.music.MusicType)
+    player.basescore_calc(c.AllNoteSize)
 
     # Use a heap for ChartEvents for better performance
     import heapq
@@ -95,13 +96,13 @@ def run_game_simulation(
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
                 combo_count += 1
                 if combo_count in []:
-                    player.combo_add("GOOD", c.AllNoteSize)
+                    player.combo_add("GOOD")
                 elif afk_mental and player.mental.get_rate() >= afk_mental:
-                    player.combo_add("MISS", c.AllNoteSize, event)
+                    player.combo_add("MISS", event)
                 elif combo_count in []:
-                    player.combo_add("GREAT", c.AllNoteSize)
+                    player.combo_add("GREAT")
                 else:
-                    player.combo_add("PERFECT", c.AllNoteSize)
+                    player.combo_add("PERFECT")
 
                 if player.CDavailable and cardnow and player.ap >= cardnow.cost:
                     player.ap -= cardnow.cost

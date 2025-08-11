@@ -102,8 +102,11 @@ if __name__ == "__main__":
     logging.debug("\n--- C位特性应用完毕 ---")
     for card in d.cards:
         logging.debug(f"Cost: {card.cost:2}\t{card.full_name}")
-    # 根据歌曲颜色计算三围
+
+    # 根据歌曲颜色计算三围、基础分
     d.appeal_calc(c.music.MusicType)
+    player.basescore_calc(c.AllNoteSize)
+
     logging.debug(f"Appeal: {player.deck.appeal}")
     logging.debug(f"技能CD: {player.cooldown} 秒")
 
@@ -122,21 +125,21 @@ if __name__ == "__main__":
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
                 combo_count += 1
                 if combo_count in []:  # 按需模拟其他判定/策略
-                    player.combo_add("GOOD", c.AllNoteSize)
-                    # player.combo_add("BAD", c.AllNoteSize, event)
+                    player.combo_add("GOOD")
+                    # player.combo_add("BAD", event)
 
                 elif afk_mental and player.mental.get_rate() >= afk_mental:
                     # 不同note类型和判定会影响扣血多少
                     # 模拟开局挂机到背水时需向combo_add()传入note类型(即event)
                     # 卡组有p吟/BR吟时自动模拟背水，可在DEATH_NOTE中添加其他背水血线
-                    player.combo_add("MISS", c.AllNoteSize, event)
+                    player.combo_add("MISS", event)
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 elif combo_count in []:
-                    player.combo_add("GREAT", c.AllNoteSize)
+                    player.combo_add("GREAT")
                     # 连击计数、AP速度更新、回复AP、扣血
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 else:
-                    player.combo_add("PERFECT", c.AllNoteSize)
+                    player.combo_add("PERFECT")
                     # 连击计数、AP速度更新、回复AP、扣血
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 # AP足够 且 冷却完毕 时打出技能

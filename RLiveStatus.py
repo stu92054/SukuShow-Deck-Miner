@@ -179,6 +179,10 @@ class PlayerAttributes:
         self.deck: Deck
         self.appeal: int = 0
         self.masterlv: int = masterlv
+        self.base_score: float
+        self.note_score: dict = dict()
+        self.half_ap_plus: float
+        self.full_ap_plus: float
 
     def __str__(self) -> str:
         return (
@@ -210,48 +214,54 @@ class PlayerAttributes:
         self.deck = deck
         self.mental.set_hp(deck)
 
-    def score_add(self, value):
+    def basescore_calc(self, all_note_size: int):
+        masterlv_bonus = self.masterlv / 100 + 1
+        self.base_score = self.deck.appeal * masterlv_bonus
+        self.note_score = {
+            "PERFECT": 30 * self.base_score / all_note_size,
+            "GREAT": 25 * self.base_score / all_note_size,
+            "GOOD": 15 * self.base_score / all_note_size,
+            "BAD": 5 * self.base_score / all_note_size,
+            "MISS": 0
+        }
+        self.half_ap_plus = 300000 / all_note_size
+        self.full_ap_plus = 600000 / all_note_size
+        
+
+    def score_add(self, value, skill=True):
         voltage_lv = self.voltage.get_level()
         if self.fevertime:
             voltage_lv *= 2
         voltage_bonus = (voltage_lv + 10) / 10
-        masterlv_bonus = self.masterlv / 100 + 1
-        temp = ceil(value * self.deck.appeal * voltage_bonus * masterlv_bonus)
-        self.score += temp
-        return temp
+        value *= voltage_bonus
+        if skill:
+            value *= self.base_score
+        value = ceil(value)
+        self.score += value
+        return value
 
-    def score_note(self, judgement, all_note_size):
-        match judgement:
-            case "PERFECT":
-                value = 30
-            case "GREAT":
-                value = 25
-            case "GOOD":
-                value = 15
-            case "BAD":
-                value = 5
-            case "MISS":
-                return 0
-            case _:
-                return 0
-        return self.score_add(value / all_note_size)
+    def score_note(self, judgement):
+        score_value = self.note_score.get(judgement, 0)
+        if score_value == 0:
+            return 0
+        return self.score_add(score_value, skill=False)
 
-    def combo_add(self, judgement, all_note_size, note_type=None):
+    def combo_add(self, judgement, note_type=None):
         self.combo += 1
         if self.combo <= 50:
             self.ap_rate = 1 + int(self.combo / 10) / 10
         match judgement:
             case "PERFECT" | "GREAT":
-                self.ap += ceil(600000 * self.ap_rate / all_note_size) / 10000
+                self.ap += ceil(self.full_ap_plus * self.ap_rate) / 10000
             case "GOOD":
-                self.ap += ceil(300000 * self.ap_rate / all_note_size) / 10000
+                self.ap += ceil(self.half_ap_plus * self.ap_rate) / 10000
             case "BAD" | "MISS":
                 self.combo = 0
                 self.ap_rate = 1
                 self.mental.sub(judgement, note_type)  # 按判定扣血
             case _:
                 pass
-        self.score_note(judgement, all_note_size)
+        self.score_note(judgement)
 
 
 if __name__ == "__main__":
