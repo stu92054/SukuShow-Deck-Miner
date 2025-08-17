@@ -82,14 +82,11 @@ def run_game_simulation(
     pypy_impl = python_implementation() == "PyPy"
     if pypy_impl:
         from sortedcontainers import SortedList
-        event_heap = SortedList()
-        event_heap.update([(float(t), e) for t, e in c.ChartEvents])
+        event_heap = SortedList(c.ChartEvents)
         event_heap.add((player.cooldown, "CDavailable"))
     else:
         import heapq
-        event_heap = []
-        for ts_str, event_name in c.ChartEvents:
-            heapq.heappush(event_heap, (float(ts_str), event_name))
+        event_heap = list(c.ChartEvents)
         heapq.heappush(event_heap, (player.cooldown, "CDavailable"))
 
     combo_count = 0

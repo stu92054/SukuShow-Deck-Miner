@@ -115,9 +115,9 @@ if __name__ == "__main__":
         1032518, 1032528, 1032901,  # 沙: 舞会 IDOME BR
         1033514, 1033524, 1033525, 1033901,  # 乃: 舞会 IDOME COCO夏 BR
         1041513,  # 吟: 舞会
-        1042516, 1042801, 1042802, # 1042515, # 1042512,  # 铃: 太阳 EA OE 暧昧mayday 舞会
+        1042516, 1042801, 1042802,  # 1042515, # 1042512,  # 铃: 太阳 EA OE 暧昧mayday 舞会
         1043515, 1043516, 1043801, 1043802,  # 芽: BLAST COCO夏 EA OE 舞会1043512
-        1051503, #1051501, 1051502,  # 泉: 天地黎明 DB RF
+        1051503,  # 1051501, 1051502,  # 泉: 天地黎明 DB RF
         1052901, 1052503,  # 1052504  # 塞: BR 十六夜 天地黎明
     ]
 
@@ -155,6 +155,7 @@ if __name__ == "__main__":
 
     try:
         pre_initialized_chart = Chart(MUSIC_DB, fixed_music_id, fixed_difficulty)
+        pre_initialized_chart.ChartEvents = [(float(t), e) for t, e in pre_initialized_chart.ChartEvents]
         if center_override:
             pre_initialized_chart.music.CenterCharacterId = center_override
         if color_override:
@@ -164,7 +165,7 @@ if __name__ == "__main__":
         logger.error(f"Failed to pre-initialize Chart object: {e}")
         exit()
 
-    #BONUS_SFL = (len(pre_initialized_chart.music.SingerCharacterId) + 1) * 0.7 + 1
+    # BONUS_SFL = (len(pre_initialized_chart.music.SingerCharacterId) + 1) * 0.7 + 1
     CENTERCHAR = str(pre_initialized_chart.music.CenterCharacterId)
 
     # 预处理卡池，移除非C位角色DR
