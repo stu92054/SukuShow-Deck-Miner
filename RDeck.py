@@ -1,6 +1,7 @@
 import logging
 import os
 from RSkill import *
+from copy import copy
 from math import ceil
 from enum import Enum
 
@@ -75,6 +76,18 @@ def _get_evolution(rarity: Rarity, lv: int) -> int:
     return stages[-1][1]
 
 
+def cardobj_cache(cls):
+    cache: dict[int, Card] = {}
+
+    def wrapper(*args, **kwargs):
+        key = args[2]  # 仅检查卡牌id
+        if key not in cache:
+            cache[key] = cls(*args, **kwargs)
+        return copy(cache[key])
+    return wrapper
+
+
+@cardobj_cache
 class Card():
     def __init__(self, db_card, db_skill, series_id, lv_list=None):
         if lv_list == None:
@@ -88,14 +101,11 @@ class Card():
         self.pure: int
         self.cool: int
         self.mental: int
-        self.evolution: int
-        self._init_status(db_card)
 
+        evo = self._init_status(db_card)
         self.center_attribute: CenterAttribute = CenterAttribute(db_skill, db_card[self.card_id]["CenterAttributeSeriesId"])
-        self.center_skill_level: int = lv_list[1]
-        self.center_skill: CenterSkill = CenterSkill(db_skill, db_card[self.card_id]["CenterSkillSeriesId"], self.center_skill_level)
-        self.skill_level: int = lv_list[2]
-        self.skill_unit: Skill = Skill(db_skill, int(f"3{self.card_id[1:]}{self.evolution}"), self.skill_level)
+        self.center_skill: CenterSkill = CenterSkill(db_skill, db_card[self.card_id]["CenterSkillSeriesId"], lv_list[1])
+        self.skill_unit: Skill = Skill(db_skill, int(f"3{self.card_id[1:]}{evo}"), lv_list[2])
         self.cost: int = self.skill_unit.cost
         self.active_count: int = 0
         self.is_except: bool = False
@@ -121,7 +131,7 @@ class Card():
         self.pure = ceil(db_card[self.card_id]["MaxPure"][-3] * status_norm / 100)
         self.cool = ceil(db_card[self.card_id]["MaxCool"][-3] * status_norm / 100)
         self.mental = ceil(db_card[self.card_id]["MaxMental"][-3] * hp_norm / 100)
-        self.evolution = evo
+        return evo
 
     def get_skill(self):
         self.active_count += 1
