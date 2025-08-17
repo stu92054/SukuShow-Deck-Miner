@@ -1,6 +1,6 @@
 import logging
 import os
-from enum import Enum
+from platform import python_implementation
 # 导入所有 R 模块和 db_load 函数
 from RCardData import db_load
 from RChart import Chart, MusicDB
@@ -79,18 +79,27 @@ def run_game_simulation(
     player.basescore_calc(c.AllNoteSize)
 
     # Use a heap for ChartEvents for better performance
-    import heapq
-    event_heap = []
-    for ts_str, event_name in c.ChartEvents:
-        heapq.heappush(event_heap, (float(ts_str), event_name))
-
-    heapq.heappush(event_heap, (player.cooldown, "CDavailable"))
+    pypy_impl = python_implementation() == "PyPy"
+    if pypy_impl:
+        from sortedcontainers import SortedList
+        event_heap = SortedList()
+        event_heap.update([(float(t), e) for t, e in c.ChartEvents])
+        event_heap.add((player.cooldown, "CDavailable"))
+    else:
+        import heapq
+        event_heap = []
+        for ts_str, event_name in c.ChartEvents:
+            heapq.heappush(event_heap, (float(ts_str), event_name))
+        heapq.heappush(event_heap, (player.cooldown, "CDavailable"))
 
     combo_count = 0
     cardnow = d.topcard()
 
     while event_heap:
-        timestamp, event = heapq.heappop(event_heap)
+        if pypy_impl:
+            timestamp, event = event_heap.pop(0)
+        else:
+            timestamp, event = heapq.heappop(event_heap)
 
         match event:
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
@@ -110,7 +119,11 @@ def run_game_simulation(
                     UseCardSkill(player, effects, conditions, cardnow)
                     player.CDavailable = False
                     cdtime_float = timestamp + player.cooldown
-                    heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
+                    if pypy_impl:
+                        event_heap.add((cdtime_float, "CDavailable"))
+                    else:
+                        heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
+
                     cardnow = d.topcard()
 
             case "CDavailable":
@@ -121,7 +134,10 @@ def run_game_simulation(
                     UseCardSkill(player, effects, conditions, cardnow)
                     player.CDavailable = False
                     cdtime_float = timestamp + player.cooldown
-                    heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
+                    if pypy_impl:
+                        event_heap.add((cdtime_float, "CDavailable"))
+                    else:
+                        heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
                     cardnow = d.topcard()
 
             case "LiveStart" | "LiveEnd" | "FeverStart":

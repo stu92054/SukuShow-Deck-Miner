@@ -117,7 +117,7 @@ if __name__ == "__main__":
         1041513,  # 吟: 舞会
         1042516, 1042801, 1042802, # 1042515, # 1042512,  # 铃: 太阳 EA OE 暧昧mayday 舞会
         1043515, 1043516, 1043801, 1043802,  # 芽: BLAST COCO夏 EA OE 舞会1043512
-        # 1051503, #1051501, 1051502,  # 泉: 天地黎明 DB RF
+        1051503, #1051501, 1051502,  # 泉: 天地黎明 DB RF
         1052901, 1052503,  # 1052504  # 塞: BR 十六夜 天地黎明
     ]
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     ]
 
     # --- Step 2: Prepare simulation tasks ---
-    fixed_music_id = "405104"  # 投票
+    fixed_music_id = "305101"  # Edel
     fixed_difficulty = "02"
     fixed_player_master_level = 50
 
@@ -218,9 +218,15 @@ if __name__ == "__main__":
     with multiprocessing.Pool(processes=num_processes) as pool:
         # imap_unordered returns results as they are completed, in no particular order.
         # This is perfect for checking high scores on the fly.
-        results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize=500)
+        from platform import python_implementation
+        pypy_impl = python_implementation() == "PyPy"
+        if pypy_impl:
+            chunksize = 1000
+        else:
+            chunksize = 500
+        results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize)
 
-        for result in tqdm(results_iterator, total=total_decks_to_simulate):
+        for result in tqdm(results_iterator, total=total_decks_to_simulate, ascii=pypy_impl):
             current_score = result['final_score']
             original_index = result['original_deck_index']
             current_log = result["cards_played_log"]
@@ -265,7 +271,7 @@ if __name__ == "__main__":
 
     # --- Step 4: Save all results to JSON ---
     all_simulation_results = []
-    for temp_file in tqdm(temp_files, desc="Merging Files"):
+    for temp_file in tqdm(temp_files, desc="Merging Files", ascii=pypy_impl):
         with open(temp_file, 'r') as f:
             all_simulation_results.extend(json.load(f))
         os.remove(temp_file)

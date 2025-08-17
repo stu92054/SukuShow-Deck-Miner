@@ -39,6 +39,7 @@ if __name__ == "__main__":
     # 配置卡组、练度
     # 完整格式: (CardSeriesId, [卡牌等级, C位技能等级, 技能等级])
 
+    """
     d = Deck(db_carddata, db_skill, [(1011501, [120, 1, 9]),  # 沙知
                                      (1021523, [120, 7, 7]),  # 银河梢
                                      (1023901, [80, 1, 7]),  # BR慈
@@ -46,21 +47,21 @@ if __name__ == "__main__":
                                      (1032518, [100, 1, 1]),  # P沙
                                      (1031519, [120, 1, 7])  # P帆
                                      ])
-
+    """
     # 使用convert_deck_to_simulator_format时可只输入id列表
     # 此时需要在CardLevelConfig中自定义练度，未定义则默认全满级
-    """
+    
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1041513, 1021523, 1033514, 1022701, 1032518, 1043515]
+            [1011501, 1041513, 1021523, 1033525, 1022701, 1043801]
         )
     )
-    """
+    
 
     # 歌曲、难度设置
     # 难度 01 / 02 / 03 / 04 对应 Normal / Hard / Expert / Master
-    fixed_music_id = "305107"  # IDOME
+    fixed_music_id = "305101"  # Edelied
     fixed_difficulty = "02"
     fixed_player_master_level = 50
 
