@@ -20,11 +20,13 @@ A deck simulator and optimizer for the rhythm game mode, School Idol Show (ス�
 
   - `PyYAML`
   - `tqdm`
+  - `sortedcontainers` (when running with PyPy)
 
   You can install them using the command below:
 
   ```bash
   pip install PyYAML tqdm
+  pip install sortedcontainers
   ```
 
 ---
@@ -43,8 +45,16 @@ Choose and run the following files depending on what you need:
 
 You can adjust the configurations in the following files as needed:
 
-- `CardLevelConfig.py`: Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.
-- `DeckGen.py`: Implements the deck generation logic. You can configure **card conflict rules** (`CARD_CONFLICT_RULES`) here to further optimize deck generation by pruning.
+  - `CardLevelConfig.py`: Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.  
+  You can also use `DEATH_NOTE` to configure the AFK HP threshold for comeback cards. If multiple comeback cards with configured thresholds are in the deck, the lowest threshold will be used.
+  - `DeckGen2.py`: Handles deck generation logic. You can configure constraints like card conflict rules (`CARD_CONFLICT_RULES`) and deck skills (`check_skill_tags`) here to further optimize deck generation by pruning.
+  - `MainBatch.py`: Configure the card pool and target songs for batch simulation, as well as the Season Fan Lv bonus multiplier (`BONUS_SFL`) and other performance-related parameters.
+  - `MainSingle.py`: Configure the specific deck and song for a single simulation.   
+  You can also adjust the log output verbosity in `logging.basicConfig`.
+      - `INFO`: Outputs only the deck and simulation results.
+      - `DEBUG`: Outputs detailed skill usage records.
+      - `TIMING`: Outputs logs including all note and CD end timestamps. Since notes can flood the console, it's recommended to output the logs to a text file for review.
+  - `Simulator_core.py`: You can modify the code here to adjust the rhythm game strategy for batch simulations, as long as you know what you're doing. Note that changes made here only affect batch simulations; the strategy for single simulations must be modified separately in `MainSingle.py`.
 
 ---
 
@@ -62,17 +72,19 @@ You can adjust the configurations in the following files as needed:
 > As a precautionary measure, you can modify the line `num_processes = os.cpu_count() or 1` in `MainBatch.py` to `num_processes = 12`. The value `12` is an example; you can replace it with **any other value less than your CPU's total thread count** to reduce performance pressure.
 
 - **Performance Considerations**: Technically, you could include all available cards in the card pool for batch simulation. However, this demands **extremely powerful CPU performance, a large amount of RAM, and ample simulation time**. Due to potential unforeseen issues, this approach is **not recommended**.
-- **Memory Accumulation**: In batch processing, the deck generation and simulation stages run in a pipeline, which somewhat reduces immediate memory pressure. However, **the simulation results for all decks will accumulate in memory until completion**. Therefore, it's advised not to include too many cards in the card pool to prevent out-of-memory errors.
+- **Memory Usage**: Although deck generation and simulation stages in batch processing operate as a pipeline and temporarily cache results to the disk, **the more cards you use, the more memory the simulator will consume**. Therefore, please do not include too many cards in the selection pool to avoid out-of-memory errors.
 
 ---
 
 ## 📝 Notes & Potential Discrepancies
 
-- This simulator uses an **exhaustive search method** for deck generation and simulation. The "optimal deck for a single song" found is only valid under the **given card pool, card levels, and difficulty**. It refers to the optimal score deck achieved by hitting **All Perfect** at the exact timing specified in the chart, or by AFK until mental drops below 10% (if the deck contains Party Ginko) and then maintaining All Perfect. Adjusting the card pool, training levels, or chart difficulty may yield different optimal decks.
-- Similarly, the **optimal deck combination for multiple songs** will also vary with changes in card pool, card levels, difficulty, etc.
+- This simulator uses an **exhaustive search method** to generate and simulate decks. The "optimal deck for a single song" it finds is only valid under the **given card pool, card levels, difficulty, and rhythm game strategy**. Adjusting the card pool, levels, or difficulty may yield a different optimal deck. The default strategy is:
+  1.  Achieve **All Perfect** at the precise timing specified in the chart.
+  2.  If the deck contains comeback cards configured in `DEATH_NOTE`, the simulator will idle automatically when the current HP is above the comeback threshold, and maintain All Perfect only when HP falls below that threshold.
+- Similarly, the optimal solution for multiple songs will also change with the card pool, levels, difficulty, and rhythm game strategy.
 - The simulator effectively **saves time on in-game rehearsal**, but it's difficult to find the **absolute optimal deck** in a single attempt. A good understanding of card skills is required to fully utilize the simulator's potential.
 - **Optimal Deck ≠ Optimal Strategy**. For strategies involving precise timing, frame-by-frame scoring optimization, or adjusting card skill levels based on skill conditions/effects, please use your own discretion.
-- When calculating **Grandprix Pt**, season fan levels are assumed to be **Lv. 10**, and the limitbreak multiplier for center character (if exists) is assumed to be **1.4x**.
+- When calculating **Grandprix Pt**, the Season Fan Lv bonus multiplier (`BONUS_SFL`) is assumed to be **6.6** (all members at level 10). The limitbreak multiplier for the center character (if exists) is calculated based on their skill or SP level.
 - As the simulator **does not 1:1 perfectly replicate in-game logic**, it's normal for simulated scores to differ from actual in-game scores.
 
 ### ⏰ Possible Sources of Error
@@ -80,11 +92,6 @@ You can adjust the configurations in the following files as needed:
 **Logic Inconsistencies**  
 Because the simulator doesn’t perfectly replicate the game logic, there may be significant differences in skill processing and score calculation results compared to actual play.
 If you can provide **actual play recordings, detailed deck levels, and song Master Lv. information**, I might attempt to verify the inconsistencies and provide fixes.
-
-**Missing Hold Note Judgment Points**  
-Some charts may have a single-digit error in the number of parsed notes in the simulator, and some of which have not been manually corrected in `RChartPatch.py`.  
-**Curved long notes** in charts are actually composed of multiple short straight Hold notes. However, their intermediate timestamps recorded in the chart may not perfectly match the actual judgment points in the game. The game re-segments Hold note timestamps at half-beat intervals.  
-`RChart.py` replicates this logic, but due to **calculation precision or different calculation methods**, some Hold notes might be missing one judgment point.
 
 **Time Processing Errors**  
 Due to **floating-point precision issues** or other unknown reasons (for example, the game might process all events once per frame rather than precisely at each event's exact timestamp), **actual skill activation timing might be earlier/later** than simulated.  
