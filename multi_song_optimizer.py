@@ -19,14 +19,17 @@ logging.basicConfig(
 # 求解前需运行 MainBatch.py 生成对应的卡组得分记录
 CHALLENGE_SONGS = [
     # 若只输入两首歌则会寻找仅针对两面的最优解，不考虑第三面
-    ("405103", "02"),  # 太陽であれ！
-    ("405104", "02"),  # とーひょー☆スター！
-    # ("305101", "02"),  # Edelied
+    ("405109", "02"),  # ブルウモーメント
+    ("405105", "02"),  # Very! Very! COCO夏っ
+    ("405108", "02"),  # 可惜夜花火
 ]
 
 # 每首歌只保留得分排名前 N 名的卡组用于求解
 TOP_N_CANDIDATES = 30000
 
+# 仅根据每面最高分剪枝，不考虑重复卡
+# 三面分差较大时适用，小分差时很慢
+simple_pruning_mode = False
 
 def load_song_simulation_results(music_id: str, difficulty: str) -> list[dict]:
     """
@@ -131,6 +134,10 @@ def find_best_three_decks(
             # Deep copy to store the current best combination
             best_global_decks = list(current_selected_decks_info)
             logger.info(f"New best total pt found: {best_global_pt}")
+            for i, deck_info in enumerate(best_global_decks):
+                logger.info(f"  Song {i+1} ({deck_info['music_id']}-{deck_info['difficulty']}): ")
+                logger.info(f"    Pt: {deck_info['pt']}\tScore: {deck_info['score']}")
+                logger.info(f"    Cards (IDs): {deck_info['deck_card_ids']}")
             # Optionally print the decks for the new best score
             # for deck_info in best_global_decks:
             #     logger.info(f"  Song {deck_info['music_id']}: Score {deck_info['score']:.2f}, Cards {deck_info['deck_card_ids']}")
@@ -139,20 +146,48 @@ def find_best_three_decks(
     current_song_id = challenge_song_ids[song_idx]
     candidates_for_current_song = all_song_candidates.get(current_song_id, [])
 
-    # Pruning: Estimate max possible score for remaining songs
-    # This is a simple upper bound (sum of top scores for remaining songs)
-    # A more accurate pruning would consider actual available cards.
-    remaining_max_pt_estimate = 0
-    for i in range(song_idx, len(challenge_song_ids)):
-        next_song_id = challenge_song_ids[i]
-        if all_song_candidates.get(next_song_id):
-            remaining_max_pt_estimate += all_song_candidates[next_song_id][0]['pt']  # Add highest score candidate
 
-    if current_total_pt + remaining_max_pt_estimate <= best_global_pt and best_global_pt != -1:
-        # If current path cannot beat the best score even with ideal future selections, prune it.
-        # This pruning is aggressive and might cut off paths if the 'ideal future selections'
-        # are actually not possible due to card conflicts. For a first pass, it's okay.
-        return
+    if simple_pruning_mode:
+    # 切换到更简单的剪枝策略：
+    # 1. 只考虑剩余最高分，不排除卡牌冲突
+    # 2. 如果当前total_pt加上剩余最高分小于等于best_global_pt，立即剪枝
+    # 在三面分数相差较大时很快，分数接近时基本无效
+        remaining_max_pt_estimate = 0
+        for i in range(song_idx, len(challenge_song_ids)):
+            next_song_id = challenge_song_ids[i]
+            remaining_max_pt_estimate += all_song_candidates[next_song_id][0]['pt']
+
+        if current_total_pt + remaining_max_pt_estimate <= best_global_pt and best_global_pt != -1:
+            return
+
+    else:
+        # Pruning: 基于可用卡牌池的动态剪枝
+        remaining_max_pt_estimate = 0
+        # 模拟剩下的歌曲
+        for i in range(song_idx, len(challenge_song_ids)):
+            next_song_id = challenge_song_ids[i]
+            
+            # 在all_song_candidates中寻找与当前used_card_ids_set无冲突的最高分卡组
+            # 这是一个关键的内层循环，可能会带来一些开销，但比无意义的递归要少
+            found_candidate_pt = 0
+            for candidate in all_song_candidates.get(next_song_id, []):
+                deck_card_ids = candidate['deck_card_ids']
+                has_conflict = False
+                for card_id in deck_card_ids:
+                    if card_id in used_card_ids_set:
+                        has_conflict = True
+                        break
+                
+                if not has_conflict:
+                    # 找到第一个无冲突的最高分卡组
+                    found_candidate_pt = candidate['pt']
+                    break
+            
+            remaining_max_pt_estimate += found_candidate_pt
+            
+        # 如果当前路径即使加上所有无冲突的最高分也无法超越全局最佳，则剪枝
+        if best_global_pt != -1 and current_total_pt + remaining_max_pt_estimate <= best_global_pt:
+            return
 
     iterable = candidates_for_current_song
     if song_idx == 0:
