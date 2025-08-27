@@ -6,7 +6,7 @@ from RChart import Chart, MusicDB
 from RDeck import Deck
 from RLiveStatus import PlayerAttributes
 from SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
-from CardLevelConfig import convert_deck_to_simulator_format, DEATH_NOTE
+from CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, DEATH_NOTE
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,8 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
+    fix_windows_console_encoding()
+    
     # 读取歌曲、卡牌、技能db
     musicdb = MusicDB()
     db_carddata = db_load(os.path.join("Data", "CardDatas.json"))
@@ -50,14 +52,13 @@ if __name__ == "__main__":
     """
     # 使用convert_deck_to_simulator_format时可只输入id列表
     # 此时需要在CardLevelConfig中自定义练度，未定义则默认全满级
-    
+
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
             [1011501, 1041513, 1021523, 1033525, 1022701, 1043801]
         )
     )
-    
 
     # 歌曲、难度设置
     # 难度 01 / 02 / 03 / 04 对应 Normal / Hard / Expert / Master

@@ -8,7 +8,7 @@ from tqdm import tqdm
 from RChart import Chart
 from DeckGen import generate_decks_with_sequential_priority_pruning
 from DeckGen2 import generate_decks_with_double_cards
-from CardLevelConfig import convert_deck_to_simulator_format, CARD_CACHE
+from CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, CARD_CACHE
 from Simulator_core import run_game_simulation, MUSIC_DB
 
 logger = logging.getLogger(__name__)
@@ -101,6 +101,7 @@ def task_generator_func(decks_generator, chart, player_level):
 
 #  --- Main Execution Block for Parallel Simulation ---
 if __name__ == "__main__":
+    fix_windows_console_encoding()
     start_time = time.time()
 
     # --- Step 1: Define all valid cards ---
@@ -222,12 +223,12 @@ if __name__ == "__main__":
         from platform import python_implementation
         pypy_impl = python_implementation() == "PyPy"
         if pypy_impl:
-            chunksize = 1000
+            chunksize = 5000
         else:
             chunksize = 500
         results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize)
 
-        for result in tqdm(results_iterator, total=total_decks_to_simulate, ascii=pypy_impl):
+        for result in tqdm(results_iterator, total=total_decks_to_simulate):
             current_score = result['final_score']
             original_index = result['original_deck_index']
             current_log = result["cards_played_log"]
@@ -272,7 +273,7 @@ if __name__ == "__main__":
 
     # --- Step 4: Save all results to JSON ---
     all_simulation_results = []
-    for temp_file in tqdm(temp_files, desc="Merging Files", ascii=pypy_impl):
+    for temp_file in tqdm(temp_files, desc="Merging Files"):
         with open(temp_file, 'r') as f:
             all_simulation_results.extend(json.load(f))
         os.remove(temp_file)

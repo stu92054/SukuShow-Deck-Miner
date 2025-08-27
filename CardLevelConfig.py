@@ -18,26 +18,26 @@ default_center_skill_level = 14  # C位技能等级的默认值
 # 格式：
 #   卡牌ID: [卡牌等级, C位技能等级, 普通技能等级],
 CARD_CACHE: dict[int, list[int]] = {
-    # 1011501: [120, 10, 10], #沙知
-    # 1021701: [140, 11, 11], #LR梢
-    # 1022901: [120, 11, 11], #BR缀
-    # 1022504: [120, 13, 13], #明月缀
-    # 1023701: [140, 10, 10], #LR慈
-    # 1023901: [120, 10, 10], #BR慈
-    # 1031901: [120, 12, 12], #BR帆
-    # 1031516: [120, 10, 10], #ST帆
-    # 1031504: [120, 10, 10], #RG帆
-    # 1032528: [120, 11, 11], #IDOME沙
-    # 1032901: [120, 10, 10], #BR沙
-    # 1033524: [120, 11, 11], #IDOME乃
-    # 1033901: [120, 10, 11], #BR乃
+    # 1011501: [120, 10, 10],  # 沙知
+    # 1021701: [140, 11, 11],  # LR梢
+    # 1022901: [120, 11, 11],  # BR缀
+    # 1022504: [120, 13, 13],  # 明月缀
+    # 1023701: [140, 10, 10],  # LR慈
+    # 1023901: [120, 10, 10],  # BR慈
+    # 1031901: [120, 12, 12],  # BR帆
+    # 1031516: [120, 10, 10],  # ST帆
+    # 1031504: [120, 10, 10],  # RG帆
+    # 1032528: [120, 11, 11],  # IDOME沙
+    # 1032901: [120, 10, 10],  # BR沙
+    # 1033524: [120, 11, 11],  # IDOME乃
+    # 1033901: [120, 10, 11],  # BR乃
     # 1042801: [140, 11, 11],  # EA铃
     # 1042802: [140, 11, 11],  # OE铃
     # 1043504: [120, 11, 11],  # mrc芽
     # 1043801: [140, 11, 11],  # EA芽
     # 1043802: [140, 11, 11],  # OE芽
-    # 1052901: [120, 10, 10], #BR塞
-    # 1052503: [120, 12, 12], #十六夜塞
+    # 1052901: [120, 10, 10],  # BR塞
+    # 1052503: [120, 12, 12],  # 十六夜塞
 }
 
 # 用于配置卡组包含特定卡牌时的背水血线
@@ -45,8 +45,8 @@ CARD_CACHE: dict[int, list[int]] = {
 # 开局会自动挂机miss到这个血量
 # 格式: 卡牌id: 血线,
 DEATH_NOTE: dict[int, int] = {
-    1041513: 10,
-    1041901: 25,
+    1041513: 10,  # 宴会吟
+    1041901: 25,  # BR吟 
 }
 
 
@@ -70,3 +70,22 @@ def convert_deck_to_simulator_format(
             CARD_CACHE[card_id] = levels
         result_deck_data.append((card_id, levels))
     return result_deck_data
+
+
+def fix_windows_console_encoding():
+    """
+    避免在 Windows + PyPy 的环境下输出非 ASCII 字符时乱码
+    """
+    import os
+
+    if "PSModulePath" in os.environ:
+        # 在 PowerShell 下，调用一次设置 UTF-8 编码
+        import subprocess
+        subprocess.run([
+            "powershell", "-Command",
+            "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding"
+        ])
+    elif "cmd.exe" in os.environ.get("ComSpec", "").lower():
+        # 在 CMD 下，修改代码页为 65001 (UTF-8)
+        import subprocess
+        subprocess.run(["chcp", "65001"], shell=True)
