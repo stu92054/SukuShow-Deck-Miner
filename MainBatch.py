@@ -4,6 +4,7 @@ import os
 import multiprocessing
 import json
 
+from platform import python_implementation
 from tqdm import tqdm
 from RChart import Chart
 from DeckGen import generate_decks_with_sequential_priority_pruning
@@ -101,7 +102,9 @@ def task_generator_func(decks_generator, chart, player_level):
 
 #  --- Main Execution Block for Parallel Simulation ---
 if __name__ == "__main__":
-    fix_windows_console_encoding()
+    pypy_impl = python_implementation() == "PyPy"
+    if pypy_impl:
+        fix_windows_console_encoding()
     start_time = time.time()
 
     # --- Step 1: Define all valid cards ---
@@ -157,6 +160,11 @@ if __name__ == "__main__":
     try:
         pre_initialized_chart = Chart(MUSIC_DB, fixed_music_id, fixed_difficulty)
         pre_initialized_chart.ChartEvents = [(float(t), e) for t, e in pre_initialized_chart.ChartEvents]
+
+        if pypy_impl:
+            from sortedcontainers import SortedList
+            pre_initialized_chart.ChartEvents = SortedList(pre_initialized_chart.ChartEvents)
+
         if center_override:
             pre_initialized_chart.music.CenterCharacterId = center_override
         if color_override:
@@ -220,8 +228,6 @@ if __name__ == "__main__":
     with multiprocessing.Pool(processes=num_processes) as pool:
         # imap_unordered returns results as they are completed, in no particular order.
         # This is perfect for checking high scores on the fly.
-        from platform import python_implementation
-        pypy_impl = python_implementation() == "PyPy"
         if pypy_impl:
             chunksize = 5000
         else:

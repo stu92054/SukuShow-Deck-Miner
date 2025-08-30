@@ -81,8 +81,7 @@ def run_game_simulation(
     # Use a heap for ChartEvents for better performance
     pypy_impl = python_implementation() == "PyPy"
     if pypy_impl:
-        from sortedcontainers import SortedList
-        event_heap = SortedList(c.ChartEvents)
+        event_heap = c.ChartEvents.copy()
         event_heap.add((player.cooldown, "CDavailable"))
     else:
         import heapq
