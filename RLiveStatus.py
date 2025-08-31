@@ -1,9 +1,16 @@
 import logging
 from functools import lru_cache
+from platform import python_implementation
 from RDeck import Deck
-from math import ceil
 
 logger = logging.getLogger(__name__)
+
+pypy_impl = python_implementation() == "PyPy"
+if pypy_impl:
+    def ceil(x):
+        return int(x) + (x > int(x))
+else:
+    from math import ceil
 
 
 class Voltage:
@@ -226,7 +233,6 @@ class PlayerAttributes:
         }
         self.half_ap_plus = 300000 / all_note_size
         self.full_ap_plus = 600000 / all_note_size
-        
 
     def score_add(self, value, skill=True):
         voltage_lv = self.voltage.get_level()
