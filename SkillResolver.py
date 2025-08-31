@@ -293,22 +293,37 @@ class SkillComparisonOperator(Enum):
     ABOVE_OR_EQUAL = 1  # 以上 (>=)
     BELOW_OR_EQUAL = 2  # 以下 (<=)
 
+@lru_cache(maxsize=None)
+def parse_condition_id(condition_id: str):
+    # 所有条件ID（非0）都是7位数字
+    if len(condition_id) != 7:
+        logger.error(f"  错误: 条件ID '{condition_id}' 长度不符合已知规则 (应为7位)。 -> 不满足")
+        return False
 
-def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id, card: Card = None) -> bool:
+    try:
+        condition_type = SkillConditionType(int(condition_id[0]))
+        operator_or_flag = SkillComparisonOperator(int(condition_id[1]))
+        value_data_raw = condition_id[2:]
+        condition_value = int(value_data_raw)  # 原始数值
+    except ValueError:
+        logger.error(f"  错误: 无法解析条件ID '{condition_id}' 的部分。 -> 不满足")
+        return False
+
+    return condition_type, operator_or_flag, condition_value
+
+
+def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id: str, card: Card = None) -> bool:
     """
     根据ID检查给定条件是否满足。
 
     Args:
         player_attrs (PlayerAttributes): 玩家属性实例。
-        condition_id (int): 技能条件ID。
+        condition_id (str): 技能条件ID。
         card (Card): 如果条件是 UsedSkillCount，指定要检查的卡牌
 
     Returns:
         bool: 如果条件满足则返回 True，否则返回 False。
     """
-    # logger.debug(f"\n--- 检查技能条件ID: {condition_id} ---")
-
-    id_str = str(condition_id)
 
     # 特殊ID "0" 表示无条件，总是满足
     if condition_id == "0":
@@ -316,27 +331,7 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id, card: Card
             logger.debug("  条件: 无条件 -> 满足")
         return True
 
-    # 所有条件ID（非0）都是7位数字
-    if len(id_str) != 7:
-        logger.error(f"  错误: 条件ID '{condition_id}' 长度不符合已知规则 (应为7位)。 -> 不满足")
-        return False
-
-    try:
-        enum_base_value = int(id_str[0])
-        operator_or_flag = int(id_str[1])
-        value_data_raw = id_str[2:]
-        condition_value = int(value_data_raw)  # 原始数值
-    except ValueError:
-        logger.error(f"  错误: 无法解析条件ID '{condition_id}' 的部分。 -> 不满足")
-        return False
-
-    # logger.debug(f"  解析结果: 条件类型={enum_base_value}, 运算符/标志={operator_or_flag}, 原始数值={value_data_raw} ({condition_value})")
-
-    try:
-        condition_type = SkillConditionType(enum_base_value)
-    except ValueError:
-        logger.error(f"  错误: 未知的条件类型枚举值 '{enum_base_value}'。 -> 不满足")
-        return False
+    condition_type, operator_or_flag, condition_value = parse_condition_id(condition_id)
 
     is_satisfied = False
 
@@ -353,11 +348,11 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id, card: Card
                 current_level *= 2
             required_level = condition_value  # 条件ID中的 value_data 直接就是等级
 
-            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL.value:  # >=
+            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL:  # >=
                 is_satisfied = (current_level >= required_level)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: Voltage Lv. >= {required_level} (当前: Lv.{current_level}) -> {'满足' if is_satisfied else '不满足'}")
-            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL.value:  # <
+            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL:  # <
                 is_satisfied = (current_level <= required_level)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: Voltage Lv. <= {required_level} (当前: Lv.{current_level}) -> {'满足' if is_satisfied else '不满足'}")
@@ -369,11 +364,11 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id, card: Card
             current_value = player_attrs.mental.get_rate()
             required_rate = condition_value / 100.0  # 将5000转换为50.00(%)
 
-            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL.value:  # >=
+            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL:  # >=
                 is_satisfied = (current_value >= required_rate)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: HP >= {required_rate:.2f}% (当前: {current_value:.2f}%) -> {'满足' if is_satisfied else '不满足'}")
-            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL.value:  # <
+            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL:  # <
                 is_satisfied = (current_value <= required_rate)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: HP <= {required_rate:.2f}% (当前: {current_value:.2f}%) -> {'满足' if is_satisfied else '不满足'}")
@@ -384,11 +379,11 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id, card: Card
             # 合计打出技能次数
             current_value = player_attrs.deck.used_all_skill_calc()
 
-            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL.value:  # >=
+            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL:  # >=
                 is_satisfied = (current_value >= condition_value)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: 合计技能次数 >= {condition_value} (当前: {current_value}) -> {'满足' if is_satisfied else '不满足'}")
-            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL.value:  # <
+            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL:  # <
                 is_satisfied = (current_value <= condition_value)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: 合计技能次数 <= {condition_value} (当前: {current_value}) -> {'满足' if is_satisfied else '不满足'}")
@@ -399,11 +394,11 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id, card: Card
             # 单卡打出次数
             current_value = card.active_count
 
-            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL.value:  # >=
+            if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL:  # >=
                 is_satisfied = (current_value >= condition_value)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: 卡牌 {card.full_name} 使用次数 >= {condition_value} (当前: {current_value}) -> {'满足' if is_satisfied else '不满足'}")
-            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL.value:  # <=
+            elif operator_or_flag == SkillComparisonOperator.BELOW_OR_EQUAL:  # <=
                 is_satisfied = (current_value <= condition_value)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"  条件: 卡牌 {card.full_name} 使用次数 <= {condition_value} (当前: {current_value}) -> {'满足' if is_satisfied else '不满足'}")
@@ -411,7 +406,7 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id, card: Card
                 logger.error(f"  错误: 未知的 UsedSkillCount 运算符 '{operator_or_flag}'。 -> 不满足")
 
         case _:
-            logger.error(f"  未知条件类型: {condition_type.name} ({enum_base_value})。 -> 不满足")
+            logger.error(f"  未知条件类型: {condition_type.name} ({condition_id})。 -> 不满足")
 
     return is_satisfied
 
@@ -430,6 +425,43 @@ class SkillEffectType(Enum):
     NextVoltageGainRateChange = 8
 
 
+@lru_cache(maxsize=None)
+def parse_effect_id(effect_id: int):
+    id_str = str(effect_id)
+
+    if len(id_str) != 9:
+        logger.error(f"错误: 效果ID '{effect_id}' 长度不符合已知规则 (应为9位)。")
+        return
+
+    try:
+        # For rhythm game skills, the EnumBaseValue is always the first digit.
+        enum_base_value = int(id_str[0])
+        effect_type = SkillEffectType(enum_base_value)
+        # The ChangeDirection is always the second digit.
+        change_direction = int(id_str[1])
+        # 根据 EnumBaseValue 判断是否有 UsageCount
+        if effect_type in [SkillEffectType.NextAPGainRateChange,
+                           SkillEffectType.NextVoltageGainRateChange]:
+            # 对于类型 7 和 8，第三位是作用次数
+            usage_count = int(id_str[2])
+            value_data_raw = id_str[3:]  # ValueData 从第四位开始
+        else:
+            usage_count = 1
+            value_data_raw = id_str[2:]
+    except ValueError:
+        logger.error(f"错误: 无法解析效果ID '{effect_id}' 的类型、方向或数值部分。")
+        return
+
+    try:
+        value_data = int(value_data_raw)
+    except ValueError:
+        logger.error(f"错误: 无法解析效果ID '{effect_id}' 的数值部分。")
+        return
+
+    return effect_type, usage_count, value_data, change_direction
+    # logger.debug(f"  解析结果: 类型编号={enum_base_value}, 方向={change_direction}, 原始数值={value_data_raw} ({value_data})")
+
+
 def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card = None):
     """
     根据EffectID解析并应用技能。
@@ -441,60 +473,7 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
 
     # logger.debug(f"\n--- 解析节奏游戏技能效果ID: {effect_id} ---")
 
-    id_str = str(effect_id)
-
-    enum_base_value = -1
-    change_direction = -1
-    value_data_raw = ""
-    value_data = 0
-
-    # All provided rhythm game skill IDs are 9 digits long.
-    # The EnumBaseValue seems to be 1 digit for types 1,2,3,4,5,6,7,8
-    # The change direction is *always* the second digit from the left.
-
-    if len(id_str) != 9:
-        logger.error(f"错误: 效果ID '{effect_id}' 长度不符合已知规则 (应为9位)。")
-        return
-
-    try:
-        # For rhythm game skills, the EnumBaseValue is always the first digit.
-        enum_base_value = int(id_str[0])
-        # The ChangeDirection is always the second digit.
-        change_direction = int(id_str[1])
-        # 根据 EnumBaseValue 判断是否有 UsageCount
-        if enum_base_value in [SkillEffectType.NextAPGainRateChange.value,
-                               SkillEffectType.NextVoltageGainRateChange.value]:
-            # 对于类型 7 和 8，第三位是作用次数
-            usage_count = int(id_str[2])
-            value_data_raw = id_str[3:]  # ValueData 从第四位开始
-        else:
-            value_data_raw = id_str[2:]
-    except ValueError:
-        logger.error(f"错误: 无法解析效果ID '{effect_id}' 的类型、方向或数值部分。")
-        return
-
-    if enum_base_value == -1 or change_direction == -1:
-        logger.error(f"错误: 无法解析效果ID '{effect_id}' 的类型或方向。")
-        return
-
-    try:
-        if value_data_raw:
-            value_data = int(value_data_raw)
-        else:
-            value_data = 0  # Some effects might be flags with no numerical value
-    except ValueError:
-        logger.error(f"错误: 无法解析效果ID '{effect_id}' 的数值部分。")
-        return
-
-    # logger.debug(f"  解析结果: 类型编号={enum_base_value}, 方向={change_direction}, 原始数值={value_data_raw} ({value_data})")
-
-    try:
-        effect_type = SkillEffectType(enum_base_value)
-    except ValueError:
-        logger.error(f"错误: 未知的效果类型枚举值 '{enum_base_value}'。")
-        return
-
-    # 0 indicates an increase/positive effect, 1 indicates a decrease/negative effect
+    effect_type, usage_count, value_data, change_direction = parse_effect_id(effect_id)
     change_factor = 1 if change_direction == 0 else -1
 
     match effect_type:
@@ -502,8 +481,8 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
             # AP change, value is in 1/10000 units (e.g., 30000 -> 3.0000, 100000 -> 10.0000)
             ap_amount = value_data * change_factor * player_attrs.ap_rate / 10000.0
             player_attrs.ap += ap_amount
-            action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
             if logger.isEnabledFor(logging.DEBUG):
+                action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
                 logger.debug(f"  应用效果: AP {action} {ap_amount:.1f} 点")
 
         case SkillEffectType.ScoreGain:
@@ -516,8 +495,8 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
                     logger.debug(f"分加成: * {score_rate:.2f}%")
             result = value_data * score_rate / 1000000
             player_attrs.score_add(result)
-            action = "获得" if change_direction == 0 else "减少"
             if logger.isEnabledFor(logging.DEBUG):
+                action = "获得" if change_direction == 0 else "减少"
                 logger.debug(f"  应用效果: {action} Appeal值 {score_percent:.2f}% 的得分")
 
         case SkillEffectType.VoltagePointChange:
@@ -530,16 +509,16 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
                         logger.debug(f"电加成: * {voltage_rate:.2f}%")
             result = ceil(value_data * voltage_rate * change_factor / 100)
             player_attrs.voltage.add_points(result)
-            action = "增加" if change_direction == 0 else "减少"
             if logger.isEnabledFor(logging.DEBUG):
+                action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  应用效果: Voltage Pt {action} {value_data} 点")
 
         case SkillEffectType.MentalRateChange:
             # MentalRateChange here is HP change, value is a percentage (e.g., 20.00% -> 2000). Divide by 100.0
             hp_percent = value_data / 100.0
             player_attrs.mental.skill_add(hp_percent * change_factor)
-            action = "恢复" if change_direction == 0 else "扣除"
             if logger.isEnabledFor(logging.DEBUG):
+                action = "恢复" if change_direction == 0 else "扣除"
                 logger.debug(f"  应用效果: HP {action} {hp_percent:.2f}%")
 
         case SkillEffectType.DeckReset:
@@ -582,7 +561,7 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
                 logger.debug(f"  应用效果: 电加成 {bonus_percent:.2f}% ({usage_count} 次)")
 
         case _:
-            logger.error(f"  未知技能效果类型: {effect_type.name} ({enum_base_value})")
+            logger.error(f"  未知技能效果类型: {effect_type.name} ({effect_id})")
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(player_attrs)
 
@@ -774,7 +753,6 @@ def ApplyCenterSkillEffect(player_attrs: PlayerAttributes, effect_id: int):
         enum_base_value = int(id_str[0])
         # The ChangeDirection is always the second digit.
         change_direction = int(id_str[1])
-        # 根据 EnumBaseValue 判断是否有 UsageCount
         value_data_raw = id_str[2:]
     except ValueError:
         logger.error(f"错误: 无法解析效果ID '{effect_id}' 的类型、方向或数值部分。")
@@ -809,8 +787,9 @@ def ApplyCenterSkillEffect(player_attrs: PlayerAttributes, effect_id: int):
             # AP change, value is in 1/10000 units (e.g., 30000 -> 3.0000, 100000 -> 10.0000)
             ap_amount = int(value_data * change_factor * player_attrs.ap_rate / 10000)
             player_attrs.ap += ap_amount
-            action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
-            logger.debug(f"  应用效果: AP {action} {ap_amount:.1f} 点")
+            if logger.isEnabledFor(logging.DEBUG):
+                action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
+                logger.debug(f"  应用效果: AP {action} {ap_amount:.1f} 点")
 
         case CenterSkillEffectType.ScoreGain:
             # Direct score gain, value is a percentage (e.g., 122.85% -> 12285). Divide by 100.0
@@ -823,8 +802,8 @@ def ApplyCenterSkillEffect(player_attrs: PlayerAttributes, effect_id: int):
                     logger.debug(f"分加成: * {score_rate:.2f}%")
             result = value_data * score_rate / 1000000
             player_attrs.score_add(result)
-            action = "获得" if change_direction == 0 else "减少"
             if logger.isEnabledFor(logging.DEBUG):
+                action = "获得" if change_direction == 0 else "减少"
                 logger.debug(f"  应用效果: {action} Appeal值 {score_percent:.2f}% 的分数")
 
         case CenterSkillEffectType.VoltagePointChange:
@@ -837,16 +816,16 @@ def ApplyCenterSkillEffect(player_attrs: PlayerAttributes, effect_id: int):
                         logger.debug(f"电加成: * {voltage_rate:.2f}%")
             result = ceil(value_data * voltage_rate * change_factor / 100)
             player_attrs.voltage.add_points(result)
-            action = "增加" if change_direction == 0 else "减少"
             if logger.isEnabledFor(logging.DEBUG):
+                action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  应用效果: Voltage Points {action} {value_data} 点")
 
         case CenterSkillEffectType.MentalRateChange:
             # MentalRateChange here is HP change, value is a percentage (e.g., 20.00% -> 2000). Divide by 100.0
             hp_percent = value_data / 100.0
             player_attrs.mental.skill_add(hp_percent * change_factor)
-            action = "恢复" if change_direction == 0 else "扣除"
             if logger.isEnabledFor(logging.DEBUG):
+                action = "恢复" if change_direction == 0 else "扣除"
                 logger.debug(f"  应用效果: HP {action} {hp_percent:.2f}%")
 
     if logger.isEnabledFor(logging.DEBUG):
