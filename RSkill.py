@@ -8,7 +8,7 @@ class Skill:
     def __init__(self, db, series_id: int, lv=14) -> None:
         self.condition: list[str] = []
         self.effect: list[int] = []
-        self.skill_id = str(series_id*100 + lv)
+        self.skill_id = str(series_id * 100 + lv)
         self.cost: int = db[self.skill_id]["ConsumeAP"]
         self.condition: list[str] = db[self.skill_id]["RhythmGameSkillConditionIds"]
         self.effect: list[int] = db[self.skill_id]["RhythmGameSkillEffectId"]
@@ -31,9 +31,9 @@ class CenterSkill:
         self.skill_id: str = "0"
         if series_id == 0:
             return
-        self.skill_id = str(series_id*100 + lv)
-        self.condition = db[self.skill_id]["CenterSkillConditionIds"]
-        self.effect = db[self.skill_id]["CenterSkillEffectId"]
+        self.skill_id = str(series_id * 100 + lv)
+        self.condition: list[str] = db[self.skill_id]["CenterSkillConditionIds"]
+        self.effect: list[int] = db[self.skill_id]["CenterSkillEffectId"]
 
     def __str__(self) -> str:
         return (
@@ -51,8 +51,8 @@ class CenterAttribute:
         if series_id == 0:
             return
         self.skill_id = str(series_id + 1)
-        self.target = db[self.skill_id].get("TargetIds", None)
-        self.effect = db[self.skill_id].get("CenterAttributeEffectId", None)
+        self.target: list[str] = db[self.skill_id].get("TargetIds", None)
+        self.effect: list[int] = db[self.skill_id].get("CenterAttributeEffectId", None)
 
     def __str__(self) -> str:
         return (

@@ -247,15 +247,13 @@ class PlayerAttributes:
         return value
 
     def score_note(self, judgement):
-        score_value = self.note_score.get(judgement, 0)
-        if score_value == 0:
-            return 0
+        score_value = self.note_score[judgement]
         return self.score_add(score_value, skill=False)
 
     def combo_add(self, judgement, note_type=None):
         self.combo += 1
         if self.combo <= 50:
-            self.ap_rate = 1 + int(self.combo / 10) / 10
+            self.ap_rate = 1 + self.combo // 10 / 10
         match judgement:
             case "PERFECT" | "GREAT":
                 self.ap += ceil(self.full_ap_plus * self.ap_rate) / 10000
@@ -265,6 +263,8 @@ class PlayerAttributes:
                 self.combo = 0
                 self.ap_rate = 1
                 self.mental.sub(judgement, note_type)  # 按判定扣血
+                if judgement == "MISS":
+                    return
             case _:
                 pass
         self.score_note(judgement)
