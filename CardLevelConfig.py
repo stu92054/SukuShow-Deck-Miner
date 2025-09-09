@@ -46,7 +46,7 @@ CARD_CACHE: dict[int, list[int]] = {
 # 格式: 卡牌id: 血线,
 DEATH_NOTE: dict[int, int] = {
     1041513: 10,  # 宴会吟
-    1041901: 25,  # BR吟 
+    1041901: 25,  # BR吟
 }
 
 

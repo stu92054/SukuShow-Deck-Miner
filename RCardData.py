@@ -74,7 +74,7 @@ def convert_all_yaml_files():
 
     # CenterAttributes
     generic_yaml_to_json(
-        filepath=os.path.join("Data","CenterAttributes.yaml"),
+        filepath=os.path.join("Data", "CenterAttributes.yaml"),
         output_path=os.path.join("Data", "CenterAttributes.json"),
         id_key="Id",
         group_id_from="Id",

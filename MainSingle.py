@@ -30,7 +30,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     fix_windows_console_encoding()
-    
+
     # 读取歌曲、卡牌、技能db
     musicdb = MusicDB()
     db_carddata = db_load(os.path.join("Data", "CardDatas.json"))

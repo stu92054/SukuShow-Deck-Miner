@@ -17,6 +17,12 @@ class TargetType(Enum):
     All = 5
 
 
+UNIT_DICT = {101: {1021, 1031, 1041},
+             102: {1022, 1032, 1042},
+             103: {1023, 1033, 1043},
+             105: {1051, 1052}}
+
+
 def CheckTarget(target_id: str, card: Card = None):
     """
     根据ID检查给定条件是否满足。
@@ -56,11 +62,7 @@ def CheckTarget(target_id: str, card: Card = None):
                 logger.debug(f"  条件: 指定成员 -> {'满足' if is_satisfied else '不满足'} {card.full_name}")
 
         case TargetType.Unit:
-            unit_dict = {101: {1021, 1031, 1041},
-                         102: {1022, 1032, 1042},
-                         103: {1023, 1033, 1043},
-                         105: {1051, 1052}}
-            if card.characters_id in unit_dict[target_value]:
+            if card.characters_id in UNIT_DICT[target_value]:
                 is_satisfied = True
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"  条件: 指定小组 -> {'满足' if is_satisfied else '不满足'} {card.full_name}")

@@ -65,7 +65,7 @@ def has_card_conflict(card_ids_in_deck: set[int]) -> bool:
 
 
 class DeckGeneratorWithCount:
-    def __init__(self, card_ids_to_consider: list[int], center_char = None):  # <--- 不再接收 card_data_full
+    def __init__(self, card_ids_to_consider: list[int], center_char=None):  # <--- 不再接收 card_data_full
         self.card_ids_to_consider = card_ids_to_consider
         self.center_char = center_char
         self.char_id_to_cards = defaultdict(list)
