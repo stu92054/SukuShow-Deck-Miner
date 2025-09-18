@@ -56,13 +56,13 @@ if __name__ == "__main__":
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1011501, 1041513, 1021523, 1033525, 1022701, 1043801]
+            [1041513, 1021701, 1041517, 1042516, 1043516, 1043802]
         )
     )
 
     # 歌曲、难度设置
     # 难度 01 / 02 / 03 / 04 对应 Normal / Hard / Expert / Master
-    fixed_music_id = "305101"  # Edelied
+    fixed_music_id = "405105"  # Edelied
     fixed_difficulty = "02"
     fixed_player_master_level = 50
 
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     logging.debug("\n--- 应用C位特性 ---")
     centercard = None
     afk_mental = 0
+    flag_hanabi_ginko = False
     for card in d.cards:
         cid = int(card.card_id)
         if cid in DEATH_NOTE:
@@ -93,6 +94,8 @@ if __name__ == "__main__":
                 afk_mental = min(afk_mental, DEATH_NOTE[cid])
             else:
                 afk_mental = DEATH_NOTE[cid]
+        if cid == 1041517:
+            flag_hanabi_ginko = True
         if card.characters_id == c.music.CenterCharacterId:
             # DR优先C位，无DR则靠左为C位
             if not centercard or card.card_id[4] == "8":
@@ -116,6 +119,14 @@ if __name__ == "__main__":
     c.ChartEvents.append((str(player.cooldown), "CDavailable"))
     c.ChartEvents.sort(key=lambda event: float(event[0]))
 
+    MISS_TIMING = {
+        "Single": 0.125,
+        "Hold": 0.125,
+        "Flick": 0.100,
+        "HoldMid": 0.070,
+        "Trace": 0.070,
+    }
+
     logging.info(f"\n--- 开始模拟: {c.music.Title} ({fixed_difficulty})  ---")
     i = 0
     combo_count = 0
@@ -134,8 +145,14 @@ if __name__ == "__main__":
                     # 不同note类型和判定会影响扣血多少
                     # 模拟开局挂机到背水时需向combo_add()传入note类型(即event)
                     # 卡组有p吟/BR吟时自动模拟背水，可在DEATH_NOTE中添加其他背水血线
-                    player.combo_add("MISS", event)
-                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
+                    # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
+                    if flag_hanabi_ginko:
+                        misstime = str(float(timestamp) + MISS_TIMING[event])
+                        c.ChartEvents.append((misstime, ("MISS", event)))
+                        c.ChartEvents.sort(key=lambda event: float(event[0]))
+                    else:
+                        player.combo_add("MISS", event)
+                        logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 elif combo_count in []:
                     player.combo_add("GREAT")
                     # 连击计数、AP速度更新、回复AP、扣血
@@ -169,6 +186,11 @@ if __name__ == "__main__":
                     c.ChartEvents.append((cdtime, "CDavailable"))
                     c.ChartEvents.sort(key=lambda event: float(event[0]))
                     cardnow = d.topcard()
+
+            case event if len(event) == 2:
+                if player.mental.get_rate() >= afk_mental:
+                    player.combo_add("MISS", event[1])
+                logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\tMISS: {event[1]}")
 
             case "LiveStart" | "LiveEnd" | "FeverStart":
                 if event == "FeverStart":

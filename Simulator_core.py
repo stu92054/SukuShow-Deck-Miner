@@ -31,6 +31,15 @@ except FileNotFoundError as e:
     exit(1)  # Exit with an error code
 
 
+MISS_TIMING = {
+    "Single": 0.125,
+    "Hold": 0.125,
+    "Flick": 0.100,
+    "HoldMid": 0.070,
+    "Trace": 0.070,
+}
+
+
 def run_game_simulation(
     task_args: tuple  # This will be (deck_card_data, chart_obj, player_master_level, original_deck_index)
 ) -> dict:
@@ -60,6 +69,7 @@ def run_game_simulation(
 
     centercard = None
     afk_mental = 0
+    flag_hanabi_ginko = 1041517 in deck_card_ids
     for card in d.cards:
         cid = int(card.card_id)
         if cid in DEATH_NOTE:
@@ -71,12 +81,14 @@ def run_game_simulation(
             # DR优先C位，无DR则靠左为C位
             if not centercard or card.card_id[4] == "8":
                 centercard = card
+
     if centercard:
         for target, effect in centercard.get_center_attribute():
             ApplyCenterAttribute(player, effect, target)
 
     d.appeal_calc(c.music.MusicType)
     player.basescore_calc(c.AllNoteSize)
+    # player.cooldown = int(player.cooldown * 1_000_000)
 
     # Use a heap for ChartEvents for better performance
     pypy_impl = python_implementation() == "PyPy"
@@ -101,7 +113,14 @@ def run_game_simulation(
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
                 combo_count += 1
                 if afk_mental and player.mental.get_rate() >= afk_mental:
-                    player.combo_add("MISS", event)
+                    # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
+                    if flag_hanabi_ginko:
+                        if pypy_impl:
+                            event_heap.add((timestamp + MISS_TIMING[event], ("MISS", event)))
+                        else:
+                            heapq.heappush(event_heap, (timestamp + MISS_TIMING[event], ("MISS", event)))
+                    else:
+                        player.combo_add("MISS", event)
                 else:
                     player.combo_add("PERFECT")
 
@@ -130,6 +149,10 @@ def run_game_simulation(
                     else:
                         heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
                     cardnow = d.topcard()
+
+            case event if len(event) == 2:
+                if player.mental.get_rate() >= afk_mental:
+                    player.combo_add("MISS", event[1])
 
             case "LiveStart" | "LiveEnd" | "FeverStart":
                 if event == "FeverStart":
