@@ -34,12 +34,12 @@ def score2pt(results):
     card_limitbreak = dict()
     for deck in results:
         bonus = BONUS_SFL
-        centercard = result["center_card"]
+        centercard = deck["center_card"]
         if centercard:
             limitbreak = card_limitbreak.get(centercard, None)
             if limitbreak == None:
                 levels = CARD_CACHE[centercard]
-                limitbreak = max(levels[1:])
+                card_limitbreak[centercard] = limitbreak = max(levels[1:])
             bonus *= LIMITBREAK_BONUS[limitbreak]
         deck['pt'] = int(deck['score'] * bonus)  # 实际为向上取整而非截断
     return results
@@ -58,6 +58,7 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
     for result in results_data:
         current_deck_card_ids = result['deck_card_ids']
         current_score = result['score']
+        center_card = result['center_card']
 
         # Create a standardized key for comparison (sorted tuple of card IDs)
         # Ensure card IDs are integers for consistent sorting if they are not already
@@ -67,8 +68,9 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
                 current_score > unique_decks_best_scores[sorted_card_ids_tuple]['score']:
             # If this is a new unique combination or we found a higher score for it
             unique_decks_best_scores[sorted_card_ids_tuple] = {
-                'deck_card_ids': current_deck_card_ids,  # Keep the original list for clarity/consistency
-                'score': current_score
+                'deck_card_ids': current_deck_card_ids,
+                'center_card': center_card,
+                'score': current_score,
             }
 
     # Convert the unique decks dictionary back to a list of results
@@ -112,13 +114,13 @@ if __name__ == "__main__":
     # 模拟时实际使用的卡牌范围
     card_ids = [
         1011501,  # 沙知
-        1021523, 1021901, 1021512, 1021701,  # 梢: 银河 BR 舞会 LR
+        1021523, 1021901, 1021512, 1021701, 1021801, 1021802,  # 梢: 银河 BR 舞会 LR PE EA
         1022521, 1022701, 1022901, 1022504,  # 缀: 银河 LR BR 明月
         1023520, 1023701, 1023901,  # 慈: 银河 LR BR
         1031519, 1031530, 1031901,  # 帆: 舞会 IDOME BR(2024)
         1032518, 1032528, 1032901,  # 沙: 舞会 IDOME BR
-        1033514, 1033524, 1033525, 1033901,  # 乃: 舞会 IDOME COCO夏 BR
-        1041513,  # 吟: 舞会
+        1033514, 1033524, 1033525, 1033526, 1033901,  # 乃: 舞会 IDOME COCO夏 喵信号 BR
+        1041513,  # 1041517, # 吟: 舞会 花火
         1042516, 1042801, 1042802,  # 1042515, # 1042512,  # 铃: 太阳 EA OE 暧昧mayday 舞会
         1043515, 1043516, 1043801, 1043802,  # 芽: BLAST COCO夏 EA OE 舞会1043512
         1051503,  # 1051501, 1051502,  # 泉: 天地黎明 DB RF
@@ -144,7 +146,7 @@ if __name__ == "__main__":
     ]
 
     # --- Step 2: Prepare simulation tasks ---
-    fixed_music_id = "305101"  # Edel
+    fixed_music_id = "405105"  # Very! Very! COCO夏っ
     fixed_difficulty = "02"
     fixed_player_master_level = 50
 
@@ -160,6 +162,7 @@ if __name__ == "__main__":
     try:
         pre_initialized_chart = Chart(MUSIC_DB, fixed_music_id, fixed_difficulty)
         pre_initialized_chart.ChartEvents = [(float(t), e) for t, e in pre_initialized_chart.ChartEvents]
+        # pre_initialized_chart.ChartEvents = [(int(float(t) * 1_000_000) , e) for t, e in pre_initialized_chart.ChartEvents]
 
         if pypy_impl:
             from sortedcontainers import SortedList
@@ -226,8 +229,7 @@ if __name__ == "__main__":
     results_processed_count = 0  # 已处理结果的总数
 
     with multiprocessing.Pool(processes=num_processes) as pool:
-        # imap_unordered returns results as they are completed, in no particular order.
-        # This is perfect for checking high scores on the fly.
+        # 若 CPU 占用率偏低，可以在此增加每次获取任务时给单个进程分配的卡组数量
         if pypy_impl:
             chunksize = 5000
         else:
@@ -239,11 +241,13 @@ if __name__ == "__main__":
             original_index = result['original_deck_index']
             current_log = result["cards_played_log"]
             deck_card_ids = result['deck_card_ids']
+            center_card = result['center_card']
 
-            # 记录当前卡组的得分和卡牌ID，添加到结果列表中
+            # 记录当前卡组的得分、卡牌、C位卡牌，添加到结果列表中
             current_batch_results.append({
                 "deck_card_ids": deck_card_ids,  # 使用卡牌ID列表
-                "score": current_score
+                "center_card": center_card,
+                "score": current_score,
             })
             results_processed_count += 1
 
