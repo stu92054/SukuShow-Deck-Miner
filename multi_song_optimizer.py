@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from tqdm import tqdm
+from CardLevelConfig import fix_windows_console_encoding
 
 
 # Set up logging for this script
@@ -19,13 +20,13 @@ logging.basicConfig(
 # 求解前需运行 MainBatch.py 生成对应的卡组得分记录
 CHALLENGE_SONGS = [
     # 若只输入两首歌则会寻找仅针对两面的最优解，不考虑第三面
-    ("204108", "02"),  # 夏めきペイン（104期Ver.）
-    ("405110", "02"),  # フュージョンクラスト
-    ("405112", "02"),  # ニャオシグニャル
+    ("405114", "02"),  # 片翼のトリバガ
+    ("405303", "02"),  # START!! True dreams
+    ("405301", "02"),  # 虹色Passions!
 ]
 
 # 每首歌只保留得分排名前 N 名的卡组用于求解
-TOP_N_CANDIDATES = 30000
+TOP_N_CANDIDATES = 5000
 
 # 仅根据每面最高分剪枝，不考虑重复卡
 # 三面分差较大时适用，小分差时很慢
@@ -136,8 +137,8 @@ def find_best_three_decks(
             best_global_decks = list(current_selected_decks_info)
             logger.info(f"New best total pt found: {best_global_pt}")
             for i, deck_info in enumerate(best_global_decks):
-                logger.info(f"  Song {i+1} ({deck_info['music_id']}-{deck_info['difficulty']}): ")
-                logger.info(f"    Pt: {deck_info['pt']}\tScore: {deck_info['score']}")
+                logger.info(f"  Song {i+1} ({deck_info['music_id']}): ")
+                logger.info(f"    Pt: {deck_info['pt']}\tScore: {deck_info['score']}\tRank: {deck_info['rank']}")
                 logger.info(f"    Deck (ID): {deck_info['deck_card_ids']}")
             # Optionally print the decks for the new best score
             # for deck_info in best_global_decks:
@@ -193,7 +194,7 @@ def find_best_three_decks(
     if song_idx == 0:
         iterable = tqdm(candidates_for_current_song, desc=f"Searching decks for {current_song_id}", unit="deck")
 
-    for candidate_deck_info in iterable:
+    for index, candidate_deck_info in enumerate(iterable):
         deck_card_ids = candidate_deck_info['deck_card_ids']
         deck_score = candidate_deck_info['score']
         deck_pt = candidate_deck_info['pt']
@@ -213,7 +214,8 @@ def find_best_three_decks(
                 "difficulty": CHALLENGE_SONGS[song_idx][1],  # Get difficulty from CHALLENGE_SONGS
                 "deck_card_ids": deck_card_ids,
                 "score": deck_score,
-                "pt": deck_pt
+                "pt": deck_pt,
+                "rank": index + 1
             }]
             new_total_pt = current_total_pt + deck_pt
 
@@ -233,6 +235,7 @@ def find_best_three_decks(
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
+    fix_windows_console_encoding()
     logger.info("Starting multi-song deck optimization...")
     start_time = time.time()
 
@@ -279,9 +282,9 @@ if __name__ == "__main__":
     if best_global_pt != -1:
         logger.info(f"Total Combined Pt: {best_global_pt}")
         for i, deck_info in enumerate(best_global_decks):
-            logger.info(f"  Song {i+1} ({deck_info['music_id']}-{deck_info['difficulty']}):")
+            logger.info(f"  Song {i+1} ({deck_info['music_id']}):")
             logger.info(f"    Score: {deck_info['score']}")
-            logger.info(f"    Pt: {deck_info['pt']}")
+            logger.info(f"    Pt: {deck_info['pt']}\tRank: {deck_info['rank']}")
             logger.info(f"    Deck (ID): {deck_info['deck_card_ids']}")
 
         # Optional: Save the best combination to a separate JSON file
