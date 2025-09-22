@@ -56,13 +56,13 @@ if __name__ == "__main__":
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1041513, 1021701, 1041517, 1042516, 1043516, 1043802]
+            [1033901, 1021901, 1021802, 1032528, 1031530, 1051503]
         )
     )
 
     # 歌曲、难度设置
     # 难度 01 / 02 / 03 / 04 对应 Normal / Hard / Expert / Master
-    fixed_music_id = "405105"  # Edelied
+    fixed_music_id = "405301"  # Edelied
     fixed_difficulty = "02"
     fixed_player_master_level = 50
 
@@ -190,8 +190,10 @@ if __name__ == "__main__":
             case event if len(event) == 2:
                 if player.mental.get_rate() >= afk_mental:
                     player.combo_add("MISS", event[1])
-                logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\tMISS: {event[1]}")
-
+                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\tMISS: {event[1]}")
+                else:
+                    player.combo_add("PERFECT")
+                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event[1]} (延后)")
             case "LiveStart" | "LiveEnd" | "FeverStart":
                 if event == "FeverStart":
                     player.fevertime = True

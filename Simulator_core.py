@@ -153,6 +153,8 @@ def run_game_simulation(
             case event if len(event) == 2:
                 if player.mental.get_rate() >= afk_mental:
                     player.combo_add("MISS", event[1])
+                else:
+                    player.combo_add("PERFECT")
 
             case "LiveStart" | "LiveEnd" | "FeverStart":
                 if event == "FeverStart":
