@@ -10,6 +10,7 @@ from RChart import Chart
 from DeckGen import generate_decks_with_sequential_priority_pruning
 from DeckGen2 import generate_decks_with_double_cards
 from CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, CARD_CACHE
+from SkillResolver import SkillEffectType
 from Simulator_core import run_game_simulation, MUSIC_DB
 
 logger = logging.getLogger(__name__)
@@ -115,34 +116,36 @@ if __name__ == "__main__":
     card_ids = [
         1011501,  # 沙知
         1021523, 1021901, 1021512, 1021701, 1021801, 1021802,  # 梢: 银河 BR 舞会 LR PE EA
-        1022521, 1022701, 1022901, 1022504,  # 缀: 银河 LR BR 明月
-        1023520, 1023701, 1023901,  # 慈: 银河 LR BR
-        1031519, 1031530, 1031901,  # 帆: 舞会 IDOME BR(2024)
-        1032518, 1032528, 1032901,  # 沙: 舞会 IDOME BR
-        1033514, 1033524, 1033525, 1033526, 1033901,  # 乃: 舞会 IDOME COCO夏 喵信号 BR
-        1041513,  # 1041517, # 吟: 舞会 花火
+        1022701, 1022901,  # 1022521, # 1022504,  # 缀: LR BR 银河 明月
+        1023701, 1023901,  # 1023520,  # 慈: LR BR 银河
+        1031519, 1031530, 1031901, 1031801, 1031802,  # 帆: 舞会 IDOME BR(2024) PE EA
+        1032518, 1032528, 1032530, 1032901, 1032801, 1032802, # 沙: 舞会 IDOME 地平 BR PE EA
+        1033514, 1033524, 1033525, 1033526, 1033528, 1033901, 1033801, 1033802, # 乃: 舞会 IDOME COCO夏 喵信号 地平 BR PE EA
+        1041513, 1041901, 1041801,  # 1041517, # 吟: 舞会 BR EA 花火
         1042516, 1042801, 1042802,  # 1042515, # 1042512,  # 铃: 太阳 EA OE 暧昧mayday 舞会
-        1043515, 1043516, 1043801, 1043802,  # 芽: BLAST COCO夏 EA OE 舞会1043512
-        1051503,  # 1051501, 1051502,  # 泉: 天地黎明 DB RF
-        1052901, 1052503,  # 1052504  # 塞: BR 十六夜 天地黎明
+        1043515, 1043516, 1043902, 1043801, 1043802,  # 芽: BLAST COCO夏 BR EA OE 舞会1043512
+        1051506, 1051503,  # 1051501, 1051502,  # 泉: 片翼 天地黎明 DB RF
+        1052901, 1052503,  # 1052801, # 1052504  # 塞: BR 十六夜 OE 天地黎明
     ]
 
-    # 塔桑精选池，实际未使用
-    # 如有需要可以从里面拿一些卡到上面跑
-    card_ids_B = [
-        1011501,  # 沙知
-        1021523, 1021901, 1021512, 1021701,  # 梢: 银河 BR 舞会 LR
-        1022701, 1022504, 1022521, 1022901, 1022512,  # 缀: LR 明月 银河 BR 舞会
-        1023520, 1023701, 1023901, 1023505, 1023513,  # 1023504, # 慈: 银河 LR BR 湖边 教师 舞会
-        1031519, 1031530, 1031901, 1031516, 1031504,  # 帆: 舞会 IDOME BR(2024) ST RG
-        1032518, 1032528, 1032901, 1032505, 1032509,  # 沙: 舞会 IDOME BR 明月 海豚
-        1033514, 1033524, 1033901, 1033520, 1033504,  # 乃: 舞会 IDOME BR JK ID
-        1041513, 1041515, 1041503, 1041901,  # 吟: 舞会 37.5 青岚 br
-        1042515, 1042503, 1042901, 1042512,  # 铃: 暧昧mayday 瓢虫 BR 舞会
-        1043515, 1043512, 1043504,  # 1043901, # 芽: BLAST 舞会 mrc BR
-        1044401,  # 泉塞
-        1051501, 1051502,  # 泉: DB RF
-        1052901, 1052503  # 塞: BR 十六夜
+    # --- 配置卡组限制条件 ---
+
+    # 卡组必须包含以下全部卡牌
+    mustcards_all = []
+    # 卡组必须包含至少一张以下卡牌
+    mustcards_any = []
+    # 以上填写格式均为: [卡牌id1, 卡牌id2, ...]
+    
+    # 卡组必须包含以下所有技能类型 
+    mustskills_all = [
+        SkillEffectType.DeckReset,  # 洗牌
+        SkillEffectType.ScoreGain,  # 分
+        SkillEffectType.VoltagePointChange,  # 电
+        SkillEffectType.NextAPGainRateChange,  # 分加成 (但是写作AP加成)
+        SkillEffectType.NextVoltageGainRateChange,  # 电加成
+        # SkillEffectType.APChange,  # 回复/扣除AP
+        # SkillEffectType.MentalRateChange,  # 回复/扣除血量
+        # SkillEffectType.CardExcept,  # 卡牌除外
     ]
 
     # --- Step 2: Prepare simulation tasks ---
@@ -199,10 +202,11 @@ if __name__ == "__main__":
 
     # 3. 获取卡组生成器
     decks_generator = generate_decks_with_double_cards(
-        card_ids,
-        pre_initialized_chart.music.CenterCharacterId,
-        force_dr,
-        os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
+        cardpool=card_ids,
+        mustcards=[mustcards_all, mustcards_any, mustskills_all],
+        center_char=pre_initialized_chart.music.CenterCharacterId,
+        force_dr=force_dr,
+        log_path=os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
     )
     total_decks_to_simulate = decks_generator.total_decks
     logger.info(f"{total_decks_to_simulate} decks to be simulated.")
