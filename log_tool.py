@@ -36,7 +36,7 @@ def score2pt(results):
         if centercard:
             limitbreak = card_limitbreak.get(centercard, None)
             if limitbreak == None:
-                levels = CARD_CACHE[centercard]
+                levels = CARD_CACHE.get(centercard, [140, 14, 14])
                 card_limitbreak[centercard] = limitbreak = max(levels[1:])
             bonus *= LIMITBREAK_BONUS[limitbreak]
         deck['pt'] = int(deck['score'] * bonus)  # 实际为向上取整而非截断
@@ -95,5 +95,5 @@ if __name__ == "__main__":
             all_simulation_results.extend(json.load(f))
 
     # 重新计算 pt 的 log 会有 "_re" 后缀
-    json_output_filename = f"simulation_results_{MUSIC_ID}_{DIFFICULTY}_re.json"
+    json_output_filename = os.path.join("log", f"simulation_results_{MUSIC_ID}_{DIFFICULTY}_re.json")
     save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True)
