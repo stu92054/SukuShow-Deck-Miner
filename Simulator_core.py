@@ -5,7 +5,7 @@ from platform import python_implementation
 from RCardData import db_load
 from RChart import Chart, MusicDB
 from RDeck import Deck
-from RLiveStatus import PlayerAttributes
+from RLiveStatus import PlayerAttributes, MentalDown
 from SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
 from CardLevelConfig import DEATH_NOTE
 
@@ -87,6 +87,7 @@ def run_game_simulation(
             ApplyCenterAttribute(player, effect, target)
 
     d.appeal_calc(c.music.MusicType)
+    player.hp_calc()
     player.basescore_calc(c.AllNoteSize)
     # player.cooldown = int(player.cooldown * 1_000_000)
 
@@ -152,7 +153,10 @@ def run_game_simulation(
 
             case event if len(event) == 2:
                 if player.mental.get_rate() >= afk_mental:
-                    player.combo_add("MISS", event[1])
+                    try:
+                        player.combo_add("MISS", event[1])
+                    except MentalDown:
+                        break
                 else:
                     player.combo_add("PERFECT")
 

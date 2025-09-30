@@ -118,6 +118,9 @@ class Voltage:
         """
         return f"Voltage: {self._current_points} Pt (Lv.{self._current_level})"
 
+class MentalDown(Exception):
+    def __init__(self):
+        pass
 
 class Mental:
     def __init__(self) -> None:
@@ -127,8 +130,8 @@ class Mental:
         self.missMinus: int = 50
         self.traceMinus: int = 20
 
-    def set_hp(self, deck: Deck):
-        self.max_hp = deck.mental_calc()
+    def set_hp(self, hp: int):
+        self.max_hp = hp
         self.current_hp = self.max_hp
         self.badMinus += int(self.max_hp * 0.03)
         self.missMinus += int(self.max_hp * 0.05)
@@ -150,6 +153,9 @@ class Mental:
                     self.current_hp = max(0, self.current_hp - self.badMinus)
                 case _:
                     pass
+            if self.current_hp:
+                return
+            raise MentalDown()
 
     def skill_add(self, value):
         self.current_hp = max(1, self.current_hp + ceil(self.max_hp * value / 100))
@@ -174,7 +180,8 @@ class PlayerAttributes:
         self.cooldown = 5.0     # 初始技能冷却时间
         self.ap_rate = 1
         self.combo = 0
-        self.voltage_gain_rate = 100.0
+        self.ap_gain_rate = 100
+        self.voltage_gain_rate = 100
         self.mental = Mental()
         self.score = 0
         self.voltage = Voltage(0)
@@ -219,7 +226,9 @@ class PlayerAttributes:
 
     def set_deck(self, deck: Deck):
         self.deck = deck
-        self.mental.set_hp(deck)
+    
+    def hp_calc(self):
+        self.mental.set_hp(self.deck.mental_calc())
 
     def basescore_calc(self, all_note_size: int):
         masterlv_bonus = self.masterlv / 100 + 1
@@ -271,5 +280,5 @@ class PlayerAttributes:
 
 
 if __name__ == "__main__":
-    logger.debug(Voltage._points_needed_for_level(11))
-    logger.debug(Voltage._points_needed_for_level(12))
+    print(Voltage._points_needed_for_level(247))
+    print(Voltage._points_needed_for_level(248))

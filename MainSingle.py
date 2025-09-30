@@ -110,6 +110,7 @@ if __name__ == "__main__":
 
     # 根据歌曲颜色计算三围、基础分
     d.appeal_calc(c.music.MusicType)
+    player.hp_calc()
     player.basescore_calc(c.AllNoteSize)
 
     logging.debug(f"Appeal: {player.deck.appeal}")

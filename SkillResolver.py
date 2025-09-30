@@ -50,7 +50,7 @@ def CheckTarget(target_id: str, card: Card = None):
         return False
 
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug(f"  解析结果: 目标类型=({target_type.name}, 数值={target_value}")
+        logger.debug(f"  解析结果: 目标类型={target_type.name}, 数值={target_value}")
 
     is_satisfied = False
 
@@ -81,9 +81,15 @@ def CheckTarget(target_id: str, card: Card = None):
             is_satisfied = True
 
         case _:
-            logger.error(f"  未知条件类型: {target_type.name} ({enum_base_value})。 -> 不满足")
+            logger.error(f"  未知条件类型: {target_type.name} ({target_id})。 -> 不满足")
 
     return is_satisfied
+
+
+def CheckMultiTarget(target_id: str, card=None):
+    targets = target_id.split(",")
+    result = any(CheckTarget(target_id, card) for target_id in targets)
+    return result
 
 
 class CenterAttributeEffectType(Enum):
@@ -149,7 +155,7 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
             # 比率变化按100.00% = 10000计算，所以需要除以10000
             change_amount = value_data / 10000.0
             for card in player_attrs.deck.cards:
-                if CheckTarget(target_id=target, card=card):
+                if CheckMultiTarget(target_id=target, card=card):
                     card.smile *= (1 + change_amount)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
@@ -158,7 +164,7 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
         case CenterAttributeEffectType.PureRateChange:
             change_amount = value_data / 10000.0
             for card in player_attrs.deck.cards:
-                if CheckTarget(target_id=target, card=card):
+                if CheckMultiTarget(target_id=target, card=card):
                     card.pure *= (1 + change_amount)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
@@ -167,7 +173,7 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
         case CenterAttributeEffectType.CoolRateChange:
             change_amount = value_data / 10000.0
             for card in player_attrs.deck.cards:
-                if CheckTarget(target_id=target, card=card):
+                if CheckMultiTarget(target_id=target, card=card):
                     card.cool *= (1 + change_amount)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
@@ -175,43 +181,51 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
 
         case CenterAttributeEffectType.SmileValueChange:
             # 暂未实装，占位代码
-            player_attrs.smile_value += value_data * change_sign
+            for card in player_attrs.deck.cards:
+                if CheckMultiTarget(target_id=target, card=card):
+                    card.smile += value_data * change_sign
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
-                logger.debug(f"  对满足要求的目标应用效果: Smile Value {action} {value_data}")
+                logger.debug(f"  对满足要求的目标应用效果: Smile值 {action} {value_data}")
 
         case CenterAttributeEffectType.PureValueChange:
             # 暂未实装，占位代码
-            player_attrs.pure_value += value_data * change_sign
+            for card in player_attrs.deck.cards:
+                if CheckMultiTarget(target_id=target, card=card):
+                    card.pure += value_data * change_sign
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
-                logger.debug(f"  对满足要求的目标应用效果: Pure Value {action} {value_data}")
+                logger.debug(f"  对满足要求的目标应用效果: Pure值 {action} {value_data}")
 
         case CenterAttributeEffectType.CoolValueChange:
             # 暂未实装，占位代码
-            player_attrs.cool_value += value_data * change_sign
+            for card in player_attrs.deck.cards:
+                if CheckMultiTarget(target_id=target, card=card):
+                    card.cool += value_data * change_sign
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
-                logger.debug(f"  对满足要求的目标应用效果: Cool Value {action} {value_data}")
+                logger.debug(f"  对满足要求的目标应用效果: Cool值 {action} {value_data}")
 
         case CenterAttributeEffectType.MentalRateChange:
-            # 暂未实装，占位代码
-            change_amount = value_data / 100.0
-            player_attrs.mental_rate += change_amount * change_sign
+            change_amount = value_data / 10000.0
+            for card in player_attrs.deck.cards:
+                if CheckMultiTarget(target_id=target, card=card):
+                    card.mental = ceil(card.mental * (1 + change_amount * change_sign))
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
-                logger.debug(f"  对满足要求的目标应用效果: Mental Rate {action} {change_amount:.2f}%")
+                logger.debug(f"  对满足要求的目标应用效果: 血量 {action} {change_amount*100:.0f}%")
 
         case CenterAttributeEffectType.MentalValueChange:
-            # 暂未实装，占位代码
-            player_attrs.mental_value += value_data * change_sign
+            for card in player_attrs.deck.cards:
+                if CheckMultiTarget(target_id=target, card=card):
+                    card.mental += value_data * change_sign
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
-                logger.debug(f"  对满足要求的目标应用效果: Mental Value {action} {value_data}")
+                logger.debug(f"  对满足要求的目标应用效果: 血量 {action} {value_data}")
 
         case CenterAttributeEffectType.ConsumeAPChange:
             for card in player_attrs.deck.cards:
-                if CheckTarget(target_id=target, card=card):
+                if CheckMultiTarget(target_id=target, card=card):
                     card.cost_change(value_data * change_sign)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
@@ -233,7 +247,6 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
                 logger.debug(f"  应用效果: AP Gain Rate {action} {change_amount:.2f}%")
 
         case CenterAttributeEffectType.VoltageGainRateChange:
-            # 暂未实装，占位代码
             change_amount = value_data / 100.0
             player_attrs.voltage_gain_rate += change_amount * change_sign
             if logger.isEnabledFor(logging.DEBUG):
@@ -447,7 +460,8 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
     match effect_type:
         case SkillEffectType.APChange:
             # AP change, value is in 1/10000 units (e.g., 30000 -> 3.0000, 100000 -> 10.0000)
-            ap_amount = value_data * change_factor * player_attrs.ap_rate / 10000.0
+            ap_rate = player_attrs.ap_rate * player_attrs.ap_gain_rate / 100
+            ap_amount = value_data * change_factor * ap_rate / 10000.0
             player_attrs.ap += ap_amount
             if logger.isEnabledFor(logging.DEBUG):
                 action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
@@ -468,13 +482,15 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
 
         case SkillEffectType.VoltagePointChange:
             # Voltage point change, value is direct points
-            voltage_rate = 100
+            voltage_rate = player_attrs.voltage_gain_rate
             if change_factor == 1:
                 if player_attrs.next_voltage_gain_rate:
                     voltage_rate += player_attrs.next_voltage_gain_rate.pop(0)
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug(f"电加成: * {voltage_rate:.2f}%")
-            result = ceil(value_data * voltage_rate * change_factor / 100)
+                result = ceil(value_data * voltage_rate / 100)
+            else:
+                result = -1 * value_data
             player_attrs.voltage.add_points(result)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
@@ -709,7 +725,8 @@ def ApplyCenterSkillEffect(player_attrs: PlayerAttributes, effect_id: int):
     match effect_type:
         case CenterSkillEffectType.APChange:
             # AP change, value is in 1/10000 units (e.g., 30000 -> 3.0000, 100000 -> 10.0000)
-            ap_amount = value_data * change_factor * player_attrs.ap_rate / 10000
+            ap_rate = player_attrs.ap_rate * player_attrs.ap_gain_rate / 100
+            ap_amount = value_data * change_factor * ap_rate / 10000.0
             player_attrs.ap += ap_amount
             if logger.isEnabledFor(logging.DEBUG):
                 action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
