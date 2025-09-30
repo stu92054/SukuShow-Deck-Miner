@@ -748,13 +748,15 @@ def ApplyCenterSkillEffect(player_attrs: PlayerAttributes, effect_id: int):
 
         case CenterSkillEffectType.VoltagePointChange:
             # Voltage point change, value is direct points
-            voltage_rate = 100
+            voltage_rate = player_attrs.voltage_gain_rate
             if change_factor == 1:
                 if player_attrs.next_voltage_gain_rate:
                     voltage_rate += player_attrs.next_voltage_gain_rate.pop(0)
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug(f"电加成: * {voltage_rate:.2f}%")
-            result = ceil(value_data * voltage_rate * change_factor / 100)
+                result = ceil(value_data * voltage_rate / 100)
+            else:
+                result = -1 * value_data
             player_attrs.voltage.add_points(result)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
