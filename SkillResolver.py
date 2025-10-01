@@ -239,7 +239,6 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
                 logger.debug(f"  应用效果: 技能CD {action} {change_amount_seconds:.0f}s")
 
         case CenterAttributeEffectType.APGainRateChange:
-            # 暂未实装，占位代码
             change_amount = value_data / 100.0
             player_attrs.ap_gain_rate += change_amount * change_sign
             if logger.isEnabledFor(logging.DEBUG):
@@ -659,7 +658,7 @@ def CheckCenterSkillCondition(player_attrs: PlayerAttributes, condition_id: str,
 
             case CenterSkillConditionType.AfterUsedAllSkillCount:
                 # 合计打出技能次数
-                current_value = player_attrs.total_skills_used_count
+                current_value = player_attrs.deck.used_all_skill_calc()
 
                 if operator_or_flag == SkillComparisonOperator.ABOVE_OR_EQUAL:  # >=
                     is_satisfied = (current_value >= condition_value)
@@ -834,9 +833,7 @@ if __name__ == "__main__":
     # UsedAllSkillCount (合计打出次数)
     CheckSkillCondition(player_attrs, 4100010)
     CheckSkillCondition(player_attrs, 4200006)
-    player_attrs.total_skills_used_count = 5
     CheckSkillCondition(player_attrs, 4200006)
-    player_attrs.total_skills_used_count = 7
 
     # UsedSkillCount (单卡打出次数，假设检查卡牌ID 1001)
     CheckSkillCondition(player_attrs, 5100003, card_id_to_check=1001)

@@ -189,7 +189,6 @@ class PlayerAttributes:
         self.next_voltage_gain_rate = []
         self.fevertime = False
         self.CDavailable = False
-        self.total_skills_used_count = 0
         self.deck: Deck
         self.appeal: int = 0
         self.masterlv: int = masterlv
