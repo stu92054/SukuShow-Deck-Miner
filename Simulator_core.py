@@ -121,7 +121,10 @@ def run_game_simulation(
                         else:
                             heapq.heappush(event_heap, (timestamp + MISS_TIMING[event], ("MISS", event)))
                     else:
-                        player.combo_add("MISS", event)
+                        try:
+                            player.combo_add("MISS", event)
+                        except MentalDown:
+                            break
                 else:
                     player.combo_add("PERFECT")
 
