@@ -168,10 +168,9 @@ class DeckGeneratorWithDoubleCards:
                 continue
             if self.check_skill_tags(count_skill_tags(deck), self.force_dr):
                 for perm in itertools.permutations(deck):
-                    # 去除分位于左一、洗牌位于最后两张的卡组
+                    # 去除分位于左一、洗牌位于最后一张的卡组
                     if SkillEffectType.ScoreGain in DB_TAG[perm[0]] or \
-                            SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
-                            SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
+                            SkillEffectType.DeckReset in DB_TAG[perm[-1]]:
                         continue
                     yield perm
 
@@ -205,8 +204,7 @@ class DeckGeneratorWithDoubleCards:
             if self.check_skill_tags(count_skill_tags(deck), self.force_dr):
                 for perm in itertools.permutations(deck):
                     if SkillEffectType.ScoreGain in DB_TAG[perm[0]] or \
-                            SkillEffectType.DeckReset in DB_TAG[perm[-1]] or \
-                            SkillEffectType.DeckReset in DB_TAG[perm[-2]]:
+                            SkillEffectType.DeckReset in DB_TAG[perm[-1]]:
                         continue
                     total += 1
         return total
