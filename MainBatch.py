@@ -118,14 +118,15 @@ if __name__ == "__main__":
         1021523, 1021901, 1021512, 1021701, 1021801, 1021802,  # 梢: 银河 BR 舞会 LR PE EA
         1022701, 1022901,  # 1022521, # 1022504,  # 缀: LR BR 银河 明月
         1023701, 1023901,  # 1023520,  # 慈: LR BR 银河
-        1031519, 1031530, 1031901, 1031801, 1031802,  # 帆: 舞会 IDOME BR(2024) PE EA
-        1032518, 1032528, 1032530, 1032901, 1032801, 1032802, # 沙: 舞会 IDOME 地平 BR PE EA
-        1033514, 1033524, 1033525, 1033526, 1033528, 1033901, 1033801, 1033802, # 乃: 舞会 IDOME COCO夏 喵信号 地平 BR PE EA
-        1041513, 1041901, 1041801,  # 1041517, # 吟: 舞会 BR EA 花火
+        1031530, 1031533, 1031534,  # 1031519, 1031901, 1031801, 1031802,  # 帆: IDOME 地平 乙女 舞会 BR(2024) PE EA
+        1032518, 1032528, 1032530, 1032901, #1032801, 1032802, # 沙: 舞会 IDOME 地平 BR PE EA
+        1033514, 1033524, 1033525, 1033526, 1033527, 
+        1033528,  # 1033901, #1033801, 1033802, # 乃: 舞会 IDOME COCO夏 喵信号 一生梦 地平 BR PE EA
+        1041513, 1041901, 1041801, 1041802, 1041516,  # 1041517, # 吟: 舞会 BR EA OE 水果 花火
         1042516, 1042801, 1042802,  # 1042515, # 1042512,  # 铃: 太阳 EA OE 暧昧mayday 舞会
         1043515, 1043516, 1043902, 1043801, 1043802,  # 芽: BLAST COCO夏 BR EA OE 舞会1043512
         1051506, 1051503,  # 1051501, 1051502,  # 泉: 片翼 天地黎明 DB RF
-        1052901, 1052503,  # 1052801, # 1052504  # 塞: BR 十六夜 OE 天地黎明
+        1052506, 1052901, 1052503,  # 1052801, # 1052504  # 塞: 片翼 BR 十六夜 OE 天地黎明
     ]
 
     # --- 配置卡组限制条件 ---
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     ]
 
     # --- Step 2: Prepare simulation tasks ---
-    fixed_music_id = "405105"  # Very! Very! COCO夏っ
+    fixed_music_id = "405116"  # 一生に夢が咲くように
     fixed_difficulty = "02"
     fixed_player_master_level = 50
 
@@ -263,7 +264,7 @@ if __name__ == "__main__":
                     "score": current_score
                 }
                 best_log = current_log
-                logger.info(f"\nNEW HI-SCORE! Deck: {original_index}, Score: {current_score}")
+                logger.info(f"\nNEW HI-SCORE! Deck: {original_index}, Score: {current_score:,}")
                 logger.info(f"  Deck: {deck_card_ids}")
 
             if len(current_batch_results) >= BATCH_SIZE:
@@ -299,7 +300,7 @@ if __name__ == "__main__":
     logger.info(f"Map: {MUSIC_DB.get_music_by_id(fixed_music_id).Title} ({fixed_difficulty})")
     logger.info(f"Total simulations run: {total_decks_to_simulate}")
     if highest_score_overall != -1:
-        logger.info(f"Overall Highest Score: {highest_score_overall}")
+        logger.info(f"Overall Highest Score: {highest_score_overall:,}")
         logger.info(f"Highest Score Deck: {highest_score_deck_info['original_index']}")
         logger.info(f"Cards: {highest_score_deck_info['deck_card_ids']}")
         logger.info(f"Log: {best_log}")

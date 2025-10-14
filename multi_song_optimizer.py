@@ -20,9 +20,9 @@ logging.basicConfig(
 # 求解前需运行 MainBatch.py 生成对应的卡组得分记录
 CHALLENGE_SONGS = [
     # 若只输入两首歌则会寻找仅针对两面的最优解，不考虑第三面
-    ("405114", "02"),  # 片翼のトリバガ
-    ("405303", "02"),  # START!! True dreams
-    ("405301", "02"),  # 虹色Passions!
+    ("405116", "04"),  # 一生に夢が咲くように
+    ("405113", "02"),  # ハートにQ
+    ("405304", "02"),  # Shocking Party
 ]
 
 # 每首歌只保留得分排名前 N 名的卡组用于求解
@@ -138,7 +138,7 @@ def find_best_three_decks(
             logger.info(f"New best total pt found: {best_global_pt}")
             for i, deck_info in enumerate(best_global_decks):
                 logger.info(f"  Song {i+1} ({deck_info['music_id']}): ")
-                logger.info(f"    Pt: {deck_info['pt']}\tScore: {deck_info['score']}\tRank: {deck_info['rank']}")
+                logger.info(f"    Pt: {deck_info['pt']:,}\tScore: {deck_info['score']:,}\tRank: {deck_info['rank']}")
                 logger.info(f"    Deck (ID): {deck_info['deck_card_ids']}")
             # Optionally print the decks for the new best score
             # for deck_info in best_global_decks:
@@ -283,8 +283,8 @@ if __name__ == "__main__":
         logger.info(f"Total Combined Pt: {best_global_pt}")
         for i, deck_info in enumerate(best_global_decks):
             logger.info(f"  Song {i+1} ({deck_info['music_id']}):")
-            logger.info(f"    Score: {deck_info['score']}")
-            logger.info(f"    Pt: {deck_info['pt']}\tRank: {deck_info['rank']}")
+            logger.info(f"    Score: {deck_info['score']:,}")
+            logger.info(f"    Pt: {deck_info['pt']:,}\tRank: {deck_info['rank']}")
             logger.info(f"    Deck (ID): {deck_info['deck_card_ids']}")
 
         # Optional: Save the best combination to a separate JSON file
