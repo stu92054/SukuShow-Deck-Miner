@@ -460,7 +460,10 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
         case SkillEffectType.APChange:
             # AP change, value is in 1/10000 units (e.g., 30000 -> 3.0000, 100000 -> 10.0000)
             ap_rate = player_attrs.ap_rate * player_attrs.ap_gain_rate / 100
-            ap_amount = value_data * change_factor * ap_rate / 10000.0
+            if change_factor == 1:
+                ap_amount = value_data * change_factor * ap_rate / 10000.0
+            else:
+                ap_amount = value_data * change_factor / 10000.0
             player_attrs.ap = max(0, player_attrs.ap + ap_amount)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
@@ -725,7 +728,10 @@ def ApplyCenterSkillEffect(player_attrs: PlayerAttributes, effect_id: int):
         case CenterSkillEffectType.APChange:
             # AP change, value is in 1/10000 units (e.g., 30000 -> 3.0000, 100000 -> 10.0000)
             ap_rate = player_attrs.ap_rate * player_attrs.ap_gain_rate / 100
-            ap_amount = value_data * change_factor * ap_rate / 10000.0
+            if change_factor == 1:
+                ap_amount = value_data * change_factor * ap_rate / 10000.0
+            else:
+                ap_amount = value_data * change_factor / 10000.0
             player_attrs.ap = max(0, player_attrs.ap + ap_amount)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "恢复" if change_direction == 0 else "消耗"  # AP is typically recovered
