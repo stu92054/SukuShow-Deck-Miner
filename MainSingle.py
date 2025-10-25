@@ -142,14 +142,14 @@ if __name__ == "__main__":
                     player.combo_add("GOOD")
                     # player.combo_add("BAD", event)
 
-                elif afk_mental and player.mental.get_rate() >= afk_mental:
+                elif afk_mental and player.mental.get_rate() > afk_mental:
                     # 不同note类型和判定会影响扣血多少
                     # 模拟开局挂机到背水时需向combo_add()传入note类型(即event)
                     # 卡组有p吟/BR吟时自动模拟背水，可在DEATH_NOTE中添加其他背水血线
                     # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
                     if flag_hanabi_ginko:
                         misstime = str(float(timestamp) + MISS_TIMING[event])
-                        c.ChartEvents.append((misstime, ("MISS", event)))
+                        c.ChartEvents.append((misstime, "_" + event))
                         c.ChartEvents.sort(key=lambda event: float(event[0]))
                     else:
                         player.combo_add("MISS", event)
@@ -188,13 +188,14 @@ if __name__ == "__main__":
                     c.ChartEvents.sort(key=lambda event: float(event[0]))
                     cardnow = d.topcard()
 
-            case event if len(event) == 2:
-                if player.mental.get_rate() >= afk_mental:
-                    player.combo_add("MISS", event[1])
-                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\tMISS: {event[1]}")
+            case event if event[0] == "_":
+                if player.mental.get_rate() > afk_mental:
+                    player.combo_add("MISS", event[1:])
+                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\tMISS: {event[1:]}")
                 else:
                     player.combo_add("PERFECT")
-                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event[1]} (延后)")
+                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event[1:]} (延后)")
+
             case "LiveStart" | "LiveEnd" | "FeverStart":
                 if event == "FeverStart":
                     player.fevertime = True

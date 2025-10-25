@@ -113,13 +113,13 @@ def run_game_simulation(
         match event:
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
                 combo_count += 1
-                if afk_mental and player.mental.get_rate() >= afk_mental:
+                if afk_mental and player.mental.get_rate() > afk_mental:
                     # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
                     if flag_hanabi_ginko:
                         if pypy_impl:
-                            event_heap.add((timestamp + MISS_TIMING[event], ("MISS", event)))
+                            event_heap.add((timestamp + MISS_TIMING[event], "_" + event))
                         else:
-                            heapq.heappush(event_heap, (timestamp + MISS_TIMING[event], ("MISS", event)))
+                            heapq.heappush(event_heap, (timestamp + MISS_TIMING[event], "_" + event))
                     else:
                         try:
                             player.combo_add("MISS", event)
@@ -154,10 +154,10 @@ def run_game_simulation(
                         heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
                     cardnow = d.topcard()
 
-            case event if len(event) == 2:
-                if player.mental.get_rate() >= afk_mental:
+            case event if event[0] == "_":
+                if player.mental.get_rate() > afk_mental:
                     try:
-                        player.combo_add("MISS", event[1])
+                        player.combo_add("MISS", event[1:])
                     except MentalDown:
                         break
                 else:
