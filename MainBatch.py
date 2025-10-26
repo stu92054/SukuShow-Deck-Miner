@@ -109,10 +109,12 @@ def task_generator_func(decks_generator, chart, player_level,leader_designation)
     for deck_card_ids_list in decks_generator:
         # 找出所有C位角色的卡片索引
         center_card_indices = []
-        
+        # New solution: if a vaild leader is entered via the command line, the decks would already have the leader.
+        # We only need to find the index of the leader card now.
         if leader_designation != 0 :
             for idx, card_id in enumerate(deck_card_ids_list):
                 if int(leader_designation) == card_id: center_card_indices.append(idx)
+        # Old solution OR if no leader is supplied
         else:
             for idx, card_id in enumerate(deck_card_ids_list):
                 char_id = card_id // 1000
@@ -208,9 +210,9 @@ if __name__ == "__main__":
         #    "mastery_level": 50,
             "mustcards_all": [],  # 設定第一首歌必須包含的卡牌
             "mustcards_any": [],
-            "center_override": None,
-            "color_override": None,
-            "leader_designation": sys.argv[4],
+            "center_override": None, # 此為C位override非指定隊長
+            "color_override": None, # 此為歌曲屬性override
+            "leader_designation": sys.argv[4], # 指定隊長，卡片ID 若不指定請務必設為0
         },
         # {
         #     "music_id": "405117",  # 第二首歌 (請修改為實際歌曲ID)
@@ -420,6 +422,8 @@ if __name__ == "__main__":
 
         # 4. 创建模拟任务生成器
         # task_generator_func 会按需从 generated_decks_generator 中拉取卡组
+        # 指定C位的點在`task_generator_func`裡面。上面卡組沒有做到這點
+        
         simulation_tasks_generator = task_generator_func(
             decks_generator, pre_initialized_chart, mastery_level, leader_designation
         )
