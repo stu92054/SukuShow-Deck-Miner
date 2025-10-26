@@ -3,6 +3,7 @@ import time
 import os
 import multiprocessing
 import json
+import sys
 
 from platform import python_implementation
 from tqdm import tqdm
@@ -205,10 +206,29 @@ if __name__ == "__main__":
     #     "color_override": None 或 1/2/3
     # }
 
+
+    
+    # 卡组必须包含以下所有技能类型 (對所有歌曲生效)
+    mustskills_all = [
+        SkillEffectType.DeckReset,  # 洗牌
+        SkillEffectType.ScoreGain,  # 分
+        SkillEffectType.VoltagePointChange,  # 电
+        SkillEffectType.NextAPGainRateChange,  # 分加成 (但是写作AP加成)
+        SkillEffectType.NextVoltageGainRateChange,  # 电加成
+        # SkillEffectType.APChange,  # 回复/扣除AP
+        # SkillEffectType.MentalRateChange,  # 回复/扣除血量
+        # SkillEffectType.CardExcept,  # 卡牌除外
+    ]
+
+    # --- Step 2: Prepare simulation tasks ---
+    # fixed_player_master_level = 50
+
+    # 將songs_config 搬到step 2底下，並加入命列參數帶入
     SONGS_CONFIG = [
         {
-            "music_id": "405305",  # 第一首歌 (請修改為實際歌曲ID)
-            "difficulty": "02",
+            "music_id": str(sys.argv[1]),  # 第一首歌 (請修改為實際歌曲ID)
+            "difficulty": str(sys.argv[2]),
+            "mastery_level": int(sys.argv[3]),
             "mustcards_all": [],  # 設定第一首歌必須包含的卡牌
             "mustcards_any": [],
             "center_override": None,
@@ -231,21 +251,11 @@ if __name__ == "__main__":
         #     "color_override": None,
         # },
     ]
-    
-    # 卡组必须包含以下所有技能类型 (對所有歌曲生效)
-    mustskills_all = [
-        SkillEffectType.DeckReset,  # 洗牌
-        SkillEffectType.ScoreGain,  # 分
-        SkillEffectType.VoltagePointChange,  # 电
-        SkillEffectType.NextAPGainRateChange,  # 分加成 (但是写作AP加成)
-        SkillEffectType.NextVoltageGainRateChange,  # 电加成
-        # SkillEffectType.APChange,  # 回复/扣除AP
-        # SkillEffectType.MentalRateChange,  # 回复/扣除血量
-        # SkillEffectType.CardExcept,  # 卡牌除外
-    ]
 
-    # --- Step 2: Prepare simulation tasks ---
-    fixed_player_master_level = 50
+
+
+
+
 
     # 新增：批次大小和临时文件目录
     BATCH_SIZE = 1_000_000  # 每100万条结果保存一个文件
@@ -260,6 +270,7 @@ if __name__ == "__main__":
         mustcards_any = song_config["mustcards_any"]
         center_override = song_config["center_override"]
         color_override = song_config["color_override"]
+        mastery_level = song_config["mastery_level"]
         
         logger.info(f"\n{'='*60}")
         logger.info(f"開始處理歌曲: ID={fixed_music_id}, 難度={fixed_difficulty}")
@@ -407,7 +418,7 @@ if __name__ == "__main__":
         # 4. 创建模拟任务生成器
         # task_generator_func 会按需从 generated_decks_generator 中拉取卡组
         simulation_tasks_generator = task_generator_func(
-            decks_generator, pre_initialized_chart, fixed_player_master_level
+            decks_generator, pre_initialized_chart, mastery_level
         )
 
         os.makedirs(TEMP_OUTPUT_DIR, exist_ok=True)
