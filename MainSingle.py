@@ -56,7 +56,7 @@ if __name__ == "__main__":
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1033901, 1021901, 1021802, 1032528, 1031530, 1051503]
+            [1032528, 1022701, 1032530, 1042802, 1031530, 1031533]
         )
     )
 
@@ -69,6 +69,13 @@ if __name__ == "__main__":
     # 强制替换歌曲C位和颜色
     center_override = None  # 1052 #1032
     color_override = None  # 1 # 1=Smile 2=Pure 3=Cool
+
+    # C位卡选择：指定使用卡组中第几张C位角色的卡作为C位
+    # None: 自动选择（DR优先，无DR则第一张）
+    # 0: 使用第1张C位角色的卡
+    # 1: 使用第2张C位角色的卡
+    # -1: 测试所有C位选择并输出对比（会运行多次模拟）
+    center_card_choice = -1
 
     c = Chart(musicdb, fixed_music_id, fixed_difficulty)
     player = PlayerAttributes(fixed_player_master_level)
@@ -83,11 +90,13 @@ if __name__ == "__main__":
     for card in d.cards:
         logging.info(f"Cost: {card.cost:2}\t{card.full_name}")
 
-    logging.debug("\n--- 应用C位特性 ---")
-    centercard = None
+    # 找出所有C位角色的卡片
+    center_char_id = c.music.CenterCharacterId
+    center_cards_indices = []
     afk_mental = 0
     flag_hanabi_ginko = False
-    for card in d.cards:
+
+    for idx, card in enumerate(d.cards):
         cid = int(card.card_id)
         if cid in DEATH_NOTE:
             if afk_mental:
@@ -96,10 +105,54 @@ if __name__ == "__main__":
                 afk_mental = DEATH_NOTE[cid]
         if cid == 1041517:
             flag_hanabi_ginko = True
-        if card.characters_id == c.music.CenterCharacterId:
-            # DR优先C位，无DR则靠左为C位
-            if not centercard or card.card_id[4] == "8":
-                centercard = card
+        if card.characters_id == center_char_id:
+            center_cards_indices.append((idx, card))
+
+    logging.info(f"\n找到 {len(center_cards_indices)} 张C位角色 ({center_char_id}) 的卡片")
+    for idx, card in center_cards_indices:
+        logging.info(f"  索引 {idx}: {card.full_name}")
+
+    if not center_cards_indices:
+        logging.error("错误：卡组中没有C位角色的卡片！")
+        exit(1)
+
+    # 根据center_card_choice决定测试哪些C位
+    if center_card_choice == -1:
+        # 测试所有C位选择
+        logging.info(f"\n将测试所有 {len(center_cards_indices)} 种C位选择")
+        center_cards_to_test = center_cards_indices
+    elif center_card_choice is None:
+        # 自动选择（DR优先）
+        dr_card = None
+        first_card = None
+        for idx, card in center_cards_indices:
+            if first_card is None:
+                first_card = (idx, card)
+            if card.card_id[4] == "8":  # DR卡
+                dr_card = (idx, card)
+                break
+        center_cards_to_test = [dr_card if dr_card else first_card]
+    elif 0 <= center_card_choice < len(center_cards_indices):
+        # 使用指定的C位卡
+        center_cards_to_test = [center_cards_indices[center_card_choice]]
+    else:
+        logging.error(f"错误：center_card_choice={center_card_choice} 无效！")
+        exit(1)
+
+    # 注意：由于原有代码结构的限制，这里只能选择一个C位来运行
+    # 如果要测试所有C位，需要重构整个模拟循环
+    # 这里我们选择第一个来运行，并输出警告
+    if len(center_cards_to_test) > 1:
+        logging.warning(f"\n{'='*80}")
+        logging.warning(f"警告：MainSingle.py 暂不支持运行多次模拟对比")
+        logging.warning(f"将只使用第一个C位选择运行")
+        logging.warning(f"如需测试所有C位，请使用 MainBatch.py")
+        logging.warning(f"{'='*80}\n")
+
+    center_idx, centercard = center_cards_to_test[0]
+    logging.info(f"\n使用 {centercard.full_name} 作为C位 (索引 {center_idx})")
+
+    logging.debug("\n--- 应用C位特性 ---")
     if centercard:
         for target, effect in centercard.get_center_attribute():
             ApplyCenterAttribute(player, effect, target)

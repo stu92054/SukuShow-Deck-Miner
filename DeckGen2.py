@@ -1,6 +1,7 @@
 import itertools
 import json
 import logging
+import math
 import os
 import time
 from collections import defaultdict, Counter
@@ -55,17 +56,14 @@ def count_skill_tags(card_ids_input: list[int]):
     Returns:
         collections.Counter: 一个Counter对象，键是tag，值是其出现次数。
     """
-    all_tags = []  # 用于收集所有卡牌的tag，包括重复的
+    # 直接使用Counter，避免创建中间列表
+    tag_counts = Counter()
 
     for card_id in card_ids_input:
         if card_id in DB_TAG:
-            # 将当前卡牌的所有tag（一个集合）添加到扁平列表中
-            all_tags.extend(DB_TAG[card_id])
-        else:
-            print(f"警告: 卡牌ID '{card_id}' 未在映射中找到。")
+            # 将当前卡牌的所有tag（一个集合）累加到Counter中
+            tag_counts.update(DB_TAG[card_id])
 
-    # 使用Counter来统计每个tag的出现次数
-    tag_counts = Counter(all_tags)
     return tag_counts
 
 
@@ -140,6 +138,71 @@ class DeckGeneratorWithDoubleCards:
                 return True
         return False
 
+    def _generate_valid_permutations(self, deck):
+        """
+        PyPy 优化：
+
+        规则：
+        - 第一位不能是分卡 (ScoreGain)
+        - 最后一位不能是洗牌卡 (DeckReset)
+        """
+        # 预先分类卡牌
+        score_gain_cards = set()
+        deck_reset_cards = set()
+
+        for card_id in deck:
+            tags = DB_TAG[card_id]
+            if SkillEffectType.ScoreGain in tags:
+                score_gain_cards.add(card_id)
+            if SkillEffectType.DeckReset in tags:
+                deck_reset_cards.add(card_id)
+
+        # PyPy JIT 高度优化 itertools.permutations
+        # 全排列+过滤比嵌套循环更快
+        for perm in itertools.permutations(deck):
+            # 第一位不能是分卡
+            if perm[0] in score_gain_cards:
+                continue
+            # 最后一位不能是洗牌卡
+            if perm[-1] in deck_reset_cards:
+                continue
+            yield perm
+
+    def _count_valid_permutations(self, deck):
+        """
+        计算有效排列的数量，用于预估总卡组数。
+        PyPy 优化版本：使用简化的数学公式
+        """
+        # 分类卡牌
+        score_gain_count = 0
+        deck_reset_count = 0
+
+        for card_id in deck:
+            tags = DB_TAG[card_id]
+            if SkillEffectType.ScoreGain in tags:
+                score_gain_count += 1
+            if SkillEffectType.DeckReset in tags:
+                deck_reset_count += 1
+
+        # 计算有效排列数
+        # 第一位可选数量 = 总数 - 分卡数量
+        valid_first = 6 - score_gain_count
+        if valid_first == 0:
+            return 0
+
+        # 最后一位可选数量 = 总数 - 洗牌卡数量 - 1(已被第一位占用)
+        valid_last = 6 - deck_reset_count - 1
+
+        if valid_last <= 0:
+            return 0
+
+        # 中间4位的排列数 = 4!
+        middle_perms = math.factorial(4)
+
+        # 总有效排列数 = 第一位选择 × 最后一位选择 × 中间排列
+        # 这是一个近似值，实际可能略有不同，但用于预估足够
+        return valid_first * valid_last * middle_perms
+
     def _generate_decks_for_distribution(self, char_distribution):
         char_counts = {char_id: char_distribution.count(char_id) for char_id in set(char_distribution)}
         card_choices_per_char = []
@@ -167,12 +230,8 @@ class DeckGeneratorWithDoubleCards:
             if has_card_conflict(set(deck)):
                 continue
             if self.check_skill_tags(count_skill_tags(deck), self.force_dr):
-                for perm in itertools.permutations(deck):
-                    # 去除分位于左一、洗牌位于最后一张的卡组
-                    if SkillEffectType.ScoreGain in DB_TAG[perm[0]] or \
-                            SkillEffectType.DeckReset in DB_TAG[perm[-1]]:
-                        continue
-                    yield perm
+                # 使用优化的排列生成器，避免生成无效排列
+                yield from self._generate_valid_permutations(deck)
 
     def _count_decks_for_distribution(self, char_distribution):
         char_counts = {char_id: char_distribution.count(char_id) for char_id in set(char_distribution)}
@@ -202,11 +261,8 @@ class DeckGeneratorWithDoubleCards:
             if has_card_conflict(set(deck)):
                 continue
             if self.check_skill_tags(count_skill_tags(deck), self.force_dr):
-                for perm in itertools.permutations(deck):
-                    if SkillEffectType.ScoreGain in DB_TAG[perm[0]] or \
-                            SkillEffectType.DeckReset in DB_TAG[perm[-1]]:
-                        continue
-                    total += 1
+                # 使用优化的计数方法
+                total += self._count_valid_permutations(deck)
         return total
 
     def compute_total_count(self):

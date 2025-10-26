@@ -4,7 +4,7 @@
 
 ---
 
-**[English](README.md) | [简体中文](README_zh-cn.md) | [日本語](README_ja-jp.md)**
+**[English](README.md) | [简体中文](README_zh-cn.md) | [繁體中文](README_zh-tw.md) | [日本語](README_ja-jp.md)**
 
 ---
 
@@ -16,18 +16,35 @@
   由于代码中使用了 `match ... case ...` 语句，项目**最低要求 Python 3.10**。  
   **为了获得最佳性能，强烈推荐使用 Python 3.11 或更高版本运行。**
 
-- **依赖包**:  
+- **依赖包**:
 
-  - `PyYAML`
-  - `tqdm`
-  - `sortedcontainers` (使用PyPy运行时)
+  - `PyYAML` - 用于解析 YAML 配置文件
+  - `tqdm` - 用于在批量模拟时显示进度条
 
   可通过以下命令安装：
 
   ```bash
   pip install PyYAML tqdm
-  pip install sortedcontainers
   ```
+
+- **使用 PyPy 进行性能优化**（可选但强烈推荐）：
+
+  使用 PyPy 代替标准 CPython 可获得显著的性能提升（某些情况下可达 **3-5 倍加速**）：
+
+  1. 下载并安装 [PyPy 3.10+](https://www.pypy.org/download.html)
+  2. 使用 PyPy 的 pip 安装依赖包：
+     ```bash
+     pypy -m pip install PyYAML tqdm sortedcontainers
+     ```
+     **注意**：`sortedcontainers` 仅在 PyPy 下需要，标准 CPython 不需要。
+  3. 使用 PyPy 运行模拟器：
+     ```bash
+     pypy MainBatch.py
+     # 或
+     pypy MainSingle.py
+     ```
+
+  **注意**：PyPy 的 JIT 编译器为计算密集型模拟提供了出色的性能，但在预热阶段可能会使用更多内存。
 
 ---
 
@@ -45,16 +62,97 @@
 
 可以根据需要调整以下文件中的配置：
 
-- `CardLevelConfig.py`: 配置所有卡牌的**默认等级**和**个别卡牌的等级** (`CARD_CACHE`)。默认情况下，所有卡牌均设置为满级。  
+- `CardLevelConfig.py`: 配置所有卡牌的**默认等级**和**个别卡牌的等级** (`CARD_CACHE`)。默认情况下，所有卡牌均设置为满级。
 利用 `DEATH_NOTE` 配置背水卡牌的挂机血线。卡组中存在多张配置了血线的背水卡时，以最低血线为准。
 - `DeckGen2.py`: 负责卡组生成逻辑。可以在此配置卡牌冲突规则 (`CARD_CONFLICT_RULES`)、卡组技能条件 (`check_skill_tags`) 等约束限制，以实现卡组生成时的进一步剪枝优化。
-- `MainBatch.py`: 配置批量模拟的卡池与课题曲、季度倍率 (`BONUS_SFL`)，以及性能相关的参数。
-- `MainSingle.py`: 配置单次模拟的卡组与曲目，可在 `logging.basicConfig` 中配置模拟过程的输出详细程度。  
-  - INFO: 仅输出卡组与模拟结果  
-  - DEBUG: 输出详细的技能使用记录  
+- `MainBatch.py`: **批量模拟的主要配置文件。** 详见下方配置指南。
+- `MainSingle.py`: 配置单次模拟的卡组与曲目，可在 `logging.basicConfig` 中配置模拟过程的输出详细程度。
+  - INFO: 仅输出卡组与模拟结果
+  - DEBUG: 输出详细的技能使用记录
   - TIMING: 输出包括所有 Note 与 CD 结束时间点的日志，Note 会刷屏所以建议将日志输出至文本文件查看
-- `Simulator_core.py`: 可以通过修改代码调整批量模拟时的音游策略，只要你知道自己在做什么。  
+- `Simulator_core.py`: 可以通过修改代码调整批量模拟时的音游策略，只要你知道自己在做什么。
 在这里进行的修改只影响批量模拟，单次模拟的音游策略需要在 `MainSingle.py` 中另行修改。
+
+### 📘 MainBatch.py 配置指南
+
+`MainBatch.py` 运行前需要手动配置。以下是需要修改的主要部分：
+
+#### 1. **卡池配置** (约第 157 行)
+定义要包含在模拟中的卡牌：
+
+```python
+card_ids = [
+    1011501,  # 示例卡牌ID
+    1033514,
+    # 在此添加你拥有的卡牌ID
+]
+```
+
+#### 2. **歌曲配置** (约第 208 行)
+配置一首或多首要模拟的歌曲：
+
+```python
+SONGS_CONFIG = [
+    {
+        "music_id": "405305",        # 歌曲ID（从游戏数据中查找）
+        "difficulty": "02",          # 难度："00"=Easy, "01"=Normal, "02"=Hard, "03"=Expert
+        "mustcards_all": [],         # 必须包含的所有卡牌（卡牌ID列表）
+        "mustcards_any": [],         # 至少包含其中一张的卡牌
+        "center_override": None,     # 覆盖C位角色（None = 使用歌曲默认）
+        "color_override": None,      # 覆盖歌曲颜色：1=Smile, 2=Pure, 3=Cool（None = 使用歌曲默认）
+    },
+    # 根据需要添加更多歌曲
+]
+```
+
+#### 3. **季度粉丝等级配置** (约第 285 行)
+配置粉丝等级以准确计算 Grandprix Pt：
+
+```python
+# 季度模式：'sukushow'（仅歌唱成员）或 'sukuste'（全部成员）
+SEASON_MODE = 'sukushow'
+
+# 设置每个角色的粉丝等级（1-10）
+FAN_LEVELS: dict[int, int] = {
+    1011: 10,  # 角色ID -> 粉丝等级
+    1021: 8,
+    1022: 10,
+    # 添加全部12个角色及其粉丝等级
+    # 未指定时默认为10
+}
+```
+
+**粉丝等级加成表：**
+- 等级 1: 0%
+- 等级 2: 20%
+- 等级 3: 27.5%
+- 等级 4: 35%
+- 等级 5: 42.5%
+- 等级 6: 50%
+- 等级 7: 55%
+- 等级 8: 60%
+- 等级 9: 65%
+- 等级 10: 70%（默认）
+
+#### 4. **DR剪枝配置** (约第 196 行)
+控制是否移除非C位角色的DR卡：
+
+```python
+ENABLE_DR_PRUNING = False  # 推荐：False（让算法自动决定）
+# True:  移除非C位DR卡 + 强制使用C位DR（旧行为）
+# False: 保留所有DR卡，让算法决定最优使用方式
+```
+
+#### 5. **技能要求** (约第 236 行)
+指定所有生成的卡组必须包含的技能类型：
+
+```python
+mustskills_all = [
+    SkillEffectType.DeckReset,  # 洗牌（DR）
+    SkillEffectType.ScoreGain,  # 分数提升
+    # 添加其他必需的技能类型
+]
+```
 ---
 
 ## ⚠️ **重要警告：CPU 占用与稳定性** ⚠️
@@ -83,7 +181,7 @@
 - 同理，多曲最优解也会随卡池、练度、谱面难度、音游策略等因素而变化。
 - 模拟器能够有效**节约实战模拟的时间**，但很难一发入魂找到真正的**绝对最优卡组**。需要对卡牌效果具有一定理解才能充分发挥模拟器的作用。
 - **最优卡组 ≠ 最优策略**。卡时间点逐帧凹分或是根据技能条件/效果卡练度的操作请各显神通。
-- 在计算 **Grandprix Pt** 时，季度倍率 (`BONUS_SFL`) 默认取 **6.6** (全员10级)，C 位成员（如果有）的解放倍率则会按其技能或 SP 等级进行换算。
+- 在计算 **Grandprix Pt** 时，季度粉丝等级加成会根据 `MainBatch.py` 中的 `FAN_LEVELS` 配置**动态计算**。如果未指定，默认所有成员为10级（相当于旧版默认值6.6）。C 位成员（如果有）的解放倍率则会按其技能或 SP 等级进行换算。
 - 由于模拟器**并非 1:1 完全复刻游戏逻辑**，模拟得分与实战不一致是正常现象。
 
 ### ⏰ 可能的误差来源

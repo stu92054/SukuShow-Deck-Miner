@@ -5,4 +5,4 @@
 !/.gitignore
 
 !*.py
-!*.md
+!README*.md

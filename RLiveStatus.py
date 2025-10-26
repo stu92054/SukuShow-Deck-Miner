@@ -12,6 +12,9 @@ if pypy_impl:
 else:
     from math import ceil
 
+# Numba优化被禁用（字典查找开销抵消了优势）
+NUMBA_AVAILABLE = False
+
 
 class Voltage:
     """
@@ -83,9 +86,10 @@ class Voltage:
         self._current_points += amount
         if self._current_points < 0:  # VoltagePt不能低于0
             self._current_points = 0
+        self._update_level()
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"  VoltagePt {'+' if amount >= 0 else '-'}{abs(amount)} 点 (当前: {self._current_points} Pt)")
-        self._update_level()
 
     def set_points(self, new_points: int):
         """
@@ -140,25 +144,25 @@ class Mental:
     def sub(self, value, note_type=None):
         if type(value) is int:
             # 输入要扣除的血量百分比
-            self.current_hp = max(0, self.current_hp - ceil(self.max_hp * value / 100))
+            self.current_hp = max(0, self.current_hp - ceil(self.max_hp * value * 0.01))
         elif type(value) is str:
-            # 输入判定
-            match value:
-                case "MISS":
-                    if note_type in ["Trace", "HoldMid"]:
-                        self.current_hp = max(0, self.current_hp - self.traceMinus)
-                    else:
-                        self.current_hp = max(0, self.current_hp - self.missMinus)
-                case "BAD":
-                    self.current_hp = max(0, self.current_hp - self.badMinus)
-                case _:
-                    pass
+            # 输入判定 - 优化：使用if-elif代替match
+            if value == "MISS":
+                if note_type == "Trace" or note_type == "HoldMid":
+                    self.current_hp = max(0, self.current_hp - self.traceMinus)
+                else:
+                    self.current_hp = max(0, self.current_hp - self.missMinus)
+            elif value == "BAD":
+                self.current_hp = max(0, self.current_hp - self.badMinus)
+            else:
+                return  # 其他判定不扣血
+
             if self.current_hp:
                 return
             raise MentalDown()
 
     def skill_add(self, value):
-        self.current_hp = max(1, self.current_hp + ceil(self.max_hp * value / 100))
+        self.current_hp = max(1, self.current_hp + ceil(self.max_hp * value * 0.01))  # 优化：* 0.01 代替 / 100
 
     def get_rate(self):
         return self.current_hp * 100.0 / self.max_hp
@@ -261,21 +265,20 @@ class PlayerAttributes:
     def combo_add(self, judgement, note_type=None):
         self.combo += 1
         if self.combo <= 50:
-            self.ap_rate = 1 + self.combo // 10 / 10
+            self.ap_rate = 1.0 + (self.combo // 10) * 0.1
         match judgement:
             case "PERFECT" | "GREAT":
-                self.ap += ceil(self.full_ap_plus * self.ap_rate) / 10000
+                self.ap += ceil(self.full_ap_plus * self.ap_rate) * 0.0001
+                self.score_note(judgement)
             case "GOOD":
-                self.ap += ceil(self.half_ap_plus * self.ap_rate) / 10000
-            case "BAD" | "MISS":
+                self.ap += ceil(self.half_ap_plus * self.ap_rate) * 0.0001
+                self.score_note(judgement)
+            case _:  # BAD or MISS
                 self.combo = 0
-                self.ap_rate = 1
-                self.mental.sub(judgement, note_type)  # 按判定扣血
-                if judgement == "MISS":
-                    return
-            case _:
-                pass
-        self.score_note(judgement)
+                self.ap_rate = 1.0
+                self.mental.sub(judgement, note_type)
+                if judgement == "BAD":  # 只有BAD计分，MISS不计分
+                    self.score_note(judgement)
 
 
 if __name__ == "__main__":

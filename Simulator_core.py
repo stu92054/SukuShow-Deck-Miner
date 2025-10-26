@@ -60,7 +60,7 @@ def run_game_simulation(
     """
     # NOTE: DBs (MUSIC_DB, DB_CARDDATA, DB_SKILL) are now global to this module
     # and inherited by child processes (copy-on-write).
-    deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids = task_args
+    deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index = task_args
 
     d = Deck(DB_CARDDATA, DB_SKILL, deck_card_data)
     c: Chart = chart_obj
@@ -70,6 +70,8 @@ def run_game_simulation(
     centercard = None
     afk_mental = 0
     flag_hanabi_ginko = 1041517 in deck_card_ids
+
+    # 扫描卡片收集信息
     for card in d.cards:
         cid = int(card.card_id)
         if cid in DEATH_NOTE:
@@ -77,10 +79,17 @@ def run_game_simulation(
                 afk_mental = min(afk_mental, DEATH_NOTE[cid])
             else:
                 afk_mental = DEATH_NOTE[cid]
-        if card.characters_id == c.music.CenterCharacterId:
-            # DR优先C位，无DR则靠左为C位
-            if not centercard or card.card_id[4] == "8":
-                centercard = card
+
+    # C位选择逻辑
+    if center_card_index >= 0:
+        # 使用指定索引的卡片作为C位
+        centercard = d.cards[center_card_index]
+    else:
+        # 自动选择C位（DR优先，无DR则靠左）
+        for card in d.cards:
+            if card.characters_id == c.music.CenterCharacterId:
+                if not centercard or card.card_id[4] == "8":
+                    centercard = card
 
     if centercard:
         for target, effect in centercard.get_center_attribute():
@@ -88,6 +97,23 @@ def run_game_simulation(
 
     d.appeal_calc(c.music.MusicType)
     player.hp_calc()
+
+    # --- Defensive check: ensure chart has notes before using AllNoteSize ---
+    if not getattr(c, "AllNoteSize", 0):
+        logger.error(
+            f"Chart for music id {getattr(c.music, 'Id', getattr(c.music, 'Id', None))} "
+            f"tier {getattr(c, 'tier', None)} has AllNoteSize={getattr(c, 'AllNoteSize', None)}. "
+            "Skipping this simulation. Check Data/bytes file and chart parsing."
+        )
+        # Return a minimal result to avoid crashing the worker pool
+        return {
+            "final_score": 0,
+            "cards_played_log": d.card_log,
+            "original_deck_index": original_deck_index,
+            "deck_card_ids": deck_card_ids,
+            "center_card": int(centercard.card_id) if centercard is not None else None
+        }
+
     player.basescore_calc(c.AllNoteSize)
     # player.cooldown = int(player.cooldown * 1_000_000)
 
@@ -103,6 +129,21 @@ def run_game_simulation(
 
     combo_count = 0
     cardnow = d.topcard()
+
+    # 提取重复的技能触发逻辑为内联函数
+    def try_use_skill():
+        nonlocal cardnow
+        if cardnow and player.ap >= cardnow.cost:
+            player.ap -= cardnow.cost
+            conditions, effects = d.topskill()
+            UseCardSkill(player, effects, conditions, cardnow)
+            player.CDavailable = False
+            cdtime_float = timestamp + player.cooldown
+            if pypy_impl:
+                event_heap.add((cdtime_float, "CDavailable"))
+            else:
+                heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
+            cardnow = d.topcard()
 
     while event_heap:
         if pypy_impl:
@@ -128,31 +169,12 @@ def run_game_simulation(
                 else:
                     player.combo_add("PERFECT")
 
-                if player.CDavailable and cardnow and player.ap >= cardnow.cost:
-                    player.ap -= cardnow.cost
-                    conditions, effects = d.topskill()
-                    UseCardSkill(player, effects, conditions, cardnow)
-                    player.CDavailable = False
-                    cdtime_float = timestamp + player.cooldown
-                    if pypy_impl:
-                        event_heap.add((cdtime_float, "CDavailable"))
-                    else:
-                        heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
-                    cardnow = d.topcard()
+                if player.CDavailable:
+                    try_use_skill()
 
             case "CDavailable":
                 player.CDavailable = True
-                if cardnow and player.ap >= cardnow.cost:
-                    player.ap -= cardnow.cost
-                    conditions, effects = d.topskill()
-                    UseCardSkill(player, effects, conditions, cardnow)
-                    player.CDavailable = False
-                    cdtime_float = timestamp + player.cooldown
-                    if pypy_impl:
-                        event_heap.add((cdtime_float, "CDavailable"))
-                    else:
-                        heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
-                    cardnow = d.topcard()
+                try_use_skill()
 
             case event if event[0] == "_":
                 if player.mental.get_rate() > afk_mental:

@@ -4,7 +4,7 @@ A deck simulator and optimizer for the rhythm game mode, School Idol Show (ス�
 
 ---
 
-**[English](README.md) | [简体中文](README_zh-cn.md) | [日本語](README_ja-jp.md)**
+**[English](README.md) | [简体中文](README_zh-cn.md) | [繁體中文](README_zh-tw.md) | [日本語](README_ja-jp.md)**
 
 ---
 
@@ -16,18 +16,35 @@ A deck simulator and optimizer for the rhythm game mode, School Idol Show (ス�
   This project **requires Python 3.10 or newer** because it uses `match ... case ...` statements.  
   **For optimal performance, running with Python 3.11 or later is highly recommended.**
 
-- **Dependencies**:  
+- **Dependencies**:
 
-  - `PyYAML`
-  - `tqdm`
-  - `sortedcontainers` (when running with PyPy)
+  - `PyYAML` - For parsing YAML configuration files
+  - `tqdm` - For displaying progress bars during batch simulations
 
   You can install them using the command below:
 
   ```bash
   pip install PyYAML tqdm
-  pip install sortedcontainers
   ```
+
+- **Performance Optimization with PyPy** (Optional but Recommended):
+
+  For significantly faster execution (up to **3-5x speedup** in some cases), you can use PyPy instead of standard CPython:
+
+  1. Download and install [PyPy 3.10+](https://www.pypy.org/download.html)
+  2. Install dependencies using PyPy's pip:
+     ```bash
+     pypy -m pip install PyYAML tqdm sortedcontainers
+     ```
+     **Note**: `sortedcontainers` is only required for PyPy, not for standard CPython.
+  3. Run the simulator with PyPy:
+     ```bash
+     pypy MainBatch.py
+     # or
+     pypy MainSingle.py
+     ```
+
+  **Note**: PyPy's JIT compiler provides excellent performance for compute-intensive simulations, but it may use more memory initially during warm-up.
 
 ---
 
@@ -45,16 +62,97 @@ Choose and run the following files depending on what you need:
 
 You can adjust the configurations in the following files as needed:
 
-  - `CardLevelConfig.py`: Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.  
+  - `CardLevelConfig.py`: Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.
   You can also use `DEATH_NOTE` to configure the AFK HP threshold for comeback cards. If multiple comeback cards with configured thresholds are in the deck, the lowest threshold will be used.
   - `DeckGen2.py`: Handles deck generation logic. You can configure constraints like card conflict rules (`CARD_CONFLICT_RULES`) and deck skills (`check_skill_tags`) here to further optimize deck generation by pruning.
-  - `MainBatch.py`: Configure the card pool and target songs for batch simulation, as well as the Season Fan Lv bonus multiplier (`BONUS_SFL`) and other performance-related parameters.
-  - `MainSingle.py`: Configure the specific deck and song for a single simulation.   
+  - `MainBatch.py`: **Primary configuration file for batch simulations.** See the detailed configuration guide below.
+  - `MainSingle.py`: Configure the specific deck and song for a single simulation.
   You can also adjust the log output verbosity in `logging.basicConfig`.
       - `INFO`: Outputs only the deck and simulation results.
       - `DEBUG`: Outputs detailed skill usage records.
       - `TIMING`: Outputs logs including all note and CD end timestamps. Since notes can flood the console, it's recommended to output the logs to a text file for review.
   - `Simulator_core.py`: You can modify the code here to adjust the rhythm game strategy for batch simulations, as long as you know what you're doing. Note that changes made here only affect batch simulations; the strategy for single simulations must be modified separately in `MainSingle.py`.
+
+### 📘 MainBatch.py Configuration Guide
+
+`MainBatch.py` requires manual configuration before running. Here are the key sections to modify:
+
+#### 1. **Card Pool Configuration** (Line ~157)
+Define which cards to include in the simulation:
+
+```python
+card_ids = [
+    1011501,  # Example card ID
+    1033514,
+    # Add your available card IDs here
+]
+```
+
+#### 2. **Song Configuration** (Line ~208)
+Configure one or multiple songs to simulate:
+
+```python
+SONGS_CONFIG = [
+    {
+        "music_id": "405305",        # Song ID (find in game data)
+        "difficulty": "02",          # Difficulty: "00"=Easy, "01"=Normal, "02"=Hard, "03"=Expert
+        "mustcards_all": [],         # Cards that MUST be in every deck (list of card IDs)
+        "mustcards_any": [],         # At least ONE of these cards must be in deck
+        "center_override": None,     # Override center character (None = use song default)
+        "color_override": None,      # Override song color: 1=Smile, 2=Pure, 3=Cool (None = use song default)
+    },
+    # Add more songs as needed
+]
+```
+
+#### 3. **Season Fan Level Configuration** (Line ~285)
+Configure fan levels for accurate Grandprix Pt calculation:
+
+```python
+# Season mode: 'sukushow' (only singing members) or 'sukuste' (all members)
+SEASON_MODE = 'sukushow'
+
+# Set fan level (1-10) for each character
+FAN_LEVELS: dict[int, int] = {
+    1011: 10,  # Character ID -> Fan Level
+    1021: 8,
+    1022: 10,
+    # Add all 12 characters with their fan levels
+    # Default is 10 if not specified
+}
+```
+
+**Fan Level Bonus Table:**
+- Level 1: 0%
+- Level 2: 20%
+- Level 3: 27.5%
+- Level 4: 35%
+- Level 5: 42.5%
+- Level 6: 50%
+- Level 7: 55%
+- Level 8: 60%
+- Level 9: 65%
+- Level 10: 70% (default)
+
+#### 4. **DR Pruning Configuration** (Line ~196)
+Control whether to remove non-center character DR cards:
+
+```python
+ENABLE_DR_PRUNING = False  # Recommended: False (let algorithm decide)
+# True:  Remove non-center DR cards + force center DR (old behavior)
+# False: Keep all DR cards, algorithm decides optimal usage
+```
+
+#### 5. **Skill Requirements** (Line ~236)
+Specify which skill types must be present in all generated decks:
+
+```python
+mustskills_all = [
+    SkillEffectType.DeckReset,  # Deck reset (DR)
+    SkillEffectType.ScoreGain,  # Score boost
+    # Add other required skill types
+]
+```
 
 ---
 
@@ -84,7 +182,7 @@ You can adjust the configurations in the following files as needed:
 - Similarly, the optimal solution for multiple songs will also change with the card pool, levels, difficulty, and rhythm game strategy.
 - The simulator effectively **saves time on in-game rehearsal**, but it's difficult to find the **absolute optimal deck** in a single attempt. A good understanding of card skills is required to fully utilize the simulator's potential.
 - **Optimal Deck ≠ Optimal Strategy**. For strategies involving precise timing, frame-by-frame scoring optimization, or adjusting card skill levels based on skill conditions/effects, please use your own discretion.
-- When calculating **Grandprix Pt**, the Season Fan Lv bonus multiplier (`BONUS_SFL`) is assumed to be **6.6** (all members at level 10). The limitbreak multiplier for the center character (if exists) is calculated based on their skill or SP level.
+- When calculating **Grandprix Pt**, the Season Fan Lv bonus is **dynamically calculated** based on the `FAN_LEVELS` configuration in `MainBatch.py`. If not specified, it defaults to level 10 for all members (equivalent to the old default of 6.6). The limitbreak multiplier for the center character (if exists) is calculated based on their skill or SP level.
 - As the simulator **does not 1:1 perfectly replicate in-game logic**, it's normal for simulated scores to differ from actual in-game scores.
 
 ### ⏰ Possible Sources of Error

@@ -4,6 +4,7 @@ from RSkill import *
 from copy import copy
 from math import ceil
 from enum import Enum
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +151,7 @@ class Card():
 class Deck():
     def __init__(self, db_card, db_skill, card_info: list) -> None:
         self.cards: list[Card] = []
-        self.queue: list[Card] = []
+        self.queue: deque[Card] = deque()
         self.appeal: int = 0
         self.card_log: list[str] = []
         for card in card_info:
@@ -158,7 +159,7 @@ class Deck():
         self.reset()
 
     def reset(self):
-        self.queue = []
+        self.queue.clear()
         for card in self.cards:
             if not card.is_except:
                 self.queue.append(card)
@@ -175,7 +176,7 @@ class Deck():
         if len(self.queue) == 0:
             self.reset()
         self.card_log.append(self.topcard().full_name)
-        return self.queue.pop(0).get_skill()
+        return self.queue.popleft().get_skill()
 
     def appeal_calc(self, music_type):
         result = 0

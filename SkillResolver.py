@@ -1,5 +1,6 @@
 import logging
 from enum import Enum
+from functools import lru_cache
 from RLiveStatus import *
 from RDeck import Card
 
@@ -23,6 +24,10 @@ UNIT_DICT = {101: {1021, 1031, 1041},
              105: {1051, 1052}}
 
 
+# 缓存：(target_id, character_id) -> bool
+_target_check_cache = {}
+
+
 def CheckTarget(target_id: str, card: Card = None):
     """
     根据ID检查给定条件是否满足。
@@ -34,12 +39,18 @@ def CheckTarget(target_id: str, card: Card = None):
     Returns:
         bool: 如果条件满足则返回 True，否则返回 False。
     """
+    # 使用缓存加速重复检查
+    cache_key = (target_id, card.characters_id if card else None)
+    if cache_key in _target_check_cache:
+        return _target_check_cache[cache_key]
+
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(f"\n--- 检查C位特性目标ID: {target_id} ---")
 
     # 所有目标ID都是5位数字
     if len(target_id) != 5:
         logger.error(f"  错误: 目标ID '{target_id}' 长度不符合已知规则 (应为5位)。 -> 不满足")
+        _target_check_cache[cache_key] = False
         return False
 
     try:
@@ -47,6 +58,7 @@ def CheckTarget(target_id: str, card: Card = None):
         target_value = int(target_id[1:])
     except ValueError:
         logger.error(f"  错误: 无法解析条件ID '{target_id}' -> 不满足")
+        _target_check_cache[cache_key] = False
         return False
 
     if logger.isEnabledFor(logging.DEBUG):
@@ -83,13 +95,18 @@ def CheckTarget(target_id: str, card: Card = None):
         case _:
             logger.error(f"  未知条件类型: {target_type.name} ({target_id})。 -> 不满足")
 
+    _target_check_cache[cache_key] = is_satisfied
     return is_satisfied
 
 
 def CheckMultiTarget(target_id: str, card=None):
+    # 如果没有逗号，直接检查单个目标，避免split
+    if ',' not in target_id:
+        return CheckTarget(target_id, card)
+
+    # 有多个目标时才split
     targets = target_id.split(",")
-    result = any(CheckTarget(target_id, card) for target_id in targets)
-    return result
+    return any(CheckTarget(tid, card) for tid in targets)
 
 
 class CenterAttributeEffectType(Enum):
@@ -121,6 +138,12 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
     """
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(f"\n--- 解析效果ID: {effect_id} ---")
+
+    # 预先筛选符合目标条件的卡牌，避免重复检查
+    if target:
+        target_cards = [card for card in player_attrs.deck.cards if CheckMultiTarget(target, card)]
+    else:
+        target_cards = player_attrs.deck.cards
 
     # 将ID解析为字符串方便操作
     id_str = str(effect_id)
@@ -154,79 +177,79 @@ def ApplyCenterAttribute(player_attrs: PlayerAttributes, effect_id: int, target:
         case CenterAttributeEffectType.SmileRateChange:
             # 比率变化按100.00% = 10000计算，所以需要除以10000
             change_amount = value_data / 10000.0
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.smile *= (1 + change_amount)
+            multiplier = 1 + change_amount
+            for card in target_cards:
+                card.smile *= multiplier
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: Smile值 {action} {change_amount*100:.0f}%")
 
         case CenterAttributeEffectType.PureRateChange:
             change_amount = value_data / 10000.0
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.pure *= (1 + change_amount)
+            multiplier = 1 + change_amount
+            for card in target_cards:
+                card.pure *= multiplier
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: Pure值 {action} {change_amount*100:.0f}%")
 
         case CenterAttributeEffectType.CoolRateChange:
             change_amount = value_data / 10000.0
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.cool *= (1 + change_amount)
+            multiplier = 1 + change_amount
+            for card in target_cards:
+                card.cool *= multiplier
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: Cool值 {action} {change_amount*100:.0f}%")
 
         case CenterAttributeEffectType.SmileValueChange:
             # 暂未实装，占位代码
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.smile += value_data * change_sign
+            value_change = value_data * change_sign
+            for card in target_cards:
+                card.smile += value_change
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: Smile值 {action} {value_data}")
 
         case CenterAttributeEffectType.PureValueChange:
             # 暂未实装，占位代码
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.pure += value_data * change_sign
+            value_change = value_data * change_sign
+            for card in target_cards:
+                card.pure += value_change
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: Pure值 {action} {value_data}")
 
         case CenterAttributeEffectType.CoolValueChange:
             # 暂未实装，占位代码
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.cool += value_data * change_sign
+            value_change = value_data * change_sign
+            for card in target_cards:
+                card.cool += value_change
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: Cool值 {action} {value_data}")
 
         case CenterAttributeEffectType.MentalRateChange:
             change_amount = value_data / 10000.0
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.mental = ceil(card.mental * (1 + change_amount * change_sign))
+            multiplier = 1 + change_amount * change_sign
+            for card in target_cards:
+                card.mental = ceil(card.mental * multiplier)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: 血量 {action} {change_amount*100:.0f}%")
 
         case CenterAttributeEffectType.MentalValueChange:
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.mental += value_data * change_sign
+            value_change = value_data * change_sign
+            for card in target_cards:
+                card.mental += value_change
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: 血量 {action} {value_data}")
 
         case CenterAttributeEffectType.ConsumeAPChange:
-            for card in player_attrs.deck.cards:
-                if CheckMultiTarget(target_id=target, card=card):
-                    card.cost_change(value_data * change_sign)
+            value_change = value_data * change_sign
+            for card in target_cards:
+                card.cost_change(value_change)
             if logger.isEnabledFor(logging.DEBUG):
                 action = "增加" if change_direction == 0 else "减少"
                 logger.debug(f"  对满足要求的目标应用效果: AP消耗 {action} {value_data}")
@@ -519,7 +542,7 @@ def ApplySkillEffect(player_attrs: PlayerAttributes, effect_id: int, card: Card 
             # 因此在触发除外时额外检查牌库中是否有刚被除外的卡，避免未被除外
             for index, deckcard in enumerate(player_attrs.deck.queue):
                 if deckcard.is_except:
-                    player_attrs.deck.queue.pop(index)
+                    del player_attrs.deck.queue[index]
                     break
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"  应用效果: 卡牌除外: {card.full_name}")

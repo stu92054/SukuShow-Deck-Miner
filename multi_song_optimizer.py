@@ -4,10 +4,94 @@ import os
 import time
 from tqdm import tqdm
 from CardLevelConfig import fix_windows_console_encoding
+from Simulator_core import DB_CARDDATA
 
 
 # Set up logging for this script
 logger = logging.getLogger(__name__)
+
+
+# 角色名称映射
+CHARACTER_NAMES = {
+    1011: "大賀美沙知",
+    1021: "乙宗梢",
+    1022: "夕霧綴理",
+    1023: "藤島慈",
+    1031: "日野下花帆",
+    1032: "村野さやか",
+    1033: "大沢瑠璃乃",
+    1041: "百生吟子",
+    1042: "徒町小鈴",
+    1043: "安養寺姫芽",
+    1051: "桂城泉",
+    1052: "セラス 柳田 リリエンフェルト",
+}
+
+
+def get_character_name(character_id: int) -> str:
+    """
+    根据角色ID获取角色名称
+
+    Args:
+        character_id: 角色ID (例如 1031)
+
+    Returns:
+        角色名称，如果找不到则返回角色ID字符串
+    """
+    return CHARACTER_NAMES.get(character_id, f'Unknown({character_id})')
+
+
+def get_card_name(card_id: int) -> str:
+    """
+    根据卡面ID获取卡面名称
+
+    Args:
+        card_id: 卡面ID (例如 1031519)
+
+    Returns:
+        卡面名称，如果找不到则返回卡面ID字符串
+    """
+    card_key = str(card_id)
+    if card_key in DB_CARDDATA:
+        return DB_CARDDATA[card_key].get('Name', f'Unknown({card_id})')
+    return f'Unknown({card_id})'
+
+
+def get_card_full_info(card_id: int) -> tuple[str, str]:
+    """
+    根据卡面ID获取角色名和卡面名
+
+    Args:
+        card_id: 卡面ID (例如 1031519)
+
+    Returns:
+        (角色名, 卡面名) 元组
+    """
+    card_key = str(card_id)
+    if card_key in DB_CARDDATA:
+        card_data = DB_CARDDATA[card_key]
+        character_id = card_data.get('CharactersId')
+        character_name = get_character_name(character_id) if character_id else 'Unknown'
+        card_name = card_data.get('Name', f'Unknown({card_id})')
+        return character_name, card_name
+    return 'Unknown', f'Unknown({card_id})'
+
+
+def format_deck_with_names(deck_card_ids: list) -> str:
+    """
+    格式化卡组，显示ID和名称
+
+    Args:
+        deck_card_ids: 卡面ID列表
+
+    Returns:
+        格式化的字符串
+    """
+    lines = []
+    for card_id in deck_card_ids:
+        card_name = get_card_name(card_id)
+        lines.append(f"      {card_id}: {card_name}")
+    return '\n'.join(lines)
 
 
 logging.basicConfig(
@@ -20,9 +104,9 @@ logging.basicConfig(
 # 求解前需运行 MainBatch.py 生成对应的卡组得分记录
 CHALLENGE_SONGS = [
     # 若只输入两首歌则会寻找仅针对两面的最优解，不考虑第三面
-    ("405116", "04"),  # 一生に夢が咲くように
-    ("405113", "02"),  # ハートにQ
-    ("405304", "02"),  # Shocking Party
+    ("405118", "02"),  # 一生に夢が咲くように
+    ("405305", "02"),  # ハートにQ
+    ("405117", "02"),  # Shocking Party
 ]
 
 # 每首歌只保留得分排名前 N 名的卡组用于求解
@@ -48,7 +132,7 @@ def load_song_simulation_results(music_id: str, difficulty: str) -> list[dict]:
                     with its 'deck_card_ids', 'pt' and 'score'.
                     Returns an empty list if the file is not found or an error occurs.
     """
-    filename = f"log\simulation_results_{music_id}_{difficulty}.json"
+    filename = os.path.join("log", f"simulation_results_{music_id}_{difficulty}.json")
     if not os.path.exists(filename):
         logger.error(f"Error: Simulation results file not found for {music_id}-{difficulty}: {filename}")
         return []
@@ -280,20 +364,38 @@ if __name__ == "__main__":
     # Step 3: Output the best combination
     logger.info("\n--- Overall Best 3-Deck Combination ---")
     if best_global_pt != -1:
-        logger.info(f"Total Combined Pt: {best_global_pt}")
+        logger.info(f"Total Combined Pt: {best_global_pt:,}")
         for i, deck_info in enumerate(best_global_decks):
             logger.info(f"  Song {i+1} ({deck_info['music_id']}):")
             logger.info(f"    Score: {deck_info['score']:,}")
             logger.info(f"    Pt: {deck_info['pt']:,}\tRank: {deck_info['rank']}")
-            logger.info(f"    Deck (ID): {deck_info['deck_card_ids']}")
+            logger.info(f"    Deck:")
+            for card_id in deck_info['deck_card_ids']:
+                character_name, card_name = get_card_full_info(card_id)
+                logger.info(f"      {card_id}: {character_name} - {card_name}")
 
         # Optional: Save the best combination to a separate JSON file
         output_filename = "best_3_song_combo.json"
         try:
+            # 为每个卡组添加卡面名称和角色名信息
+            decks_with_names = []
+            for deck_info in best_global_decks:
+                deck_with_names = deck_info.copy()
+                # 添加卡面详细信息列表（包含角色名和卡面名）
+                deck_with_names['deck_card_names'] = [
+                    {
+                        'id': card_id,
+                        'character': get_card_full_info(card_id)[0],
+                        'name': get_card_full_info(card_id)[1]
+                    }
+                    for card_id in deck_info['deck_card_ids']
+                ]
+                decks_with_names.append(deck_with_names)
+
             with open(output_filename, 'w', encoding='utf-8') as f:
                 json.dump({
                     "total_pt": best_global_pt,
-                    "decks": best_global_decks
+                    "decks": decks_with_names
                 }, f, ensure_ascii=False, indent=4)
             logger.info(f"Best 3-song combination saved to {output_filename}")
         except Exception as e:
