@@ -1,7 +1,6 @@
 import itertools
 import json
 import logging
-import math
 import os
 import time
 from collections import defaultdict, Counter
@@ -90,7 +89,7 @@ def generate_role_distributions(all_characters):
 
 def load_simulated_decks(path: str):
     simulated_decks = set()
-    if os.path.exists(path):
+    if path and os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         for result in data:
@@ -171,37 +170,49 @@ class DeckGeneratorWithDoubleCards:
     def _count_valid_permutations(self, deck):
         """
         计算有效排列的数量，用于预估总卡组数。
-        PyPy 优化版本：使用简化的数学公式
+
+        注意：由于C位选择逻辑的修改，每个deck中有多张C位角色卡时，
+        会生成多个任务（每张C位卡一个任务）。
+
+        改用實際計數而非公式計算，以確保準確性。
         """
-        # 分类卡牌
-        score_gain_count = 0
-        deck_reset_count = 0
+        # 统计C位角色卡的数量
+        center_card_count = 0
+        if self.center_char:
+            for card_id in deck:
+                char_id = card_id // 1000
+                if char_id == self.center_char:
+                    center_card_count += 1
+
+        # 如果没有C位卡，默认为1（不影响计算）
+        if center_card_count == 0:
+            center_card_count = 1
+
+        # 實際計數有效排列
+        # 使用與 _generate_valid_permutations 相同的邏輯
+        score_gain_cards = set()
+        deck_reset_cards = set()
 
         for card_id in deck:
             tags = DB_TAG[card_id]
             if SkillEffectType.ScoreGain in tags:
-                score_gain_count += 1
+                score_gain_cards.add(card_id)
             if SkillEffectType.DeckReset in tags:
-                deck_reset_count += 1
+                deck_reset_cards.add(card_id)
 
-        # 计算有效排列数
-        # 第一位可选数量 = 总数 - 分卡数量
-        valid_first = 6 - score_gain_count
-        if valid_first == 0:
-            return 0
+        # 計數符合條件的排列
+        valid_count = 0
+        for perm in itertools.permutations(deck):
+            # 第一位不能是分卡
+            if perm[0] in score_gain_cards:
+                continue
+            # 最后一位不能是洗牌卡
+            if perm[-1] in deck_reset_cards:
+                continue
+            valid_count += 1
 
-        # 最后一位可选数量 = 总数 - 洗牌卡数量 - 1(已被第一位占用)
-        valid_last = 6 - deck_reset_count - 1
-
-        if valid_last <= 0:
-            return 0
-
-        # 中间4位的排列数 = 4!
-        middle_perms = math.factorial(4)
-
-        # 总有效排列数 = 第一位选择 × 最后一位选择 × 中间排列
-        # 这是一个近似值，实际可能略有不同，但用于预估足够
-        return valid_first * valid_last * middle_perms
+        # 乘以C位卡數量（每張C位卡都會生成一個獨立任務）
+        return valid_count * center_card_count
 
     def _generate_decks_for_distribution(self, char_distribution):
         char_counts = {char_id: char_distribution.count(char_id) for char_id in set(char_distribution)}
