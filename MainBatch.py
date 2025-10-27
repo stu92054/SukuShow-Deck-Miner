@@ -97,7 +97,7 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
         logger.error(f"Error saving simulation results to JSON: {e}")
 
 
-def task_generator_func(decks_generator, chart, player_level):
+def task_generator_func(decks_generator, chart, player_level,leader_designation):
     """
     一个生成器函数，从 decks_generator 获取每个卡组，
     并将其转换为 run_game_simulation 所需的任务格式。
@@ -110,10 +110,17 @@ def task_generator_func(decks_generator, chart, player_level):
     for deck_card_ids_list in decks_generator:
         # 找出所有C位角色的卡片索引
         center_card_indices = []
-        for idx, card_id in enumerate(deck_card_ids_list):
-            char_id = card_id // 1000
-            if char_id == center_char_id:
-                center_card_indices.append(idx)
+        # New solution: if a vaild leader is entered via the command line, the decks would already have the leader.
+        # We only need to find the index of the leader card now.
+        if leader_designation != 0 :
+            for idx, card_id in enumerate(deck_card_ids_list):
+                if int(leader_designation) == card_id: center_card_indices.append(idx)
+        # Old solution OR if no leader is supplied
+        else:
+            for idx, card_id in enumerate(deck_card_ids_list):
+                char_id = card_id // 1000
+                if char_id == center_char_id:
+                    center_card_indices.append(idx)
 
         # 如果有多张C位角色的卡，为每张生成一个任务
         # 如果只有一张或没有，生成一个任务（索引为-1表示自动选择）
@@ -136,15 +143,16 @@ def parse_arguments(unified_config):
     解析命令列參數，支援單首或多首歌曲配置
 
     用法示例：
-        python MainBatch.py 405117 02 50
-        python MainBatch.py 405117 02 50 405118 02 50
+        python MainBatch.py 405117 02 50 0  # 不指定隊長
+        python MainBatch.py 405117 02 50 1041802  # 指定隊長卡片ID
+        python MainBatch.py 405117 02 50 0 405118 02 50 0  # 多首歌
         python MainBatch.py  # 使用預設配置
         python MainBatch.py --debug  # Debug模式：使用配置中的牌組
         python MainBatch.py --debug 1032528 1022701 1032530 1042802 1031530 1031533  # Debug模式：指定牌組
     """
     parser = argparse.ArgumentParser(description='批次模擬卡組得分')
     parser.add_argument('songs', nargs='*',
-                       help='歌曲配置，格式：music_id difficulty mastery_level [music_id2 difficulty2 mastery_level2 ...]')
+                       help='歌曲配置，格式：music_id difficulty mastery_level leader_id [music_id2 difficulty2 mastery_level2 leader_id2 ...]')
     parser.add_argument('--debug', nargs='*', type=int, metavar='CARD_ID',
                        help='Debug模式：可選指定6張卡牌ID（按順序），不指定則使用配置中的牌組')
     parser.add_argument('--center-index', type=int, default=-1,
@@ -173,14 +181,14 @@ def parse_arguments(unified_config):
         logger.info("未提供命令列參數，使用預設配置")
         return None  # 返回 None 表示使用統一配置
 
-    # 解析命令列參數
-    if len(args.songs) % 3 != 0:
-        logger.error("命令列參數格式錯誤！每首歌需要3個參數：music_id difficulty mastery_level")
+    # 解析命令列參數（格式：music_id difficulty mastery_level leader_designation）
+    if len(args.songs) % 4 != 0:
+        logger.error("命令列參數格式錯誤！每首歌需要4個參數：music_id difficulty mastery_level leader_designation")
         logger.error(f"收到 {len(args.songs)} 個參數：{args.songs}")
         sys.exit(1)
 
     songs_config = []
-    for i in range(0, len(args.songs), 3):
+    for i in range(0, len(args.songs), 4):
         try:
             config = {
                 "music_id": str(args.songs[i]),
@@ -190,6 +198,7 @@ def parse_arguments(unified_config):
                 "mustcards_any": [],
                 "center_override": None,
                 "color_override": None,
+                "leader_designation": str(args.songs[i + 3]),  # 第4個參數為隊長ID
             }
             songs_config.append(config)
             logger.info(f"添加歌曲配置：ID={config['music_id']}, 難度={config['difficulty']}, 熟練度={config['mastery_level']}")
@@ -346,6 +355,7 @@ if __name__ == "__main__":
                 "mustcards_any": [],                           # 必須包含至少一張的卡牌
                 "center_override": None,     # 強制替換C位角色ID (None=使用歌曲預設)
                 "color_override": None,      # 強制替換顏色 (None=使用歌曲預設, 1=Smile, 2=Pure, 3=Cool)
+                "leader_designation": "0",   # 指定隊長卡片ID，"0"=不指定（自動選擇）
             },
             # 複製以下區塊可以添加第二首、第三首歌曲：
             # {
@@ -356,6 +366,7 @@ if __name__ == "__main__":
             #     "mustcards_any": [],
             #     "center_override": None,
             #     "color_override": None,
+            #     "leader_designation": "0",
             # },
         ],
 
@@ -384,39 +395,8 @@ if __name__ == "__main__":
     #     1052506, 1052901, 1052503,  # 1052801, # 1052504  # 塞: 片翼 BR 十六夜 OE 天地黎明
     # ]
     card_ids = [
-        1011501,
-        1033514,
-        1023520,
-        1031530,
-        1032528,
-        1021523,
-        1052901,
-        1022701,
-        1032518,
-        1031519,
-        1023901,
-        1041513,
-        1033901,
-        1052504,
-        1021512,
-        1051503,
-        1042515,
-        1031801,
-        1043801,
-        1042802,
-        1041802,
-        1021701,
-        1023701,
-        1043516,
-        1042516,
-        1033902,
-        1052506,
-        1051506,
-        1021901,
-        1043902,
-        1031533,
-        1032530,
-        1033528]
+        1021701, 1021504, 1022701, 1023701, 1023520, 1031533, 1031530, 1031519, 1032530, 1032528, 1032518, 1033528, 1033902, 1033525, 1033524, 1041516, 1041503, 1042514, 1042515, 1043902, 1043516, 1052506, 1052901, 1051506, 1051503, 1033512, 1033529
+    ]
 
     # ==================== DR剪枝配置 ====================
     # 控制是否移除非C位角色的DR卡，并强制卡组包含DR
@@ -476,7 +456,8 @@ if __name__ == "__main__":
         center_override = song_config["center_override"]
         color_override = song_config["color_override"]
         mastery_level = song_config["mastery_level"]
-        
+        leader_designation = song_config["leader_designation"]
+
         logger.info(f"\n{'='*60}")
         logger.info(f"開始處理歌曲: ID={fixed_music_id}, 難度={fixed_difficulty}")
         logger.info(f"{'='*60}")
@@ -501,6 +482,30 @@ if __name__ == "__main__":
 
         # BONUS_SFL = (len(pre_initialized_chart.music.SingerCharacterId) + 1) * 0.7 + 1
         CENTERCHAR = str(pre_initialized_chart.music.CenterCharacterId)
+
+        # Check if the leader is in cardpool. If not, exit.
+        failed_designation = 0
+        if int(leader_designation) == 0: 
+            failed_designation = failed_designation + 1
+        else:
+            if (int(leader_designation) in card_ids) == False: 
+                logger.fatal("The specified leader is not in the card pool. Simulation cannot continue.")
+                continue
+            if leader_designation[0:4] != CENTERCHAR:
+                logger.fatal("The specified leader is not the center of the song. Simulation cannot continue.")
+                continue
+        
+        
+        
+        
+        # Add the leader to mustcards_all list.
+        if failed_designation == 0:
+            mustcards_all.append(int(leader_designation))
+            print(mustcards_all)
+            logger.info(f"{leader_designation} has been added to the must have list.")
+        else:
+            leader_designation = 0
+        
 
         # ------------------ Season Fan Lv (動態計算 BONUS_SFL) ------------------
         # 使用方式：在下方的 FAN_LEVELS 填入 character_id -> fan_lv(1..10)
@@ -622,8 +627,10 @@ if __name__ == "__main__":
 
         # 4. 创建模拟任务生成器
         # task_generator_func 会按需从 generated_decks_generator 中拉取卡组
+        # 指定C位的點在`task_generator_func`裡面。上面卡組沒有做到這點
+        
         simulation_tasks_generator = task_generator_func(
-            decks_generator, pre_initialized_chart, mastery_level
+            decks_generator, pre_initialized_chart, mastery_level, leader_designation
         )
 
         os.makedirs(TEMP_OUTPUT_DIR, exist_ok=True)
