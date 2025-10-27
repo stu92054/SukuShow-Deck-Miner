@@ -130,13 +130,40 @@ def run_game_simulation(
     combo_count = 0
     cardnow = d.topcard()
 
+    # 動態重新計算血線的函數
+    def recalculate_afk_mental():
+        """重新檢查牌組中未除外的卡片，計算當前血線"""
+        nonlocal afk_mental
+        new_afk_mental = 0
+        for card in d.cards:
+            # 只檢查未被除外的卡片
+            if not card.is_except:
+                cid = int(card.card_id)
+                if cid in DEATH_NOTE:
+                    if new_afk_mental:
+                        new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
+                    else:
+                        new_afk_mental = DEATH_NOTE[cid]
+        afk_mental = new_afk_mental
+
     # 提取重复的技能触发逻辑为内联函数
     def try_use_skill():
-        nonlocal cardnow
+        nonlocal cardnow, afk_mental
         if cardnow and player.ap >= cardnow.cost:
             player.ap -= cardnow.cost
+
+            # 記錄打出前是否有卡片被除外
+            cards_except_before = [card for card in d.cards if card.is_except]
+
             conditions, effects = d.topskill()
             UseCardSkill(player, effects, conditions, cardnow)
+
+            # 檢查是否有新的卡片被除外
+            cards_except_after = [card for card in d.cards if card.is_except]
+            if len(cards_except_after) > len(cards_except_before):
+                # 有卡片被除外，重新計算血線
+                recalculate_afk_mental()
+
             player.CDavailable = False
             cdtime_float = timestamp + player.cooldown
             if pypy_impl:

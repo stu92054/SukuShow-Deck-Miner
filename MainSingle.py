@@ -56,14 +56,14 @@ if __name__ == "__main__":
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1032528, 1022701, 1032530, 1042802, 1031530, 1031533]
+            [1011501, 1052506, 1041802, 1052901, 1041517, 1051506]
         )
     )
 
     # 歌曲、难度设置
     # 难度 01 / 02 / 03 / 04 对应 Normal / Hard / Expert / Master
-    fixed_music_id = "405301"  # Edelied
-    fixed_difficulty = "02"
+    fixed_music_id = "405117"  # 乙女詞華集
+    fixed_difficulty = "03"
     fixed_player_master_level = 50
 
     # 强制替换歌曲C位和颜色
@@ -219,8 +219,30 @@ if __name__ == "__main__":
                 if cardnow and player.ap >= cardnow.cost and player.CDavailable:
                     player.ap -= cardnow.cost
                     logger.debug(f"\n打出技能: {cardnow.full_name}\t时间: {timestamp}")
+
+                    # 記錄打出前被除外的卡片數量
+                    cards_except_before = sum(1 for card in d.cards if card.is_except)
+
                     conditions, effects = d.topskill()
                     UseCardSkill(player, effects, conditions, cardnow)
+
+                    # 檢查是否有新的卡片被除外，重新計算血線
+                    cards_except_after = sum(1 for card in d.cards if card.is_except)
+                    if cards_except_after > cards_except_before:
+                        # 動態重新計算血線
+                        new_afk_mental = 0
+                        for card in d.cards:
+                            if not card.is_except:
+                                cid = int(card.card_id)
+                                if cid in DEATH_NOTE:
+                                    if new_afk_mental:
+                                        new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
+                                    else:
+                                        new_afk_mental = DEATH_NOTE[cid]
+                        afk_mental = new_afk_mental
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug(f"  動態血線更新: {afk_mental}%")
+
                     player.CDavailable = False
                     cdtime = str(float(timestamp) + player.cooldown)
                     c.ChartEvents.append((cdtime, "CDavailable"))
@@ -233,8 +255,30 @@ if __name__ == "__main__":
                 if cardnow and player.ap >= cardnow.cost:
                     player.ap -= cardnow.cost
                     logger.debug(f"\n打出技能: {cardnow.full_name}\t时间: {timestamp}")
+
+                    # 記錄打出前被除外的卡片數量
+                    cards_except_before = sum(1 for card in d.cards if card.is_except)
+
                     conditions, effects = d.topskill()
                     UseCardSkill(player, effects, conditions, cardnow)
+
+                    # 檢查是否有新的卡片被除外，重新計算血線
+                    cards_except_after = sum(1 for card in d.cards if card.is_except)
+                    if cards_except_after > cards_except_before:
+                        # 動態重新計算血線
+                        new_afk_mental = 0
+                        for card in d.cards:
+                            if not card.is_except:
+                                cid = int(card.card_id)
+                                if cid in DEATH_NOTE:
+                                    if new_afk_mental:
+                                        new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
+                                    else:
+                                        new_afk_mental = DEATH_NOTE[cid]
+                        afk_mental = new_afk_mental
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug(f"  動態血線更新: {afk_mental}%")
+
                     player.CDavailable = False
                     cdtime = str(float(timestamp) + player.cooldown)
                     c.ChartEvents.append((cdtime, "CDavailable"))
