@@ -4,6 +4,7 @@ import os
 import multiprocessing
 import json
 import sys
+import argparse
 
 from platform import python_implementation
 from tqdm import tqdm
@@ -130,12 +131,239 @@ def task_generator_func(decks_generator, chart, player_level):
             task_index += 1
 
 
+def parse_arguments(unified_config):
+    """
+    解析命令列參數，支援單首或多首歌曲配置
+
+    用法示例：
+        python MainBatch.py 405117 02 50
+        python MainBatch.py 405117 02 50 405118 02 50
+        python MainBatch.py  # 使用預設配置
+        python MainBatch.py --debug  # Debug模式：使用配置中的牌組
+        python MainBatch.py --debug 1032528 1022701 1032530 1042802 1031530 1031533  # Debug模式：指定牌組
+    """
+    parser = argparse.ArgumentParser(description='批次模擬卡組得分')
+    parser.add_argument('songs', nargs='*',
+                       help='歌曲配置，格式：music_id difficulty mastery_level [music_id2 difficulty2 mastery_level2 ...]')
+    parser.add_argument('--debug', nargs='*', type=int, metavar='CARD_ID',
+                       help='Debug模式：可選指定6張卡牌ID（按順序），不指定則使用配置中的牌組')
+    parser.add_argument('--center-index', type=int, default=-1,
+                       help='Debug模式：指定C位卡在牌組中的索引（0-5），-1表示測試所有C位選擇（預設：-1）')
+
+    args = parser.parse_args()
+
+    # 如果是 Debug 模式，返回特殊標記
+    if args.debug is not None:
+        # 如果指定了卡牌，使用指定的；否則使用配置中的
+        if len(args.debug) == 0:
+            # 沒有指定卡牌，使用配置中的
+            deck_cards = unified_config["debug_deck_cards"]
+            logger.info("使用配置中的 Debug 牌組")
+        elif len(args.debug) == 6:
+            # 指定了6張卡牌
+            deck_cards = args.debug
+            logger.info("使用命令列指定的牌組")
+        else:
+            logger.error("Debug模式錯誤：必須指定6張卡牌ID或不指定任何卡牌")
+            sys.exit(1)
+        return {"debug_mode": True, "deck_cards": deck_cards, "center_index": args.center_index}
+
+    # 如果沒有命令列參數，使用預設配置
+    if not args.songs:
+        logger.info("未提供命令列參數，使用預設配置")
+        return None  # 返回 None 表示使用統一配置
+
+    # 解析命令列參數
+    if len(args.songs) % 3 != 0:
+        logger.error("命令列參數格式錯誤！每首歌需要3個參數：music_id difficulty mastery_level")
+        logger.error(f"收到 {len(args.songs)} 個參數：{args.songs}")
+        sys.exit(1)
+
+    songs_config = []
+    for i in range(0, len(args.songs), 3):
+        try:
+            config = {
+                "music_id": str(args.songs[i]),
+                "difficulty": str(args.songs[i + 1]),
+                "mastery_level": int(args.songs[i + 2]),
+                "mustcards_all": [],
+                "mustcards_any": [],
+                "center_override": None,
+                "color_override": None,
+            }
+            songs_config.append(config)
+            logger.info(f"添加歌曲配置：ID={config['music_id']}, 難度={config['difficulty']}, 熟練度={config['mastery_level']}")
+        except ValueError as e:
+            logger.error(f"解析參數失敗：{e}")
+            logger.error(f"參數組 {i//3 + 1}: {args.songs[i:i+3]}")
+            sys.exit(1)
+
+    return songs_config
+
+
+def run_debug_mode(deck_cards, center_index, config):
+    """
+    Debug模式：計算單一固定牌組的分數
+
+    參數：
+        deck_cards: 6張卡牌ID的列表（按順序）
+        center_index: 指定使用第幾張C位卡（-1表示測試所有）
+        config: 統一配置字典
+    """
+    logger.info("="*60)
+    logger.info("進入 Debug 模式：計算單一牌組分數")
+    logger.info("="*60)
+
+    # 從統一配置區讀取歌曲配置（使用第一首歌的配置）
+    first_song = config["songs"][0]
+    fixed_music_id = first_song["music_id"]
+    fixed_difficulty = first_song["difficulty"]
+    fixed_player_master_level = first_song["mastery_level"]
+    center_override = first_song["center_override"]
+    color_override = first_song["color_override"]
+
+    logger.info(f"\n牌組卡片ID: {deck_cards}")
+    logger.info(f"\n歌曲配置:")
+    logger.info(f"  歌曲ID: {fixed_music_id}")
+    logger.info(f"  難度: {fixed_difficulty}")
+    logger.info(f"  熟練度: {fixed_player_master_level}")
+
+    # 初始化 Chart
+    try:
+        pre_initialized_chart = Chart(MUSIC_DB, fixed_music_id, fixed_difficulty)
+        pre_initialized_chart.ChartEvents = [(float(t), e) for t, e in pre_initialized_chart.ChartEvents]
+
+        if center_override:
+            pre_initialized_chart.music.CenterCharacterId = center_override
+        if color_override:
+            pre_initialized_chart.music.MusicType = color_override
+        logger.info(f"Chart for {pre_initialized_chart.music.Title} (ID: {fixed_music_id}) and Difficulty {fixed_difficulty} pre-initialized.")
+    except Exception as e:
+        logger.error(f"Failed to pre-initialize Chart object: {e}")
+        sys.exit(1)
+
+    # 找出所有C位角色的卡片索引
+    center_char_id = pre_initialized_chart.music.CenterCharacterId
+    center_card_indices = []
+    for idx, card_id in enumerate(deck_cards):
+        char_id = card_id // 1000
+        if char_id == center_char_id:
+            center_card_indices.append(idx)
+
+    logger.info(f"\n找到 {len(center_card_indices)} 張C位角色 ({center_char_id}) 的卡片")
+    for idx in center_card_indices:
+        logger.info(f"  索引 {idx}: {deck_cards[idx]}")
+
+    if not center_card_indices:
+        logger.error("錯誤：牌組中沒有C位角色的卡片！")
+        sys.exit(1)
+
+    # 根據center_index決定測試哪些C位
+    if center_index == -1:
+        # 測試所有C位選擇
+        logger.info(f"\n將測試所有 {len(center_card_indices)} 種C位選擇")
+        center_indices_to_test = center_card_indices
+    elif center_index in center_card_indices:
+        # 使用指定的C位卡索引
+        center_indices_to_test = [center_index]
+        logger.info(f"\n使用指定的C位選擇（牌組索引 {center_index}）")
+    else:
+        logger.error(f"錯誤：center_index={center_index} 不是有效的C位角色卡索引")
+        logger.error(f"有效的C位索引為: {center_card_indices}")
+        sys.exit(1)
+
+    # 對每個C位選擇進行模擬
+    results = []
+    for test_idx, center_idx in enumerate(center_indices_to_test):
+        logger.info(f"\n{'='*60}")
+        logger.info(f"測試 C位 #{test_idx+1}/{len(center_indices_to_test)}: 使用索引 {center_idx} 的卡片 ({deck_cards[center_idx]})")
+        logger.info(f"{'='*60}")
+
+        # 轉換牌組格式
+        sim_deck_format = convert_deck_to_simulator_format(deck_cards)
+
+        # 調用 run_game_simulation
+        result = run_game_simulation(
+            (sim_deck_format, pre_initialized_chart, fixed_player_master_level, 0, deck_cards, center_idx)
+        )
+
+        current_score = result['final_score']
+        cards_played_log = result["cards_played_log"]
+        center_card = result['center_card']
+
+        logger.info(f"\n--- 模擬結束 ---")
+        logger.info(f"分數: {current_score:,}")
+        logger.info(f"C位卡片: {center_card}")
+        logger.info(f"打出記錄: {cards_played_log}")
+        logger.info(f"打出次數: {len(cards_played_log)}")
+
+        results.append({
+            "center_index": center_idx,
+            "center_card": center_card,
+            "score": current_score,
+            "card_log": cards_played_log
+        })
+
+    # 輸出結果摘要
+    logger.info(f"\n{'='*60}")
+    logger.info("結果摘要")
+    logger.info(f"{'='*60}")
+    for result in results:
+        logger.info(f"C位索引 {result['center_index']} (卡片ID: {result['center_card']}): {result['score']:,} 分")
+
+    if len(results) > 1:
+        best_result = max(results, key=lambda r: r['score'])
+        logger.info(f"\n最佳C位選擇：索引 {best_result['center_index']} (卡片ID: {best_result['center_card']})")
+        logger.info(f"最高分數：{best_result['score']:,}")
+
+
 #  --- Main Execution Block for Parallel Simulation ---
 if __name__ == "__main__":
     pypy_impl = python_implementation() == "PyPy"
     if pypy_impl:
         fix_windows_console_encoding()
     start_time = time.time()
+
+    # ==================== 統一配置區 ====================
+    # 所有模式共用的配置，包括批次模式和 Debug 模式
+    #
+    # 使用說明：
+    # 1. Debug 模式：python MainBatch.py --debug
+    # 2. 批次模式（使用下方配置）：python MainBatch.py
+    #    - 如果 songs 列表有 1 首歌 → 單首模式
+    #    - 如果 songs 列表有多首歌 → 自動多首模式
+    # 3. 命令列指定歌曲：python MainBatch.py 405117 03 50 405118 02 50
+
+    UNIFIED_CONFIG = {
+        # --- 批次模式歌曲配置 ---
+        # 可以配置一首或多首歌曲，程式會自動判斷
+        "songs": [
+            {
+                "music_id": "405305",        # 歌曲ID
+                "difficulty": "02",          # 難度 (01=Normal, 02=Hard, 03=Expert, 04=Master)
+                "mastery_level": 50,         # 熟練度 (1-50)
+                "mustcards_all": [1032528, 1032530, 1031530],  # 必須包含的所有卡牌
+                "mustcards_any": [],                           # 必須包含至少一張的卡牌
+                "center_override": None,     # 強制替換C位角色ID (None=使用歌曲預設)
+                "color_override": None,      # 強制替換顏色 (None=使用歌曲預設, 1=Smile, 2=Pure, 3=Cool)
+            },
+            # 複製以下區塊可以添加第二首、第三首歌曲：
+            # {
+            #     "music_id": "405117",      # 第二首歌
+            #     "difficulty": "03",
+            #     "mastery_level": 50,
+            #     "mustcards_all": [],
+            #     "mustcards_any": [],
+            #     "center_override": None,
+            #     "color_override": None,
+            # },
+        ],
+
+        # --- Debug 模式專用（從第一首歌繼承歌曲配置） ---
+        "debug_deck_cards": [1011501, 1052506, 1041802, 1052901, 1041517, 1051506],  # 固定的6張卡牌順序
+    }
+
+    # ====================================================
 
     # --- Step 1: Define all valid cards ---
 
@@ -195,18 +423,6 @@ if __name__ == "__main__":
     # True:  移除非C位DR + 强制使用C位DR（旧逻辑，可能限制搜索空间）
     # False: 保留所有DR，让算法自由决定（推荐，可能找到更高分）
     ENABLE_DR_PRUNING = False
-
-    # --- 配置多首歌曲 ---
-    # 每首歌的配置格式: {
-    #     "music_id": "歌曲ID",
-    #     "difficulty": "難度",
-    #     "mustcards_all": [必須包含的所有卡牌],
-    #     "mustcards_any": [必須包含至少一張的卡牌],
-    #     "center_override": None 或 角色ID,
-    #     "color_override": None 或 1/2/3
-    # }
-
-
     
     # 卡组必须包含以下所有技能类型 (對所有歌曲生效)
     mustskills_all = [
@@ -221,36 +437,25 @@ if __name__ == "__main__":
     ]
 
     # --- Step 2: Prepare simulation tasks ---
-    # fixed_player_master_level = 50
 
-    # 將songs_config 搬到step 2底下，並加入命列參數帶入
-    SONGS_CONFIG = [
-        {
-            "music_id": str(sys.argv[1]),  # 第一首歌 (請修改為實際歌曲ID)
-            "difficulty": str(sys.argv[2]),
-            "mastery_level": int(sys.argv[3]),
-            "mustcards_all": [],  # 設定第一首歌必須包含的卡牌
-            "mustcards_any": [],
-            "center_override": None,
-            "color_override": None,
-        },
-        # {
-        #     "music_id": "405117",  # 第二首歌 (請修改為實際歌曲ID)
-        #     "difficulty": "02",
-        #     "mustcards_all": [],  # 設定第二首歌必須包含的卡牌
-        #     "mustcards_any": [],
-        #     "center_override": None,
-        #     "color_override": None,
-        # },
-        # {
-        #     "music_id": "405118",  # 第三首歌 (請修改為實際歌曲ID)
-        #     "difficulty": "02",
-        #     "mustcards_all": [],  # 設定第三首歌必須包含的卡牌
-        #     "mustcards_any": [],
-        #     "center_override": None,
-        #     "color_override": None,
-        # },
-    ]
+    # 解析命令列參數或使用預設配置
+    SONGS_CONFIG = parse_arguments(UNIFIED_CONFIG)
+
+    # 如果是 Debug 模式，直接運行並退出
+    if isinstance(SONGS_CONFIG, dict) and SONGS_CONFIG.get("debug_mode"):
+        run_debug_mode(SONGS_CONFIG["deck_cards"], SONGS_CONFIG["center_index"], UNIFIED_CONFIG)
+        end_time = time.time()
+        logger.info(f"\n總耗時: {end_time - start_time:.2f} 秒")
+        sys.exit(0)
+
+    # 如果沒有命令列參數，使用統一配置中的歌曲列表
+    if SONGS_CONFIG is None:
+        SONGS_CONFIG = UNIFIED_CONFIG["songs"]
+        logger.info(f"從配置區載入 {len(SONGS_CONFIG)} 首歌曲")
+
+    logger.info(f"將模擬 {len(SONGS_CONFIG)} 首歌曲")
+    for idx, config in enumerate(SONGS_CONFIG, 1):
+        logger.info(f"  歌曲 {idx}: ID={config['music_id']}, 難度={config['difficulty']}, 熟練度={config['mastery_level']}")
 
 
 
@@ -437,9 +642,9 @@ if __name__ == "__main__":
         results_processed_count = 0  # 已处理结果的总数
 
         with multiprocessing.Pool(processes=num_processes) as pool:
-            # 若 CPU 占用率偏低，可以在此增加每次获取任务时给单个进程分配的卡组数量
+            # 優化：經過測試，chunksize=7500 在 PyPy 下性能最佳（比 10000 快 1.3%）
             if pypy_impl:
-                chunksize = 10000
+                chunksize = 7500
             else:
                 chunksize = 500
             results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize)
