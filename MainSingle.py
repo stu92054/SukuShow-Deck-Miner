@@ -199,14 +199,28 @@ if __name__ == "__main__":
                     # 不同note类型和判定会影响扣血多少
                     # 模拟开局挂机到背水时需向combo_add()传入note类型(即event)
                     # 卡组有p吟/BR吟时自动模拟背水，可在DEATH_NOTE中添加其他背水血线
-                    # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
-                    if flag_hanabi_ginko:
-                        misstime = str(float(timestamp) + MISS_TIMING[event])
-                        c.ChartEvents.append((misstime, "_" + event))
-                        c.ChartEvents.sort(key=lambda event: float(event[0]))
+
+                    # 檢查 MISS 是否會導致血量歸零
+                    if event == "Trace" or event == "HoldMid":
+                        miss_damage = player.mental.traceMinus
                     else:
-                        player.combo_add("MISS", event)
-                        logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
+                        miss_damage = player.mental.missMinus
+
+                    will_die = (player.mental.current_hp <= miss_damage)
+
+                    if will_die:
+                        # 如果 MISS 會導致遊戲結束，改為 PERFECT
+                        player.combo_add("PERFECT")
+                        logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event} (避免血量歸零)")
+                    else:
+                        # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
+                        if flag_hanabi_ginko:
+                            misstime = str(float(timestamp) + MISS_TIMING[event])
+                            c.ChartEvents.append((misstime, "_" + event))
+                            c.ChartEvents.sort(key=lambda event: float(event[0]))
+                        else:
+                            player.combo_add("MISS", event)
+                            logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event}")
                 elif combo_count in []:
                     player.combo_add("GREAT")
                     # 连击计数、AP速度更新、回复AP、扣血
@@ -239,6 +253,9 @@ if __name__ == "__main__":
                                         new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
                                     else:
                                         new_afk_mental = DEATH_NOTE[cid]
+                        # 如果沒有剩餘的背水卡，血線重置為100%（不需要背水）
+                        if new_afk_mental == 0:
+                            new_afk_mental = 100
                         afk_mental = new_afk_mental
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug(f"  動態血線更新: {afk_mental}%")
@@ -275,6 +292,9 @@ if __name__ == "__main__":
                                         new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
                                     else:
                                         new_afk_mental = DEATH_NOTE[cid]
+                        # 如果沒有剩餘的背水卡，血線重置為100%（不需要背水）
+                        if new_afk_mental == 0:
+                            new_afk_mental = 100
                         afk_mental = new_afk_mental
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug(f"  動態血線更新: {afk_mental}%")
@@ -287,8 +307,22 @@ if __name__ == "__main__":
 
             case event if event[0] == "_":
                 if player.mental.get_rate() > afk_mental:
-                    player.combo_add("MISS", event[1:])
-                    logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\tMISS: {event[1:]}")
+                    # 延遲的 MISS（花火吟子模式）
+                    note_type = event[1:]
+                    if note_type == "Trace" or note_type == "HoldMid":
+                        miss_damage = player.mental.traceMinus
+                    else:
+                        miss_damage = player.mental.missMinus
+
+                    will_die = (player.mental.current_hp <= miss_damage)
+
+                    if will_die:
+                        # 如果 MISS 會導致遊戲結束，改為 PERFECT
+                        player.combo_add("PERFECT")
+                        logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{note_type} (避免血量歸零)")
+                    else:
+                        player.combo_add("MISS", note_type)
+                        logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\tMISS: {note_type}")
                 else:
                     player.combo_add("PERFECT")
                     logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{event[1:]} (延后)")

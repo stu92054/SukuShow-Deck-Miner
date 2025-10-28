@@ -5,7 +5,7 @@ from platform import python_implementation
 from RCardData import db_load
 from RChart import Chart, MusicDB
 from RDeck import Deck
-from RLiveStatus import PlayerAttributes, MentalDown
+from RLiveStatus import PlayerAttributes
 from SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
 from CardLevelConfig import DEATH_NOTE
 
@@ -144,6 +144,9 @@ def run_game_simulation(
                         new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
                     else:
                         new_afk_mental = DEATH_NOTE[cid]
+        # 如果沒有剩餘的背水卡，血線重置為100%（不需要背水）
+        if new_afk_mental == 0:
+            new_afk_mental = 100
         afk_mental = new_afk_mental
 
     # 提取重复的技能触发逻辑为内联函数
@@ -182,17 +185,26 @@ def run_game_simulation(
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
                 combo_count += 1
                 if afk_mental and player.mental.get_rate() > afk_mental:
-                    # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
-                    if flag_hanabi_ginko:
-                        if pypy_impl:
-                            event_heap.add((timestamp + MISS_TIMING[event], "_" + event))
-                        else:
-                            heapq.heappush(event_heap, (timestamp + MISS_TIMING[event], "_" + event))
+                    # 檢查 MISS 是否會導致血量歸零
+                    if event == "Trace" or event == "HoldMid":
+                        miss_damage = player.mental.traceMinus
                     else:
-                        try:
+                        miss_damage = player.mental.missMinus
+
+                    will_die = (player.mental.current_hp <= miss_damage)
+
+                    if will_die:
+                        # 如果 MISS 會導致遊戲結束，改為 PERFECT
+                        player.combo_add("PERFECT")
+                    else:
+                        # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
+                        if flag_hanabi_ginko:
+                            if pypy_impl:
+                                event_heap.add((timestamp + MISS_TIMING[event], "_" + event))
+                            else:
+                                heapq.heappush(event_heap, (timestamp + MISS_TIMING[event], "_" + event))
+                        else:
                             player.combo_add("MISS", event)
-                        except MentalDown:
-                            break
                 else:
                     player.combo_add("PERFECT")
 
@@ -205,10 +217,20 @@ def run_game_simulation(
 
             case event if event[0] == "_":
                 if player.mental.get_rate() > afk_mental:
-                    try:
-                        player.combo_add("MISS", event[1:])
-                    except MentalDown:
-                        break
+                    # 延遲的 MISS（花火吟子模式）
+                    note_type = event[1:]
+                    if note_type == "Trace" or note_type == "HoldMid":
+                        miss_damage = player.mental.traceMinus
+                    else:
+                        miss_damage = player.mental.missMinus
+
+                    will_die = (player.mental.current_hp <= miss_damage)
+
+                    if will_die:
+                        # 如果 MISS 會導致遊戲結束，改為 PERFECT
+                        player.combo_add("PERFECT")
+                    else:
+                        player.combo_add("MISS", note_type)
                 else:
                     player.combo_add("PERFECT")
 

@@ -242,6 +242,10 @@ def run_debug_mode(deck_cards, center_index, config):
         pre_initialized_chart = Chart(MUSIC_DB, fixed_music_id, fixed_difficulty)
         pre_initialized_chart.ChartEvents = [(float(t), e) for t, e in pre_initialized_chart.ChartEvents]
 
+        if pypy_impl:
+            from sortedcontainers import SortedList
+            pre_initialized_chart.ChartEvents = SortedList(pre_initialized_chart.ChartEvents)
+
         if center_override:
             pre_initialized_chart.music.CenterCharacterId = center_override
         if color_override:
@@ -348,30 +352,40 @@ if __name__ == "__main__":
         # 可以配置一首或多首歌曲，程式會自動判斷
         "songs": [
             {
-                "music_id": "405305",        # 歌曲ID
+                "music_id": "405117",        # 歌曲ID
                 "difficulty": "02",          # 難度 (01=Normal, 02=Hard, 03=Expert, 04=Master)
                 "mastery_level": 50,         # 熟練度 (1-50)
-                "mustcards_all": [1032528, 1032530, 1031530],  # 必須包含的所有卡牌
+                "mustcards_all": [],         # [#1032528, 1032530, 1031530],  # 必須包含的所有卡牌
                 "mustcards_any": [],                           # 必須包含至少一張的卡牌
                 "center_override": None,     # 強制替換C位角色ID (None=使用歌曲預設)
                 "color_override": None,      # 強制替換顏色 (None=使用歌曲預設, 1=Smile, 2=Pure, 3=Cool)
                 "leader_designation": "0",   # 指定隊長卡片ID，"0"=不指定（自動選擇）
             },
             # 複製以下區塊可以添加第二首、第三首歌曲：
-            # {
-            #     "music_id": "405117",      # 第二首歌
-            #     "difficulty": "03",
-            #     "mastery_level": 50,
-            #     "mustcards_all": [],
-            #     "mustcards_any": [],
-            #     "center_override": None,
-            #     "color_override": None,
-            #     "leader_designation": "0",
-            # },
+            {
+                "music_id": "405118",      # 第二首歌
+                "difficulty": "02",
+                "mastery_level": 50,
+                "mustcards_all": [],
+                "mustcards_any": [],
+                "center_override": None,
+                "color_override": None,
+                "leader_designation": "0",
+            },
+            {
+                "music_id": "405305",      # 第二首歌
+                "difficulty": "02",
+                "mastery_level": 50,
+                "mustcards_all": [],
+                "mustcards_any": [],
+                "center_override": None,
+                "color_override": None,
+                "leader_designation": "0",
+            },
         ],
 
         # --- Debug 模式專用（從第一首歌繼承歌曲配置） ---
-        "debug_deck_cards": [1011501, 1052506, 1041802, 1052901, 1041517, 1051506],  # 固定的6張卡牌順序
+        "debug_deck_cards": [1011501, 1052506, 1041513, 1051506, 1021701, 1041802],  # 固定的6張卡牌順序
     }
 
     # ====================================================
@@ -395,7 +409,40 @@ if __name__ == "__main__":
     #     1052506, 1052901, 1052503,  # 1052801, # 1052504  # 塞: 片翼 BR 十六夜 OE 天地黎明
     # ]
     card_ids = [
-        1021701, 1021504, 1022701, 1023701, 1023520, 1031533, 1031530, 1031519, 1032530, 1032528, 1032518, 1033528, 1033902, 1033525, 1033524, 1041516, 1041503, 1042514, 1042515, 1043902, 1043516, 1052506, 1052901, 1051506, 1051503, 1033512, 1033529
+        #1021701, 1021504, 1022701, 1023701, 1023520, 1031533, 1031530, 1031519, 1032530, 1032528, 1032518, 1033528, 1033902, 1033525, 1033524, 1041516, 1041503, 1042514, 1042515, 1043902, 1043516, 1052506, 1052901, 1051506, 1051503, 1033512, 1033529
+        1011501,
+        1033514,
+        1023520,
+        1031530,
+        1032528,
+        1021523,
+        1052901,
+        1022701,
+        1032518,
+        1031519,
+        1023901,
+        1041513,
+        1033901,
+        1052504,
+        1021512,
+        1051503,
+        1042515,
+        1031801,
+        1043801,
+        1042802,
+        1041802,
+        1021701,
+        1023701,
+        1043516,
+        1042516,
+        1033902,
+        1052506,
+        1051506,
+        1021901,
+        1043902,
+        1031533,
+        1032530,
+        1033528
     ]
 
     # ==================== DR剪枝配置 ====================
@@ -524,11 +571,11 @@ if __name__ == "__main__":
             1031: 10,  # 帆
             1032: 10,  # 沙
             1033: 10,  # 乃
-            1041: 8,  # 吟
+            1041: 10,  # 吟
             1042: 10,  # 鈴
             1043: 10,  # 芽
             1051: 10,  # 泉
-            1052: 7,  # 塞
+            1052: 10,  # 塞
         }
 
         # Fan Lv -> bonus(百分比) 對照表 (轉為小數時需除以100)
