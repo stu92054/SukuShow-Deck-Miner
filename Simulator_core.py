@@ -1,6 +1,5 @@
 import logging
 import os
-from platform import python_implementation
 # 导入所有 R 模块和 db_load 函数
 from RCardData import db_load
 from RChart import Chart, MusicDB
@@ -117,15 +116,15 @@ def run_game_simulation(
     player.basescore_calc(c.AllNoteSize)
     # player.cooldown = int(player.cooldown * 1_000_000)
 
-    # Use a heap for ChartEvents for better performance
-    pypy_impl = python_implementation() == "PyPy"
-    if pypy_impl:
-        event_heap = c.ChartEvents.copy()
-        event_heap.add((player.cooldown, "CDavailable"))
-    else:
-        import heapq
-        event_heap = list(c.ChartEvents)
-        heapq.heappush(event_heap, (player.cooldown, "CDavailable"))
+    # Dual-queue optimization: O(n^2) -> O(n log n)
+    # Use pre-sorted chart events + heap for dynamic events
+    import heapq
+    chart_events = c.ChartEvents  # Pre-sorted list (read-only)
+    extra_events = list()         # Heap for dynamic events
+    heapq.heappush(extra_events, (player.cooldown, "CDavailable"))
+
+    i_event = 0
+    chart_length = len(chart_events)
 
     combo_count = 0
     cardnow = d.topcard()
@@ -169,17 +168,16 @@ def run_game_simulation(
 
             player.CDavailable = False
             cdtime_float = timestamp + player.cooldown
-            if pypy_impl:
-                event_heap.add((cdtime_float, "CDavailable"))
-            else:
-                heapq.heappush(event_heap, (cdtime_float, "CDavailable"))
+            heapq.heappush(extra_events, (cdtime_float, "CDavailable"))
             cardnow = d.topcard()
 
-    while event_heap:
-        if pypy_impl:
-            timestamp, event = event_heap.pop(0)
+    while i_event < chart_length or extra_events:
+        # Choose the earliest event from either queue
+        if i_event < chart_length and (not extra_events or chart_events[i_event][0] <= extra_events[0][0]):
+            timestamp, event = chart_events[i_event]
+            i_event += 1
         else:
-            timestamp, event = heapq.heappop(event_heap)
+            timestamp, event = heapq.heappop(extra_events)
 
         match event:
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
@@ -199,10 +197,7 @@ def run_game_simulation(
                     else:
                         # 需要仰卧起坐时，将 MISS 时机按判定窗口延后以提高精度
                         if flag_hanabi_ginko:
-                            if pypy_impl:
-                                event_heap.add((timestamp + MISS_TIMING[event], "_" + event))
-                            else:
-                                heapq.heappush(event_heap, (timestamp + MISS_TIMING[event], "_" + event))
+                            heapq.heappush(extra_events, (timestamp + MISS_TIMING[event], "_" + event))
                         else:
                             player.combo_add("MISS", event)
                 else:
