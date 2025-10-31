@@ -231,7 +231,7 @@ def run_game_simulation(
 
             case "LiveStart" | "LiveEnd" | "FeverStart":
                 if event == "FeverStart":
-                    player.fevertime = True
+                    player.voltage.set_fever(True)
                 if centercard is not None:
                     for condition, effect in centercard.get_center_skill():
                         if CheckCenterSkillCondition(player, condition, centercard, event):
@@ -240,7 +240,7 @@ def run_game_simulation(
                     break
 
             case "FeverEnd":
-                player.fevertime = False
+                player.voltage.set_fever(False)
             case _:
                 pass
 
