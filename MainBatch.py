@@ -504,6 +504,7 @@ if __name__ == "__main__":
         color_override = song_config["color_override"]
         mastery_level = song_config["mastery_level"]
         leader_designation = song_config["leader_designation"]
+        TEMP_OUTPUT_DIR = "temp_" + song_config["music_id"]
 
         logger.info(f"\n{'='*60}")
         logger.info(f"開始處理歌曲: ID={fixed_music_id}, 難度={fixed_difficulty}")
