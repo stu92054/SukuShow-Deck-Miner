@@ -69,12 +69,12 @@ def convert_deck_to_simulator_format(
     # 創建本地快取，避免污染全局狀態
     local_cache = {}
 
-    # 優先使用自定義練度
+    # 首先使用全局 CARD_CACHE (向下兼容舊代碼)
+    local_cache.update(CARD_CACHE)
+
+    # 然後用自定義練度覆蓋 (優先級更高)
     if custom_card_levels:
         local_cache.update(custom_card_levels)
-
-    # 其次使用全局 CARD_CACHE (向下兼容舊代碼)
-    local_cache.update(CARD_CACHE)
 
     result_deck_data = []
     for card_id in deck_card_ids_list:

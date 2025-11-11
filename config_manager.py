@@ -2,9 +2,13 @@
 配置管理系統 - 支援多人協作的配置隔離
 
 使用方式:
-    1. 創建個人配置檔案: config/dev-{username}.yaml
-    2. 設定環境變量: set CONFIG_FILE=config/dev-alice.yaml
+    1. 創建個人配置檔案: config/member-{membername}.yaml
+    2. 設定環境變量: set CONFIG_FILE=config/member-alice.yaml
     3. 或使用預設: config/default.yaml
+
+日誌目錄結構:
+    - 使用 member-{name}.yaml: 輸出到 log/{name}/
+    - 使用其他配置檔: 輸出到 log/{developer_id}/
 """
 
 import os
@@ -28,6 +32,7 @@ class ConfigManager:
         self.config_file = self._resolve_config_file(config_file)
         self.config = self._load_config()
         self.developer_id = os.environ.get("DEV_ID", getpass.getuser())
+        self.member_name = self._extract_member_name(self.config_file)
         self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     def _resolve_config_file(self, config_file: Optional[str]) -> str:
@@ -42,7 +47,7 @@ class ConfigManager:
 
         # 優先級 1: 直接指定
         if config_file and os.path.exists(config_file):
-            print(f"✓ 使用指定配置: {config_file}")
+            print(f"[Config] Using specified config: {config_file}")
             return config_file
 
         # 優先級 2: 命令列參數 --config
@@ -50,7 +55,7 @@ class ConfigManager:
             if arg == "--config" and i + 1 < len(sys.argv):
                 cli_config = sys.argv[i + 1]
                 if os.path.exists(cli_config):
-                    print(f"✓ 使用命令列指定配置: {cli_config}")
+                    print(f"[Config] Using CLI config: {cli_config}")
                     return cli_config
                 else:
                     raise FileNotFoundError(f"命令列指定的配置檔案不存在: {cli_config}")
@@ -58,13 +63,13 @@ class ConfigManager:
         # 優先級 3: 環境變量
         env_config = os.environ.get("CONFIG_FILE")
         if env_config and os.path.exists(env_config):
-            print(f"✓ 使用環境變量配置: {env_config}")
+            print(f"[Config] Using environment config: {env_config}")
             return env_config
 
         # 優先級 4: 預設配置
         default_config = os.path.join("config", "default.yaml")
         if os.path.exists(default_config):
-            print(f"✓ 使用預設配置: {default_config}")
+            print(f"[Config] Using default config: {default_config}")
             return default_config
 
         raise FileNotFoundError(
@@ -79,6 +84,26 @@ class ConfigManager:
         with open(self.config_file, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
         return config
+
+    def _extract_member_name(self, config_file: str) -> str:
+        """
+        從配置檔案路徑中提取成員名稱
+
+        格式: config/member-{name}.yaml -> 提取 {name}
+
+        Args:
+            config_file: 配置檔案路徑
+
+        Returns:
+            成員名稱，如果無法提取則返回 developer_id
+        """
+        import re
+        # 嘗試匹配 member-{name} 格式
+        match = re.search(r'member-([^/\\\.]+)', config_file)
+        if match:
+            return match.group(1)
+        # 如果無法提取，則使用 developer_id 作為後備
+        return self.developer_id
 
     def get_output_dir(self, subdir: str = "") -> str:
         """
@@ -111,14 +136,32 @@ class ConfigManager:
         return output_path
 
     def get_temp_dir(self, music_id: Optional[str] = None) -> str:
-        """獲取臨時檔案目錄"""
+        """
+        獲取臨時檔案目錄（帶時間戳隔離，避免多次運行衝突）
+        格式: output/{developer_id}/{timestamp}/temp/temp_{music_id}
+        """
         if music_id:
             return self.get_output_dir(f"temp/temp_{music_id}")
         return self.get_output_dir("temp")
 
     def get_log_dir(self) -> str:
-        """獲取日誌目錄"""
-        return self.get_output_dir("log")
+        """
+        獲取最終輸出目錄（不帶時間戳，直接覆蓋過去記錄）
+        格式: log/{member_name}/
+        """
+        base_dir = "log"
+        enable_isolation = self.config.get("output", {}).get("enable_isolation", True)
+
+        if enable_isolation:
+            # 最終輸出只用 member_name 隔離，不用時間戳
+            output_path = os.path.join(base_dir, self.member_name)
+        else:
+            # 不隔離模式 (用於正式運行)
+            output_path = base_dir
+
+        # 自動創建目錄
+        os.makedirs(output_path, exist_ok=True)
+        return output_path
 
     def get_cache_dir(self) -> str:
         """獲取快取目錄"""
@@ -172,6 +215,7 @@ class ConfigManager:
         print("配置摘要")
         print("=" * 60)
         print(f"配置檔案: {self.config_file}")
+        print(f"成員名稱: {self.member_name}")
         print(f"開發者ID: {self.developer_id}")
         print(f"運行時間: {self.run_timestamp}")
         print(f"日誌目錄: {self.get_log_dir()}")
