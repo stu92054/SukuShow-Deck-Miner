@@ -1,0 +1,122 @@
+# ============================================
+# SukuShow Deck Miner - 預設配置檔案
+# ============================================
+
+# 輸出目錄配置
+output:
+  base_dir: "output"           # 輸出根目錄
+  enable_isolation: true       # 啟用環境隔離 (每個開發者/運行有獨立目錄)
+
+# 歌曲配置
+songs:
+  - music_id: "405117"
+    difficulty: "02"
+    mastery_level: 50
+    mustcards_all: []          # 必須包含的卡牌 (全部)
+    mustcards_any: []          # 必須包含的卡牌 (任一)
+    center_override: null      # 覆蓋 Center 位置 (null 表示不覆蓋)
+    color_override: null       # 覆蓋顏色 (null 表示不覆蓋)
+    leader_designation: "0"    # 隊長指定 (0-9 或字串 card_id)
+
+  - music_id: "405118"
+    difficulty: "02"
+    mastery_level: 50
+    mustcards_all: []
+    mustcards_any: []
+    center_override: null
+    color_override: null
+    leader_designation: "0"
+
+  - music_id: "405305"
+    difficulty: "02"
+    mastery_level: 50
+    mustcards_all: []
+    mustcards_any: []
+    center_override: null
+    color_override: null
+    leader_designation: "0"
+
+# Debug 卡組 (用於測試)
+debug_deck_cards:
+  - 1011501
+  - 1052506
+  - 1041513
+  - 1051506
+  - 1021701
+  - 1041802
+
+# 卡牌池配置
+card_ids:
+  - 1011501
+  - 1033514
+  - 1023520
+  - 1041513
+  - 1021701
+  - 1033515
+  - 1043520
+  - 1053516
+  - 1032516
+  - 1052507
+  - 1022516
+  - 1012516
+  - 1042517
+  - 1041802
+  - 1033501
+  - 1013501
+  - 1043501
+  - 1053501
+  - 1032503
+  - 1012501
+  - 1052506
+  - 1042504
+  - 1031701
+  - 1042507
+  - 1022517
+  - 1012517
+  - 1032517
+  - 1052508
+  - 1042508
+  - 1053517
+  - 1022518
+  - 1041514
+  - 1051506
+  - 1043521
+  - 1023521
+  - 1033528
+
+# 賽季模式
+season_mode: "sukushow"        # sukushow 或其他模式
+
+# 粉絲等級配置 (用於 Season Fan Lv bonus)
+fan_levels:
+  1011: 0   # 沙知
+  1021: 0   # 梢
+  1022: 0   # 綴理
+  1023: 0   # 慈
+  1031: 10  # 帆
+  1032: 10  # 沙
+  1033: 10  # 乃
+  1041: 10  # 吟
+  1042: 10  # 鈴
+  1043: 10  # 芽
+  1051: 10  # 泉
+  1052: 10  # 塞
+
+# 卡牌練度配置 (覆蓋預設值)
+# 格式: card_id: [level, center_skill_level, skill_level]
+card_levels:
+  # 範例:
+  # 1011501: [120, 10, 10]  # 沙知 UR
+  # 1052506: [120, 10, 10]  # 塞 UR
+
+# 批次處理配置
+batch_size: 1000000            # 每批次模擬數量
+
+# 多進程配置
+num_processes: null            # null 表示使用 CPU 核心數
+
+# 快取配置
+cache:
+  max_fingerprints_in_memory: 5000000
+  auto_cleanup: true           # 自動清理臨時快取
+  max_cache_age_days: 7        # 快取最大保留天數

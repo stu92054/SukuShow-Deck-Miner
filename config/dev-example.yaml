@@ -1,0 +1,75 @@
+# ============================================
+# 個人開發配置範本
+# ============================================
+#
+# 使用方式:
+#   1. 複製此檔案為 dev-{你的用戶名}.yaml
+#   2. 修改配置以符合你的測試需求
+#   3. 執行時會自動偵測並使用你的個人配置
+#
+# 或設定環境變量:
+#   set CONFIG_FILE=config/dev-alice.yaml
+#
+
+# 輸出目錄配置
+output:
+  base_dir: "output"
+  enable_isolation: true       # 開發時建議啟用
+
+# 測試單一歌曲範例
+songs:
+  - music_id: "405117"
+    difficulty: "02"
+    mastery_level: 50
+    mustcards_all: []
+    mustcards_any: []
+    center_override: null
+    color_override: null
+    leader_designation: "0"
+
+# Debug 卡組
+debug_deck_cards:
+  - 1011501
+  - 1052506
+  - 1041513
+  - 1051506
+  - 1021701
+  - 1041802
+
+# 小卡池測試 (加快運行速度)
+card_ids:
+  - 1011501
+  - 1033514
+  - 1023520
+  - 1041513
+  - 1021701
+  - 1033515
+
+season_mode: "sukushow"
+
+fan_levels:
+  1011: 0
+  1021: 0
+  1022: 0
+  1023: 0
+  1031: 10
+  1032: 10
+  1033: 10
+  1041: 10
+  1042: 10
+  1043: 10
+  1051: 10
+  1052: 10
+
+card_levels: {}
+
+# 開發時使用較小的批次
+batch_size: 100000
+
+# 使用較少進程以便 Debug
+num_processes: 2
+
+cache:
+  max_fingerprints_in_memory: 1000000
+  auto_cleanup: true
+  max_cache_age_days: 3

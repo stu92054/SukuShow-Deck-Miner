@@ -1,0 +1,113 @@
+# ============================================
+# 公會成員配置範例 - Example
+# ============================================
+
+# 輸出目錄配置
+output:
+  base_dir: "output"
+  enable_isolation: true       # 開啟隔離，每次運行生成獨立目錄
+
+# 歌曲配置 (支援多首歌曲)
+songs:
+  - music_id: "405117"
+    difficulty: "02"           # 01=Normal, 02=Hard, 03=Expert, 04=Master
+    mastery_level: 50
+    mustcards_all: []
+    mustcards_any: []
+    center_override: null
+    color_override: null
+    leader_designation: "0"
+
+  - music_id: "405118"
+    difficulty: "03"           # Expert
+    mastery_level: 50
+    mustcards_all: []
+    mustcards_any: []
+    center_override: null
+    color_override: null
+    leader_designation: "0"
+
+  - music_id: "405305"
+    difficulty: "04"           # Master
+    mastery_level: 50
+    mustcards_all: []
+    mustcards_any: []
+    center_override: null
+    color_override: null
+    leader_designation: "0"
+
+# Debug 卡組 (可選，用於單卡組測試)
+debug_deck_cards: null
+
+# Alice 的卡池
+card_ids:
+  - 1011501  # 沙知
+  - 1021701  # LR梢
+  - 1022901  # BR缀
+  - 1022504  # 明月缀
+  - 1023701  # LR慈
+  - 1023901  # BR慈
+  - 1031901  # BR帆
+  - 1031516  # ST帆
+  - 1031504  # RG帆
+  - 1032528  # IDOME沙
+  - 1032901  # BR沙
+  - 1033524  # IDOME乃
+  - 1033901  # BR乃
+  - 1042801  # EA铃
+  - 1042802  # OE铃
+  - 1043504  # mrc芽
+  - 1043801  # EA芽
+  - 1043802  # OE芽
+  - 1052901  # BR塞
+  - 1052503  # 十六夜塞
+
+season_mode: "sukushow"
+
+# Alice 的粉絲等級
+fan_levels:
+  1011: 5   # 沙知
+  1021: 3   # 梢
+  1022: 2   # 綴理
+  1023: 8   # 慈
+  1031: 10  # 帆
+  1032: 10  # 沙
+  1033: 10  # 乃
+  1041: 6   # 吟
+  1042: 4   # 鈴
+  1043: 7   # 芽
+  1051: 9   # 泉
+  1052: 10  # 塞
+
+# 特定卡牌練度覆蓋 (如果有未滿練的卡)
+# 格式: card_id: [level, center_skill_level, skill_level]
+card_levels:
+  # 範例 (全部滿練則留空):
+  # 1011501: [120, 10, 10]  # 沙知
+  # 1021701: [140, 11, 11]  # LR梢
+  # 1022901: [120, 11, 11]  # BR缀
+  # 1022504: [120, 13, 13]  # 明月缀
+  # 1023701: [140, 10, 10]  # LR慈
+  # 1023901: [120, 10, 10]  # BR慈
+  # 1031901: [120, 12, 12]  # BR帆
+  # 1031516: [120, 10, 10]  # ST帆
+  # 1031504: [120, 10, 10]  # RG帆
+  # 1032528: [120, 11, 11]  # IDOME沙
+  # 1032901: [120, 10, 10]  # BR沙
+  # 1033524: [120, 11, 11]  # IDOME乃
+  # 1033901: [120, 10, 11]  # BR乃
+  # 1042801: [140, 11, 11]  # EA铃
+  # 1042802: [140, 11, 11]  # OE铃
+  # 1043504: [120, 11, 11]  # mrc芽
+  # 1043801: [140, 11, 11]  # EA芽
+  # 1043802: [140, 11, 11]  # OE芽
+  # 1052901: [120, 10, 10]  # BR塞
+  # 1052503: [120, 12, 12]  # 十六夜塞
+
+batch_size: 1000000
+num_processes: null            # 使用所有 CPU 核心
+
+cache:
+  max_fingerprints_in_memory: 5000000
+  auto_cleanup: true
+  max_cache_age_days: 7

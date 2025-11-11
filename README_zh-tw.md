@@ -60,7 +60,89 @@
 
 ### ⚙ 個性化設定
 
-可以根據需要調整以下檔案中的設定：
+#### 🆕 配置檔案系統（推薦用於公會成員計算）
+
+**對於需要為多位公會成員進行模擬的使用者**，我們提供了基於 YAML 的配置系統，可輕鬆切換不同成員的配置：
+
+**快速開始：**
+
+1. **為每位公會成員創建配置檔案：**
+   ```bash
+   copy config\member-example.yaml config\member-yourname.yaml
+   ```
+
+2. **編輯配置檔案**以匹配該成員的卡池、粉絲等級和卡牌練度：
+   ```yaml
+   # config/member-yourname.yaml
+
+   songs:
+     - music_id: "405117"
+       difficulty: "02"        # 01=Normal, 02=Hard, 03=Expert, 04=Master
+       mastery_level: 50
+
+     - music_id: "405118"      # 可以添加多首歌曲
+       difficulty: "03"
+
+   card_ids:
+     - 1011501  # 列出該成員擁有的所有卡牌
+     - 1021701
+     # ...
+
+   fan_levels:
+     1011: 5    # 該成員的粉絲等級
+     1021: 3
+     # ...
+
+   card_levels:
+     # 覆寫特定卡牌練度（如果未滿練）
+     # 1021701: [130, 10, 10]  # LR梢 未滿練
+   ```
+
+3. **使用配置執行模擬：**
+   ```bash
+   python MainBatch.py --config config/member-yourname.yaml
+   ```
+
+4. **結果自動保存到隔離的目錄：**
+   ```
+   output/
+   └── {username}/
+       └── {timestamp}/
+           └── log/
+               └── simulation_results_405117_02.json
+   ```
+
+**優點：**
+- ✅ **輕鬆切換** - 快速為不同公會成員執行模擬
+- ✅ **無需修改程式碼** - 所有配置都在 YAML 檔案中
+- ✅ **隔離輸出** - 每次執行創建獨立目錄（避免檔案衝突）
+- ✅ **Git 友善** - 配置檔案可提交到版本控制
+
+**配置優先順序：**
+1. 命令列：`python MainBatch.py --config config/member1.yaml`
+2. 環境變數：`set CONFIG_FILE=config/member1.yaml`
+3. 預設：`config/default.yaml`
+
+**公會計算工作流程範例：**
+```bash
+# 為成員 Alice 計算
+python MainBatch.py --config config/member-alice.yaml
+
+# 為成員 Bob 計算
+python MainBatch.py --config config/member-bob.yaml
+
+# 結果位於不同目錄：
+# output/alice/{timestamp}/log/
+# output/bob/{timestamp}/log/
+```
+
+詳見 `config/member-example.yaml` 完整範例。
+
+---
+
+#### 傳統方式：直接修改檔案
+
+也可以根據需要直接調整 Python 檔案中的設定：
 
 - `CardLevelConfig.py`: 設定所有卡牌的**預設等級**和**個別卡牌的等級** (`CARD_CACHE`)。預設情況下，所有卡牌均設定為滿級。
 利用 `DEATH_NOTE` 設定背水卡牌的掛機血線。卡組中存在多張設定了血線的背水卡時，以最低血線為準。
@@ -95,7 +177,7 @@ card_ids = [
 SONGS_CONFIG = [
     {
         "music_id": "405305",        # 歌曲ID（從遊戲資料中查詢）
-        "difficulty": "02",          # 難度："00"=Easy, "01"=Normal, "02"=Hard, "03"=Expert
+        "difficulty": "02",          # 難度："01"=Normal, "02"=Hard, "03"=Expert, "04"=Master
         "mustcards_all": [],         # 必須包含的所有卡牌（卡牌ID清單）
         "mustcards_any": [],         # 至少包含其中一張的卡牌
         "center_override": None,     # 覆寫C位角色（None = 使用歌曲預設）
