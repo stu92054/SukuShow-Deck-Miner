@@ -15,6 +15,13 @@ from CardLevelConfig import convert_deck_to_simulator_format, fix_windows_consol
 from SkillResolver import SkillEffectType
 from Simulator_core import run_game_simulation, MUSIC_DB
 
+# 導入配置管理器（如果不存在則使用傳統配置）
+try:
+    from config_manager import get_config
+    CONFIG_MANAGER_AVAILABLE = True
+except ImportError:
+    CONFIG_MANAGER_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
@@ -153,12 +160,23 @@ def parse_arguments(unified_config):
     parser = argparse.ArgumentParser(description='批次模擬卡組得分')
     parser.add_argument('songs', nargs='*',
                        help='歌曲配置，格式：music_id difficulty mastery_level leader_id [music_id2 difficulty2 mastery_level2 leader_id2 ...]')
+    parser.add_argument('--config', type=str, metavar='CONFIG_FILE',
+                       help='YAML配置檔案路徑（例如：config/member-alice.yaml）')
     parser.add_argument('--debug', nargs='*', type=int, metavar='CARD_ID',
                        help='Debug模式：可選指定6張卡牌ID（按順序），不指定則使用配置中的牌組')
     parser.add_argument('--center-index', type=int, default=-1,
                        help='Debug模式：指定C位卡在牌組中的索引（0-5），-1表示測試所有C位選擇（預設：-1）')
 
     args = parser.parse_args()
+
+    # 如果提供了 --config 參數，從 YAML 載入配置
+    if args.config:
+        if not CONFIG_MANAGER_AVAILABLE:
+            logger.error("錯誤：config_manager.py 不可用，無法使用 --config 參數")
+            logger.error("請確保 config_manager.py 存在於專案目錄中")
+            sys.exit(1)
+        return {"use_yaml_config": True, "config_file": args.config}
+
 
     # 如果是 Debug 模式，返回特殊標記
     if args.debug is not None:
@@ -468,6 +486,23 @@ if __name__ == "__main__":
     # 解析命令列參數或使用預設配置
     SONGS_CONFIG = parse_arguments(UNIFIED_CONFIG)
 
+    # 檢查是否使用 YAML 配置
+    use_yaml_config = False
+    yaml_config = None
+    if isinstance(SONGS_CONFIG, dict) and SONGS_CONFIG.get("use_yaml_config"):
+        use_yaml_config = True
+        logger.info("使用 YAML 配置檔案")
+        yaml_config = get_config(SONGS_CONFIG["config_file"])
+        yaml_config.print_summary()
+
+        # 從 YAML 載入配置
+        UNIFIED_CONFIG = {
+            "songs": yaml_config.get_songs_config(),
+            "debug_deck_cards": yaml_config.get_debug_deck() or UNIFIED_CONFIG["debug_deck_cards"],
+        }
+        card_ids = yaml_config.get_card_ids()
+        SONGS_CONFIG = None  # 重置為 None，讓後面使用 UNIFIED_CONFIG
+
     # 如果是 Debug 模式，直接運行並退出
     if isinstance(SONGS_CONFIG, dict) and SONGS_CONFIG.get("debug_mode"):
         run_debug_mode(SONGS_CONFIG["deck_cards"], SONGS_CONFIG["center_index"], UNIFIED_CONFIG)
@@ -491,8 +526,17 @@ if __name__ == "__main__":
 
     # 新增：批次大小和临时文件目录
     BATCH_SIZE = 1_000_000  # 每100万条结果保存一个文件
-    TEMP_OUTPUT_DIR = "temp"
-    FINAL_OUTPUT_DIR = "log"
+
+    # 如果使用 YAML 配置，使用隔離的輸出目錄
+    if use_yaml_config and yaml_config:
+        TEMP_OUTPUT_DIR_BASE = yaml_config.get_temp_dir()
+        FINAL_OUTPUT_DIR = yaml_config.get_log_dir()
+        logger.info(f"輸出目錄: {FINAL_OUTPUT_DIR}")
+    else:
+        TEMP_OUTPUT_DIR_BASE = "temp"
+        FINAL_OUTPUT_DIR = "log"
+
+    TEMP_OUTPUT_DIR = TEMP_OUTPUT_DIR_BASE
 
     # ==================== 開始處理多首歌曲 ====================
     for song_config in SONGS_CONFIG:
@@ -504,7 +548,12 @@ if __name__ == "__main__":
         color_override = song_config["color_override"]
         mastery_level = song_config["mastery_level"]
         leader_designation = song_config["leader_designation"]
-        TEMP_OUTPUT_DIR = "temp_" + song_config["music_id"]
+
+        # 為每首歌創建獨立的臨時目錄
+        if use_yaml_config and yaml_config:
+            TEMP_OUTPUT_DIR = yaml_config.get_temp_dir(song_config["music_id"])
+        else:
+            TEMP_OUTPUT_DIR = "temp_" + song_config["music_id"]
 
         logger.info(f"\n{'='*60}")
         logger.info(f"開始處理歌曲: ID={fixed_music_id}, 難度={fixed_difficulty}")
@@ -668,7 +717,7 @@ if __name__ == "__main__":
             mustcards=[mustcards_all, mustcards_any, mustskills_all],
             center_char=pre_initialized_chart.music.CenterCharacterId,
             force_dr=force_dr,
-            log_path=os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
+            log_path=os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
         )
         total_decks_to_simulate = decks_generator.total_decks
         logger.info(f"{total_decks_to_simulate} decks to be simulated.")
@@ -755,7 +804,7 @@ if __name__ == "__main__":
             with open(temp_file, 'r') as f:
                 all_simulation_results.extend(json.load(f))
             os.remove(temp_file)
-        json_output_filename = os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
+        json_output_filename = os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
         save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True)
 
         # --- Step 5: Final Summary ---
