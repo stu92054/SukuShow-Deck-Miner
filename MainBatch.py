@@ -570,19 +570,15 @@ if __name__ == "__main__":
 
 
 
-    # 新增：批次大小和临时文件目录
+    # 新增：批次大小和输出目录
     BATCH_SIZE = 1_000_000  # 每100万条结果保存一个文件
 
-    # 如果使用 YAML 配置，使用隔離的輸出目錄
+    # 設定最終輸出目錄（不會在歌曲循環中改變）
     if use_yaml_config and yaml_config:
-        TEMP_OUTPUT_DIR_BASE = yaml_config.get_temp_dir()
         FINAL_OUTPUT_DIR = yaml_config.get_log_dir()
         logger.info(f"輸出目錄: {FINAL_OUTPUT_DIR}")
     else:
-        TEMP_OUTPUT_DIR_BASE = "temp"
         FINAL_OUTPUT_DIR = "log"
-
-    TEMP_OUTPUT_DIR = TEMP_OUTPUT_DIR_BASE
 
     # ==================== 開始處理多首歌曲 ====================
     for song_config in SONGS_CONFIG:

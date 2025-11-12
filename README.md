@@ -105,11 +105,17 @@ Choose and run the following files depending on what you need:
 
 4. **Results are automatically saved to isolated directories:**
    ```
-   output/
-   └── {username}/
-       └── {timestamp}/
-           └── log/
-               └── simulation_results_405117_02.json
+   # Final results (permanently saved)
+   log/
+   └── {member_name}/              # e.g., alice/ (when using member-*.yaml)
+       └── simulation_results_405117_02.json
+
+   # Temporary files (during execution, can be cleaned up after completion)
+   temp/
+   └── {member_name}/              # Consistent with log/
+       └── {timestamp}/            # Execution timestamp
+           └── temp_405117/        # Separate directory for each song
+               └── temp_batch_001.json
    ```
 
 **Benefits:**
@@ -135,8 +141,12 @@ python MainBatch.py --config config/member-alice.yaml
 python MainBatch.py --config config/member-bob.yaml
 
 # Results are in separate directories:
-# output/alice/{timestamp}/log/
-# output/bob/{timestamp}/log/
+# log/alice/simulation_results_*.json
+# log/bob/simulation_results_*.json
+#
+# Temporary files:
+# temp/alice/{timestamp}/temp_*/
+# temp/bob/{timestamp}/temp_*/
 ```
 
 See `config/member-example.yaml` for a complete example.

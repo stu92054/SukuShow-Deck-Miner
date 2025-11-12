@@ -106,11 +106,17 @@ Link！Like！ラブライブ！](https://www.lovelive-anime.jp/hasunosora/syste
 
 4. **結果は自動的に分離されたディレクトリに保存されます：**
    ```
-   output/
-   └── {username}/
-       └── {timestamp}/
-           └── log/
-               └── simulation_results_405117_02.json
+   # 最終結果（永久保存）
+   log/
+   └── {member_name}/              # 例: alice/ (member-*.yaml 使用時)
+       └── simulation_results_405117_02.json
+
+   # 一時ファイル（実行中、完了後にクリーンアップ可能）
+   temp/
+   └── {member_name}/              # log/ と一致
+       └── {timestamp}/            # 実行タイムスタンプ
+           └── temp_405117/        # 各楽曲ごとの独立ディレクトリ
+               └── temp_batch_001.json
    ```
 
 **メリット：**
@@ -136,8 +142,12 @@ python MainBatch.py --config config/member-alice.yaml
 python MainBatch.py --config config/member-bob.yaml
 
 # 結果は別々のディレクトリに：
-# output/alice/{timestamp}/log/
-# output/bob/{timestamp}/log/
+# log/alice/simulation_results_*.json
+# log/bob/simulation_results_*.json
+#
+# 一時ファイル：
+# temp/alice/{timestamp}/temp_*/
+# temp/bob/{timestamp}/temp_*/
 ```
 
 詳細は `config/member-example.yaml` の完全な例を参照してください。

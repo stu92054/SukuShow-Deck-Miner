@@ -8,7 +8,7 @@
 
 日誌目錄結構:
     - 使用 member-{name}.yaml: 輸出到 log/{name}/
-    - 使用其他配置檔: 輸出到 log/{developer_id}/
+    - 使用其他配置檔 (如 default.yaml): 輸出到 log/
 """
 
 import os
@@ -114,44 +114,37 @@ class ConfigManager:
         # 如果不是 member 配置（如 default.yaml），返回 None
         return None
 
-    def get_output_dir(self, subdir: str = "") -> str:
+    def get_temp_dir(self, music_id: Optional[str] = None) -> str:
         """
-        獲取隔離的輸出目錄
-
-        Args:
-            subdir: 子目錄名稱 (如 "log", "temp")
-
-        Returns:
-            完整輸出路徑，格式: output/{developer_id}/{timestamp}/{subdir}
+        獲取臨時檔案目錄（帶時間戳隔離，避免多次運行衝突）
+        格式:
+        - member-{name}.yaml: temp/{name}/{timestamp}/temp_{music_id}
+        - 其他配置: temp/{developer_id}/{timestamp}/temp_{music_id}
         """
-        base_dir = self.config.get("output", {}).get("base_dir", "output")
+        base_dir = "temp"
+
+        # 優先使用 member_name，沒有才用 developer_id（保持與 log 目錄一致）
+        user_dir = self.member_name if self.member_name else self.developer_id
 
         # 檢查是否啟用環境隔離
         enable_isolation = self.config.get("output", {}).get("enable_isolation", True)
 
         if enable_isolation:
-            output_path = os.path.join(
-                base_dir,
-                self.developer_id,
-                self.run_timestamp,
-                subdir
-            )
+            # 隔離模式：temp/{user}/{timestamp}/temp_{music_id}
+            if music_id:
+                temp_path = os.path.join(base_dir, user_dir, self.run_timestamp, f"temp_{music_id}")
+            else:
+                temp_path = os.path.join(base_dir, user_dir, self.run_timestamp)
         else:
-            # 不隔離模式 (用於正式運行)
-            output_path = os.path.join(base_dir, subdir)
+            # 不隔離模式：temp/temp_{music_id}
+            if music_id:
+                temp_path = os.path.join(base_dir, f"temp_{music_id}")
+            else:
+                temp_path = base_dir
 
         # 自動創建目錄
-        os.makedirs(output_path, exist_ok=True)
-        return output_path
-
-    def get_temp_dir(self, music_id: Optional[str] = None) -> str:
-        """
-        獲取臨時檔案目錄（帶時間戳隔離，避免多次運行衝突）
-        格式: output/{developer_id}/{timestamp}/temp/temp_{music_id}
-        """
-        if music_id:
-            return self.get_output_dir(f"temp/temp_{music_id}")
-        return self.get_output_dir("temp")
+        os.makedirs(temp_path, exist_ok=True)
+        return temp_path
 
     def get_log_dir(self) -> str:
         """
@@ -172,11 +165,6 @@ class ConfigManager:
         # 自動創建目錄
         os.makedirs(output_path, exist_ok=True)
         return output_path
-
-    def get_cache_dir(self) -> str:
-        """獲取快取目錄"""
-        cache_dir = self.get_output_dir("cache")
-        return cache_dir
 
     def get_songs_config(self) -> List[Dict[str, Any]]:
         """獲取歌曲配置列表"""
@@ -225,12 +213,11 @@ class ConfigManager:
         logger.info("配置摘要")
         logger.info("=" * 60)
         logger.info(f"配置檔案: {self.config_file}")
-        logger.info(f"成員名稱: {self.member_name}")
+        logger.info(f"成員名稱: {self.member_name if self.member_name else '(無，使用開發者ID)'}")
         logger.info(f"開發者ID: {self.developer_id}")
         logger.info(f"運行時間: {self.run_timestamp}")
         logger.info(f"日誌目錄: {self.get_log_dir()}")
         logger.info(f"臨時目錄: {self.get_temp_dir()}")
-        logger.info(f"快取目錄: {self.get_cache_dir()}")
         logger.info(f"歌曲數量: {len(self.get_songs_config())}")
         logger.info(f"卡牌數量: {len(self.get_card_ids())}")
         logger.info(f"賽季模式: {self.get_season_mode()}")

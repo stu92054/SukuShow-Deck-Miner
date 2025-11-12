@@ -105,11 +105,17 @@
 
 4. **结果自动保存到隔离的目录：**
    ```
-   output/
-   └── {username}/
-       └── {timestamp}/
-           └── log/
-               └── simulation_results_405117_02.json
+   # 最终结果（永久保存）
+   log/
+   └── {member_name}/              # 如 alice/ (使用 member-*.yaml 时)
+       └── simulation_results_405117_02.json
+
+   # 临时文件（执行过程中，完成后可清理）
+   temp/
+   └── {member_name}/              # 与 log/ 保持一致
+       └── {timestamp}/            # 执行时间戳
+           └── temp_405117/        # 各歌曲独立目录
+               └── temp_batch_001.json
    ```
 
 **优点：**
@@ -135,8 +141,12 @@ python MainBatch.py --config config/member-alice.yaml
 python MainBatch.py --config config/member-bob.yaml
 
 # 结果位于不同目录：
-# output/alice/{timestamp}/log/
-# output/bob/{timestamp}/log/
+# log/alice/simulation_results_*.json
+# log/bob/simulation_results_*.json
+#
+# 临时文件：
+# temp/alice/{timestamp}/temp_*/
+# temp/bob/{timestamp}/temp_*/
 ```
 
 详见 `config/member-example.yaml` 完整示例。
