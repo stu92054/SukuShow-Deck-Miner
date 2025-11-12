@@ -60,7 +60,102 @@
 
 ### ⚙ 个性化配置
 
-可以根据需要调整以下文件中的配置：
+#### 🆕 配置文件系统（推荐用于公会成员计算）
+
+**对于需要为多位公会成员进行模拟的用户**，我们提供了基于 YAML 的配置系统，可轻松切换不同成员的配置：
+
+**快速开始：**
+
+1. **为每位公会成员创建配置文件：**
+   ```bash
+   copy config\member-example.yaml config\member-yourname.yaml
+   ```
+
+2. **编辑配置文件**以匹配该成员的卡池、粉丝等级和卡牌练度：
+   ```yaml
+   # config/member-yourname.yaml
+
+   songs:
+     - music_id: "405117"
+       difficulty: "02"        # 01=Normal, 02=Hard, 03=Expert, 04=Master
+       mastery_level: 50
+
+     - music_id: "405118"      # 可以添加多首歌曲
+       difficulty: "03"
+
+   card_ids:
+     - 1011501  # 列出该成员拥有的所有卡牌
+     - 1021701
+     # ...
+
+   fan_levels:
+     1011: 5    # 该成员的粉丝等级
+     1021: 3
+     # ...
+
+   card_levels:
+     # 覆盖特定卡牌练度（如果未满练）
+     # 1021701: [130, 10, 10]  # LR梢 未满练
+   ```
+
+3. **使用配置运行模拟：**
+   ```bash
+   python MainBatch.py --config config/member-yourname.yaml
+   ```
+
+4. **结果自动保存到隔离的目录：**
+   ```
+   # 最终结果（永久保存）
+   log/
+   └── {member_name}/              # 如 alice/ (使用 member-*.yaml 时)
+       └── simulation_results_405117_02.json
+
+   # 临时文件（执行过程中，完成后可清理）
+   temp/
+   └── {member_name}/              # 与 log/ 保持一致
+       └── {timestamp}/            # 执行时间戳
+           └── temp_405117/        # 各歌曲独立目录
+               └── temp_batch_001.json
+   ```
+
+**优点：**
+- ✅ **轻松切换** - 快速为不同公会成员运行模拟
+- ✅ **无需修改代码** - 所有配置都在 YAML 文件中
+- ✅ **隔离输出** - 每次运行创建独立目录（避免文件冲突）
+- ✅ **Git 友好** - 配置文件可提交到版本控制
+
+**配置优先级：**
+1. 命令行：`python MainBatch.py --config config/member1.yaml`
+2. 环境变量：`set CONFIG_FILE=config/member1.yaml`（Windows）或 `export CONFIG_FILE=config/member1.yaml`（Linux）
+3. 默认：`config/default.yaml`（如果存在，已被 git 忽略）
+4. CardLevelConfig.py 与程序内设置（旧方法，向下兼容）
+
+**注意：** `config/default.yaml` 已被 gitignore。请使用 `config/default-example.yaml` 作为模板创建自己的 `config/default.yaml`。
+
+**公会计算工作流程示例：**
+```bash
+# 为成员 Alice 计算
+python MainBatch.py --config config/member-alice.yaml
+
+# 为成员 Bob 计算
+python MainBatch.py --config config/member-bob.yaml
+
+# 结果位于不同目录：
+# log/alice/simulation_results_*.json
+# log/bob/simulation_results_*.json
+#
+# 临时文件：
+# temp/alice/{timestamp}/temp_*/
+# temp/bob/{timestamp}/temp_*/
+```
+
+详见 `config/member-example.yaml` 完整示例。
+
+---
+
+#### 传统方式：直接修改文件
+
+也可以根据需要直接调整 Python 文件中的配置：
 
 - `CardLevelConfig.py`: 配置所有卡牌的**默认等级**和**个别卡牌的等级** (`CARD_CACHE`)。默认情况下，所有卡牌均设置为满级。
 利用 `DEATH_NOTE` 配置背水卡牌的挂机血线。卡组中存在多张配置了血线的背水卡时，以最低血线为准。
@@ -95,7 +190,7 @@ card_ids = [
 SONGS_CONFIG = [
     {
         "music_id": "405305",        # 歌曲ID（从游戏数据中查找）
-        "difficulty": "02",          # 难度："00"=Easy, "01"=Normal, "02"=Hard, "03"=Expert
+        "difficulty": "02",          # 难度:"01"=Normal, "02"=Hard, "03"=Expert, "04"=Master
         "mustcards_all": [],         # 必须包含的所有卡牌（卡牌ID列表）
         "mustcards_any": [],         # 至少包含其中一张的卡牌
         "center_override": None,     # 覆盖C位角色（None = 使用歌曲默认）

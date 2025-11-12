@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import time
+import sys
+import argparse
 from tqdm import tqdm
 from CardLevelConfig import fix_windows_console_encoding
 from Simulator_core import DB_CARDDATA
@@ -94,6 +96,19 @@ def format_deck_with_names(deck_card_ids: list) -> str:
     return '\n'.join(lines)
 
 
+def get_song_title(music_id: str) -> str:
+    """根据歌曲ID获取歌名"""
+    try:
+        from RChart import MusicDB
+        music_db = MusicDB()
+        music = music_db.get_music_by_id(music_id)
+        if music:
+            return music.Title
+    except Exception:
+        pass
+    return f'Unknown({music_id})'
+
+
 logging.basicConfig(
     level=logging.INFO,  # Adjust logging level as needed (e.g., INFO, DEBUG)
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -104,9 +119,9 @@ logging.basicConfig(
 # 求解前需运行 MainBatch.py 生成对应的卡组得分记录
 CHALLENGE_SONGS = [
     # 若只输入两首歌则会寻找仅针对两面的最优解，不考虑第三面
-    ("405118", "02"),  # 一生に夢が咲くように
-    ("405305", "02"),  # ハートにQ
-    ("405117", "02"),  # Shocking Party
+    # ("405119", "02"),  # 一生に夢が咲くように
+    ("405121", "02"),  # ハートにQ
+    ("405107", "02"),  # Shocking Party
 ]
 
 # 每首歌只保留得分排名前 N 名的卡组用于求解
@@ -117,13 +132,14 @@ TOP_N_CANDIDATES = 5000
 simple_pruning_mode = False
 
 
-def load_song_simulation_results(music_id: str, difficulty: str) -> list[dict]:
+def load_song_simulation_results_from_file(filename: str, music_id: str, difficulty: str) -> list[dict]:
     """
     Loads simulation results for a specific song and difficulty from a JSON file.
     Deduplicates decks based on card composition (ignoring order) and keeps the highest score
     for each unique composition. Then filters and returns the top N candidates.
 
     Args:
+        filename (str): The path to the JSON file.
         music_id (str): The ID of the music track.
         difficulty (str): The difficulty level of the chart.
 
@@ -132,7 +148,6 @@ def load_song_simulation_results(music_id: str, difficulty: str) -> list[dict]:
                     with its 'deck_card_ids', 'pt' and 'score'.
                     Returns an empty list if the file is not found or an error occurs.
     """
-    filename = os.path.join("log", f"simulation_results_{music_id}_{difficulty}.json")
     if not os.path.exists(filename):
         logger.error(f"Error: Simulation results file not found for {music_id}-{difficulty}: {filename}")
         return []
@@ -320,8 +335,34 @@ def find_best_three_decks(
 # --- Main Execution Block ---
 if __name__ == "__main__":
     fix_windows_console_encoding()
+
+    # 解析命令列參數
+    parser = argparse.ArgumentParser(description='多歌曲卡組最佳化求解器（回溯算法版本）')
+    parser.add_argument('--config', type=str, metavar='CONFIG_FILE',
+                       help='YAML配置檔案路徑（例如：config/member-alice.yaml）')
+    args = parser.parse_args()
+
     logger.info("Starting multi-song deck optimization...")
     start_time = time.time()
+
+    # 嘗試讀取配置管理器以獲取正確的 log 目錄
+    try:
+        from config_manager import get_config
+        if args.config:
+            # 使用命令列指定的配置檔
+            config = get_config(args.config)
+            logger.info(f"使用命令列指定的配置檔: {args.config}")
+        else:
+            # 使用預設配置檔（從環境變量或預設路徑）
+            config = get_config()
+            logger.info(f"使用預設配置檔: {config.config_file}")
+
+        LOG_DIR = config.get_log_dir()
+        logger.info(f"log 目錄: {LOG_DIR}")
+    except (ImportError, ValueError, FileNotFoundError) as e:
+        # 如果沒有配置管理器或找不到配置，使用默認的 log 目錄
+        LOG_DIR = "log"
+        logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用默認 log 目錄: {LOG_DIR}")
 
     all_song_candidates_data = {}
     challenge_song_ids_ordered = []  # Keep track of the order of songs
@@ -331,10 +372,12 @@ if __name__ == "__main__":
         song_key = f"{music_id}_{difficulty}"  # Use a combined key for the dictionary
         challenge_song_ids_ordered.append(song_key)  # Add to ordered list
 
-        candidates = load_song_simulation_results(music_id, difficulty)
+        # 從正確的 log 目錄讀取
+        filename = os.path.join(LOG_DIR, f"simulation_results_{music_id}_{difficulty}.json")
+        candidates = load_song_simulation_results_from_file(filename, music_id, difficulty)
         if not candidates:
             logger.error(f"No candidates found for {music_id}-{difficulty}. Cannot proceed with optimization.")
-            exit()
+            sys.exit(1)
         all_song_candidates_data[song_key] = candidates
 
     logger.info(f"Loaded candidates for {len(all_song_candidates_data)} songs.")
@@ -366,9 +409,15 @@ if __name__ == "__main__":
     if best_global_pt != -1:
         logger.info(f"Total Combined Pt: {best_global_pt:,}")
         for i, deck_info in enumerate(best_global_decks):
-            logger.info(f"  Song {i+1} ({deck_info['music_id']}):")
+            # 從 music_id 中解析出實際的歌曲ID和難度
+            music_id_parts = deck_info['music_id'].split('_')
+            music_id = music_id_parts[0]
+            difficulty = music_id_parts[1] if len(music_id_parts) > 1 else '??'
+            song_title = get_song_title(music_id)
+
+            logger.info(f"  Song {i+1}: {music_id} (Difficulty: {difficulty}) - {song_title}")
             logger.info(f"    Score: {deck_info['score']:,}")
-            logger.info(f"    Pt: {deck_info['pt']:,}\tRank: {deck_info['rank']}")
+            logger.info(f"    Pt: {deck_info['pt']:,}  (Rank: #{deck_info['rank']})")
             logger.info(f"    Deck:")
             for card_id in deck_info['deck_card_ids']:
                 character_name, card_name = get_card_full_info(card_id)

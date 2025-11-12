@@ -1,0 +1,13 @@
+# 忽略本地預設配置
+default.yaml
+
+# 忽略所有個人開發配置
+dev-*.yaml
+
+# 忽略所有公會成員配置
+member-*.yaml
+
+# 但保留範本
+!default-example.yaml
+!dev-example.yaml
+!member-example.yaml

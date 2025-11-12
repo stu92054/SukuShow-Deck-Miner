@@ -51,23 +51,43 @@ DEATH_NOTE: dict[int, int] = {
 
 
 def convert_deck_to_simulator_format(
-    deck_card_ids_list: list[int]
+    deck_card_ids_list: list[int],
+    custom_card_levels: dict[int, list[int]] = None
 ) -> list[tuple[int, list[int]]]:
     """
     将 CardSeriesId 列表转换为模拟器所需的格式，并根据预加载的缓存或默认值添加等级信息。
+
+    Args:
+        deck_card_ids_list: 卡牌ID列表
+        custom_card_levels: 自定义卡牌练度 (从配置檔案讀取)，格式: {card_id: [level, center_skill_level, skill_level]}
+                           如果为 None，則使用全局 CARD_CACHE (向下兼容)
+
+    Returns:
+        模拟器格式的卡组数据: [(card_id, [level, center_skill_level, skill_level]), ...]
     """
+
+    # 創建本地快取，避免污染全局狀態
+    local_cache = {}
+
+    # 首先使用全局 CARD_CACHE (向下兼容舊代碼)
+    local_cache.update(CARD_CACHE)
+
+    # 然後用自定義練度覆蓋 (優先級更高)
+    if custom_card_levels:
+        local_cache.update(custom_card_levels)
 
     result_deck_data = []
     for card_id in deck_card_ids_list:
-        # 尝试从缓存中获取自定义等级，如果不存在则使用默认满级
-        levels = CARD_CACHE.get(card_id, None)
+        # 從本地快取獲取等級，如果不存在則使用默認值
+        levels = local_cache.get(card_id, None)
         if levels == None:
             levels = [
                 default_card_level[int(str(card_id)[4])],
                 default_center_skill_level,
                 default_skill_level
             ]
-            CARD_CACHE[card_id] = levels
+            # 僅更新本地快取，不污染全局 CARD_CACHE
+            local_cache[card_id] = levels
         result_deck_data.append((card_id, levels))
     return result_deck_data
 

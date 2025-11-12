@@ -61,7 +61,102 @@ Link！Like！ラブライブ！](https://www.lovelive-anime.jp/hasunosora/syste
 
 ### ⚙ カスタム設定
 
-必要に応じて、以下のファイル内の設定を調整できます。
+#### 🆕 設定ファイルシステム（ギルドメンバー計算に推奨）
+
+**複数のギルドメンバーのシミュレーションを行う必要があるユーザー向け**に、YAMLベースの設定システムを提供しており、異なるメンバーの設定を簡単に切り替えることができます：
+
+**クイックスタート：**
+
+1. **各ギルドメンバーの設定ファイルを作成：**
+   ```bash
+   copy config\member-example.yaml config\member-yourname.yaml
+   ```
+
+2. **設定ファイルを編集**して、メンバーのカードプール、ファンレベル、カード練度に合わせます：
+   ```yaml
+   # config/member-yourname.yaml
+
+   songs:
+     - music_id: "405117"
+       difficulty: "02"        # 01=Normal, 02=Hard, 03=Expert, 04=Master
+       mastery_level: 50
+
+     - music_id: "405118"      # 複数曲追加可能
+       difficulty: "03"
+
+   card_ids:
+     - 1011501  # メンバーが所有するすべてのカードをリスト
+     - 1021701
+     # ...
+
+   fan_levels:
+     1011: 5    # メンバーのファンレベル
+     1021: 3
+     # ...
+
+   card_levels:
+     # 特定のカード練度を上書き（最大レベルでない場合）
+     # 1021701: [130, 10, 10]  # LR梢 最大レベルでない
+   ```
+
+3. **設定を使用してシミュレーションを実行：**
+   ```bash
+   python MainBatch.py --config config/member-yourname.yaml
+   ```
+
+4. **結果は自動的に分離されたディレクトリに保存されます：**
+   ```
+   # 最終結果（永久保存）
+   log/
+   └── {member_name}/              # 例: alice/ (member-*.yaml 使用時)
+       └── simulation_results_405117_02.json
+
+   # 一時ファイル（実行中、完了後にクリーンアップ可能）
+   temp/
+   └── {member_name}/              # log/ と一致
+       └── {timestamp}/            # 実行タイムスタンプ
+           └── temp_405117/        # 各楽曲ごとの独立ディレクトリ
+               └── temp_batch_001.json
+   ```
+
+**メリット：**
+- ✅ **簡単な切り替え** - 異なるギルドメンバーのシミュレーションを素早く実行
+- ✅ **コード変更不要** - すべての設定はYAMLファイル内
+- ✅ **分離された出力** - 各実行で独立したディレクトリを作成（ファイル競合なし）
+- ✅ **Git フレンドリー** - 設定ファイルをバージョン管理にコミット可能
+
+**設定の優先順位：**
+1. コマンドライン：`python MainBatch.py --config config/member1.yaml`
+2. 環境変数：`set CONFIG_FILE=config/member1.yaml`（Windows）または `export CONFIG_FILE=config/member1.yaml`（Linux）
+3. デフォルト：`config/default.yaml`（存在する場合、git で無視）
+4. CardLevelConfig.py とプログラム内設定（従来の方法、下位互換性あり）
+
+**注意：** `config/default.yaml` は gitignore されています。`config/default-example.yaml` をテンプレートとして使用し、独自の `config/default.yaml` を作成してください。
+
+**ギルド計算のワークフロー例：**
+```bash
+# メンバー Alice の計算
+python MainBatch.py --config config/member-alice.yaml
+
+# メンバー Bob の計算
+python MainBatch.py --config config/member-bob.yaml
+
+# 結果は別々のディレクトリに：
+# log/alice/simulation_results_*.json
+# log/bob/simulation_results_*.json
+#
+# 一時ファイル：
+# temp/alice/{timestamp}/temp_*/
+# temp/bob/{timestamp}/temp_*/
+```
+
+詳細は `config/member-example.yaml` の完全な例を参照してください。
+
+---
+
+#### 従来の方法：直接ファイルを変更
+
+Pythonファイルで直接設定を調整することもできます：
 
 - `CardLevelConfig.py`: すべてのカードの**デフォルト練度**と**個別のカード練度** (`CARD_CACHE`) を設定します。デフォルトでは、すべてのカードが最大レベルに設定されています。
 また、`DEATH_NOTE` を利用して背水カードの放置HPラインを構成できます。デッキ内に複数の背水カードが設定されている場合、最も低いHPラインが適用されます。
@@ -96,7 +191,7 @@ card_ids = [
 SONGS_CONFIG = [
     {
         "music_id": "405305",        # 楽曲ID（ゲームデータから取得）
-        "difficulty": "02",          # 難易度："00"=Easy, "01"=Normal, "02"=Hard, "03"=Expert
+        "difficulty": "02",          # 難易度："01"=Normal, "02"=Hard, "03"=Expert, "04"=Master
         "mustcards_all": [],         # すべてのデッキに必須のカード（カードIDリスト）
         "mustcards_any": [],         # 少なくとも1枚は含む必要があるカード
         "center_override": None,     # センターキャラを上書き（None = 楽曲デフォルト）

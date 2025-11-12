@@ -15,6 +15,13 @@ from CardLevelConfig import convert_deck_to_simulator_format, fix_windows_consol
 from SkillResolver import SkillEffectType
 from Simulator_core import run_game_simulation, MUSIC_DB
 
+# 導入配置管理器（如果不存在則使用傳統配置）
+try:
+    from config_manager import get_config
+    CONFIG_MANAGER_AVAILABLE = True
+except ImportError:
+    CONFIG_MANAGER_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
@@ -35,7 +42,16 @@ LIMITBREAK_BONUS = {
 }
 
 
-def score2pt(results):
+def score2pt(results, custom_card_levels=None):
+    """
+    計算 PT 值
+
+    Args:
+        results: 模擬結果列表
+        custom_card_levels: 自定義卡牌練度 (從配置檔案讀取)
+    """
+    from CardLevelConfig import default_card_level, default_center_skill_level, default_skill_level
+
     card_limitbreak = dict()
     for deck in results:
         bonus = BONUS_SFL
@@ -43,19 +59,33 @@ def score2pt(results):
         if centercard:
             limitbreak = card_limitbreak.get(centercard, None)
             if limitbreak == None:
-                levels = CARD_CACHE[centercard]
+                # 優先使用自定義練度，其次使用 CARD_CACHE，最後使用默認值
+                levels = None
+                if custom_card_levels and centercard in custom_card_levels:
+                    levels = custom_card_levels[centercard]
+                elif centercard in CARD_CACHE:
+                    levels = CARD_CACHE[centercard]
+                else:
+                    # 使用默認練度
+                    rarity = int(str(centercard)[4])
+                    levels = [
+                        default_card_level[rarity],
+                        default_center_skill_level,
+                        default_skill_level
+                    ]
                 card_limitbreak[centercard] = limitbreak = max(levels[1:])
             bonus *= LIMITBREAK_BONUS[limitbreak]
         deck['pt'] = int(deck['score'] * bonus)  # 实际为向上取整而非截断
     return results
 
 
-def save_simulation_results(results_data: list, filename: str = os.path.join("log", "simulation_results.json"), calc_pt=False):
+def save_simulation_results(results_data: list, filename: str = os.path.join("log", "simulation_results.json"), calc_pt=False, custom_card_levels=None):
     """
     将模拟结果数据保存到 JSON 文件，只保留最高分的顺序。
     results_data: 包含每个卡组及其得分的字典列表。
                   例如: [{"deck_cards": [id1, id2, ...], "score": 123456}, ...]
     filename: 保存 JSON 文件的名称。
+    custom_card_levels: 自定義卡牌練度 (從配置檔案讀取)
     """
 
     unique_decks_best_scores = {}  # Key: tuple of sorted card IDs, Value: {'deck_card_ids': original_list, 'score': best_score}
@@ -81,7 +111,7 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
     # Convert the unique decks dictionary back to a list of results
     processed_results = list(unique_decks_best_scores.values())
     if calc_pt:
-        processed_results = score2pt(processed_results)
+        processed_results = score2pt(processed_results, custom_card_levels)
         # 合并既有log
         if os.path.exists(filename):
             with open(filename, 'r', encoding='utf-8') as f:
@@ -97,12 +127,15 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
         logger.error(f"Error saving simulation results to JSON: {e}")
 
 
-def task_generator_func(decks_generator, chart, player_level,leader_designation):
+def task_generator_func(decks_generator, chart, player_level, leader_designation, custom_card_levels=None):
     """
     一个生成器函数，从 decks_generator 获取每个卡组，
     并将其转换为 run_game_simulation 所需的任务格式。
 
     对于有多张C位角色卡的卡组，生成所有可能的C位选择。
+
+    Args:
+        custom_card_levels: 自定義卡牌練度 (從配置檔案讀取)
     """
     task_index = 0
     center_char_id = chart.music.CenterCharacterId
@@ -132,7 +165,7 @@ def task_generator_func(decks_generator, chart, player_level,leader_designation)
             center_indices_to_test = center_card_indices
 
         for center_index in center_indices_to_test:
-            sim_deck_format = convert_deck_to_simulator_format(deck_card_ids_list)
+            sim_deck_format = convert_deck_to_simulator_format(deck_card_ids_list, custom_card_levels)
             # 传递C位卡索引给模拟器
             yield (sim_deck_format, chart, player_level, task_index, deck_card_ids_list, center_index)
             task_index += 1
@@ -153,12 +186,23 @@ def parse_arguments(unified_config):
     parser = argparse.ArgumentParser(description='批次模擬卡組得分')
     parser.add_argument('songs', nargs='*',
                        help='歌曲配置，格式：music_id difficulty mastery_level leader_id [music_id2 difficulty2 mastery_level2 leader_id2 ...]')
+    parser.add_argument('--config', type=str, metavar='CONFIG_FILE',
+                       help='YAML配置檔案路徑（例如：config/member-alice.yaml）')
     parser.add_argument('--debug', nargs='*', type=int, metavar='CARD_ID',
                        help='Debug模式：可選指定6張卡牌ID（按順序），不指定則使用配置中的牌組')
     parser.add_argument('--center-index', type=int, default=-1,
                        help='Debug模式：指定C位卡在牌組中的索引（0-5），-1表示測試所有C位選擇（預設：-1）')
 
     args = parser.parse_args()
+
+    # 如果提供了 --config 參數，從 YAML 載入配置
+    if args.config:
+        if not CONFIG_MANAGER_AVAILABLE:
+            logger.error("錯誤：config_manager.py 不可用，無法使用 --config 參數")
+            logger.error("請確保 config_manager.py 存在於專案目錄中")
+            sys.exit(1)
+        return {"use_yaml_config": True, "config_file": args.config}
+
 
     # 如果是 Debug 模式，返回特殊標記
     if args.debug is not None:
@@ -210,7 +254,7 @@ def parse_arguments(unified_config):
     return songs_config
 
 
-def run_debug_mode(deck_cards, center_index, config):
+def run_debug_mode(deck_cards, center_index, config, custom_card_levels=None):
     """
     Debug模式：計算單一固定牌組的分數
 
@@ -218,6 +262,7 @@ def run_debug_mode(deck_cards, center_index, config):
         deck_cards: 6張卡牌ID的列表（按順序）
         center_index: 指定使用第幾張C位卡（-1表示測試所有）
         config: 統一配置字典
+        custom_card_levels: 自定義卡牌練度 (從配置檔案讀取)
     """
     logger.info("="*60)
     logger.info("進入 Debug 模式：計算單一牌組分數")
@@ -293,7 +338,7 @@ def run_debug_mode(deck_cards, center_index, config):
         logger.info(f"{'='*60}")
 
         # 轉換牌組格式
-        sim_deck_format = convert_deck_to_simulator_format(deck_cards)
+        sim_deck_format = convert_deck_to_simulator_format(deck_cards, custom_card_levels)
 
         # 調用 run_game_simulation
         result = run_game_simulation(
@@ -468,9 +513,45 @@ if __name__ == "__main__":
     # 解析命令列參數或使用預設配置
     SONGS_CONFIG = parse_arguments(UNIFIED_CONFIG)
 
+    # 檢查是否使用 YAML 配置
+    use_yaml_config = False
+    yaml_config = None
+    custom_card_levels = None  # 自定義卡牌練度
+
+    # 如果命令列有 --config，使用指定的配置
+    if isinstance(SONGS_CONFIG, dict) and SONGS_CONFIG.get("use_yaml_config"):
+        use_yaml_config = True
+        logger.info("使用 YAML 配置檔案")
+        yaml_config = get_config(SONGS_CONFIG["config_file"])
+    # 否則，嘗試自動檢測配置（環境變數或 default.yaml）
+    elif CONFIG_MANAGER_AVAILABLE and not isinstance(SONGS_CONFIG, dict):
+        try:
+            yaml_config = get_config()
+            use_yaml_config = True
+            logger.info("自動檢測到 YAML 配置")
+        except (ValueError, FileNotFoundError):
+            # 沒有找到配置檔案，使用舊方法
+            logger.info("未找到 YAML 配置，使用舊方法（CardLevelConfig.py）")
+            pass
+
+    # 如果使用 YAML 配置，載入相關設定
+    if use_yaml_config and yaml_config:
+        yaml_config.print_summary()
+
+        # 從 YAML 載入配置
+        UNIFIED_CONFIG = {
+            "songs": yaml_config.get_songs_config(),
+            "debug_deck_cards": yaml_config.get_debug_deck() or UNIFIED_CONFIG["debug_deck_cards"],
+        }
+        card_ids = yaml_config.get_card_ids()
+        custom_card_levels = yaml_config.get_card_levels()  # 讀取自定義卡牌練度
+        if custom_card_levels:
+            logger.info(f"載入了 {len(custom_card_levels)} 張卡牌的自定義練度")
+        SONGS_CONFIG = None  # 重置為 None，讓後面使用 UNIFIED_CONFIG
+
     # 如果是 Debug 模式，直接運行並退出
     if isinstance(SONGS_CONFIG, dict) and SONGS_CONFIG.get("debug_mode"):
-        run_debug_mode(SONGS_CONFIG["deck_cards"], SONGS_CONFIG["center_index"], UNIFIED_CONFIG)
+        run_debug_mode(SONGS_CONFIG["deck_cards"], SONGS_CONFIG["center_index"], UNIFIED_CONFIG, custom_card_levels)
         end_time = time.time()
         logger.info(f"\n總耗時: {end_time - start_time:.2f} 秒")
         sys.exit(0)
@@ -489,10 +570,15 @@ if __name__ == "__main__":
 
 
 
-    # 新增：批次大小和临时文件目录
+    # 新增：批次大小和输出目录
     BATCH_SIZE = 1_000_000  # 每100万条结果保存一个文件
-    TEMP_OUTPUT_DIR = "temp"
-    FINAL_OUTPUT_DIR = "log"
+
+    # 設定最終輸出目錄（不會在歌曲循環中改變）
+    if use_yaml_config and yaml_config:
+        FINAL_OUTPUT_DIR = yaml_config.get_log_dir()
+        logger.info(f"輸出目錄: {FINAL_OUTPUT_DIR}")
+    else:
+        FINAL_OUTPUT_DIR = "log"
 
     # ==================== 開始處理多首歌曲 ====================
     for song_config in SONGS_CONFIG:
@@ -504,7 +590,12 @@ if __name__ == "__main__":
         color_override = song_config["color_override"]
         mastery_level = song_config["mastery_level"]
         leader_designation = song_config["leader_designation"]
-        TEMP_OUTPUT_DIR = "temp_" + song_config["music_id"]
+
+        # 為每首歌創建獨立的臨時目錄
+        if use_yaml_config and yaml_config:
+            TEMP_OUTPUT_DIR = yaml_config.get_temp_dir(song_config["music_id"])
+        else:
+            TEMP_OUTPUT_DIR = "temp_" + song_config["music_id"]
 
         logger.info(f"\n{'='*60}")
         logger.info(f"開始處理歌曲: ID={fixed_music_id}, 難度={fixed_difficulty}")
@@ -556,28 +647,35 @@ if __name__ == "__main__":
         
 
         # ------------------ Season Fan Lv (動態計算 BONUS_SFL) ------------------
-        # 使用方式：在下方的 FAN_LEVELS 填入 character_id -> fan_lv(1..10)
+        # 優先從 YAML 配置讀取，如果沒有則使用下方的預設值
+        # 使用方式：在 YAML 中配置 fan_levels 和 season_mode
         # 如果對某個成員未指定，預設為 10（保留既有行為，使預設 BONUS_SFL 等於舊有 6.6）
-        # mode: 'sukushow' (スクショウ) 或 'sukuste' (スクステ)
-        SEASON_MODE = 'sukushow'  # 可改為 'sukuste' 以套用スクステ 行為
 
-        # 在此填寫你要覆寫的 Fan Lv（character id -> level 1..10）
-        # 例如: FAN_LEVELS = {1021: 8, 1032: 10}
-        FAN_LEVELS: dict[int, int] = {
-        # 填寫範例（角色編號 -> Fan Lv 1..10）:
-            1011: 0,  # 沙知
-            1021: 0,  # 梢
-            1022: 0,  # 綴理
-            1023: 0,  # 慈
-            1031: 10,  # 帆
-            1032: 10,  # 沙
-            1033: 10,  # 乃
-            1041: 10,  # 吟
-            1042: 10,  # 鈴
-            1043: 10,  # 芽
-            1051: 10,  # 泉
-            1052: 10,  # 塞
-        }
+        # 從 YAML 配置讀取（如果有）
+        if use_yaml_config and yaml_config:
+            SEASON_MODE = yaml_config.get_season_mode()
+            FAN_LEVELS = yaml_config.get_fan_levels()
+            logger.info(f"從配置讀取 Season Mode: {SEASON_MODE}")
+            if FAN_LEVELS:
+                logger.info(f"從配置讀取 Fan Levels: {len(FAN_LEVELS)} 個角色")
+        else:
+            # 使用預設值（向下相容舊方法）
+            SEASON_MODE = 'sukushow'  # 可改為 'sukuste' 以套用スクステ 行為
+            FAN_LEVELS: dict[int, int] = {
+            # 填寫範例（角色編號 -> Fan Lv 1..10）:
+                1011: 0,  # 沙知
+                1021: 0,  # 梢
+                1022: 0,  # 綴理
+                1023: 0,  # 慈
+                1031: 10,  # 帆
+                1032: 10,  # 沙
+                1033: 10,  # 乃
+                1041: 10,  # 吟
+                1042: 10,  # 鈴
+                1043: 10,  # 芽
+                1051: 10,  # 泉
+                1052: 10,  # 塞
+            }
 
         # Fan Lv -> bonus(百分比) 對照表 (轉為小數時需除以100)
         FAN_LV_BONUS_TABLE = {
@@ -595,7 +693,7 @@ if __name__ == "__main__":
 
         # 歌唱人數補正表 (只列出已知的倍數，其他人數使用 1.0)
         SINGING_COUNT_CORRECTION = {
-            'sukushow': {2: 2.75, 8: 1.00, 9: 0.90},
+            'sukushow': {2: 2.75, 4: 1.73, 8: 1.00, 9: 0.90},
             'sukuste': {2: 2.33, 8: 1.00},
         }
 
@@ -668,7 +766,7 @@ if __name__ == "__main__":
             mustcards=[mustcards_all, mustcards_any, mustskills_all],
             center_char=pre_initialized_chart.music.CenterCharacterId,
             force_dr=force_dr,
-            log_path=os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
+            log_path=os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
         )
         total_decks_to_simulate = decks_generator.total_decks
         logger.info(f"{total_decks_to_simulate} decks to be simulated.")
@@ -678,7 +776,7 @@ if __name__ == "__main__":
         # 指定C位的點在`task_generator_func`裡面。上面卡組沒有做到這點
         
         simulation_tasks_generator = task_generator_func(
-            decks_generator, pre_initialized_chart, mastery_level, leader_designation
+            decks_generator, pre_initialized_chart, mastery_level, leader_designation, custom_card_levels
         )
 
         os.makedirs(TEMP_OUTPUT_DIR, exist_ok=True)
@@ -733,7 +831,7 @@ if __name__ == "__main__":
                 if len(current_batch_results) >= BATCH_SIZE:
                     batch_counter += 1
                     temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
-                    save_simulation_results(current_batch_results, temp_filename)
+                    save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
                     temp_files.append(temp_filename)
                     current_batch_results = []  # 清空当前批次列表
 
@@ -741,7 +839,7 @@ if __name__ == "__main__":
             if current_batch_results:
                 batch_counter += 1
                 temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
-                save_simulation_results(current_batch_results, temp_filename)
+                save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
                 temp_files.append(temp_filename)
                 current_batch_results = []  # 清空
 
@@ -755,8 +853,8 @@ if __name__ == "__main__":
             with open(temp_file, 'r') as f:
                 all_simulation_results.extend(json.load(f))
             os.remove(temp_file)
-        json_output_filename = os.path.join("log", f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
-        save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True)
+        json_output_filename = os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
+        save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True, custom_card_levels=custom_card_levels)
 
         # --- Step 5: Final Summary ---
         logger.info(f"\n--- Final Simulation Summary for {fixed_music_id} ---")

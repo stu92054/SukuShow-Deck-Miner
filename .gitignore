@@ -6,3 +6,13 @@
 
 !*.py
 !README*.md
+
+# 允許配置檔案 (但排除個人配置)
+!config/
+!config/default.yaml
+!config/dev-example.yaml
+!config/member-example.yaml
+!config/.gitignore
+
+# 允許 requirements.txt
+!requirements.txt

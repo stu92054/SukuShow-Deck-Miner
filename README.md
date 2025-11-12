@@ -60,7 +60,102 @@ Choose and run the following files depending on what you need:
 
 ### ⚙ Custom Configuration
 
-You can adjust the configurations in the following files as needed:
+#### 🆕 Configuration File System (Recommended for Guild Members)
+
+**For users who need to run simulations for multiple guild members**, we provide a YAML-based configuration system that allows easy switching between different member configurations:
+
+**Quick Start:**
+
+1. **Create a configuration file for each guild member:**
+   ```bash
+   copy config\member-example.yaml config\member-yourname.yaml
+   ```
+
+2. **Edit the configuration file** to match the member's card pool, fan levels, and card levels:
+   ```yaml
+   # config/member-yourname.yaml
+
+   songs:
+     - music_id: "405117"
+       difficulty: "02"        # 01=Normal, 02=Hard, 03=Expert, 04=Master
+       mastery_level: 50
+
+     - music_id: "405118"      # You can add multiple songs
+       difficulty: "03"
+
+   card_ids:
+     - 1011501  # List all cards the member has
+     - 1021701
+     # ...
+
+   fan_levels:
+     1011: 5    # Member's fan levels
+     1021: 3
+     # ...
+
+   card_levels:
+     # Override specific card levels if not max level
+     # 1021701: [130, 10, 10]  # LR梢 not fully leveled
+   ```
+
+3. **Run simulation with the configuration:**
+   ```bash
+   python MainBatch.py --config config/member-yourname.yaml
+   ```
+
+4. **Results are automatically saved to isolated directories:**
+   ```
+   # Final results (permanently saved)
+   log/
+   └── {member_name}/              # e.g., alice/ (when using member-*.yaml)
+       └── simulation_results_405117_02.json
+
+   # Temporary files (during execution, can be cleaned up after completion)
+   temp/
+   └── {member_name}/              # Consistent with log/
+       └── {timestamp}/            # Execution timestamp
+           └── temp_405117/        # Separate directory for each song
+               └── temp_batch_001.json
+   ```
+
+**Benefits:**
+- ✅ **Easy switching** - Quickly run simulations for different guild members
+- ✅ **No code modification** - All configurations in YAML files
+- ✅ **Isolated outputs** - Each run creates separate directories (no file conflicts)
+- ✅ **Version control friendly** - Configuration files can be committed to Git
+
+**Configuration Priority:**
+1. Command line: `python MainBatch.py --config config/member1.yaml`
+2. Environment variable: `set CONFIG_FILE=config/member1.yaml` (Windows) or `export CONFIG_FILE=config/member1.yaml` (Linux)
+3. Default: `config/default.yaml` (if exists, ignored by git)
+4. CardLevelConfig.py and in-program settings (legacy method, backward compatible)
+
+**Note:** `config/default.yaml` is gitignored. Use `config/default-example.yaml` as a template to create your own `config/default.yaml`.
+
+**Example workflow for guild calculations:**
+```bash
+# Calculate for member Alice
+python MainBatch.py --config config/member-alice.yaml
+
+# Calculate for member Bob
+python MainBatch.py --config config/member-bob.yaml
+
+# Results are in separate directories:
+# log/alice/simulation_results_*.json
+# log/bob/simulation_results_*.json
+#
+# Temporary files:
+# temp/alice/{timestamp}/temp_*/
+# temp/bob/{timestamp}/temp_*/
+```
+
+See `config/member-example.yaml` for a complete example.
+
+---
+
+#### Legacy: Direct File Configuration
+
+You can also adjust configurations directly in Python files as needed:
 
   - `CardLevelConfig.py`: Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.
   You can also use `DEATH_NOTE` to configure the AFK HP threshold for comeback cards. If multiple comeback cards with configured thresholds are in the deck, the lowest threshold will be used.
@@ -95,7 +190,7 @@ Configure one or multiple songs to simulate:
 SONGS_CONFIG = [
     {
         "music_id": "405305",        # Song ID (find in game data)
-        "difficulty": "02",          # Difficulty: "00"=Easy, "01"=Normal, "02"=Hard, "03"=Expert
+        "difficulty": "02",          # Difficulty: "01"=Normal, "02"=Hard, "03"=Expert, "04"=Master
         "mustcards_all": [],         # Cards that MUST be in every deck (list of card IDs)
         "mustcards_any": [],         # At least ONE of these cards must be in deck
         "center_override": None,     # Override center character (None = use song default)
