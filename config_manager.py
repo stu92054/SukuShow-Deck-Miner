@@ -12,11 +12,16 @@
 """
 
 import os
+import sys
+import re
 import yaml
 import getpass
+import logging
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-from pathlib import Path
+
+# 設定日誌記錄器
+logger = logging.getLogger(__name__)
 
 
 class ConfigManager:
@@ -52,11 +57,9 @@ class ConfigManager:
         4. config/default.yaml (如果存在)
         5. 如果都沒有，返回 None（使用舊方法：CardLevelConfig.py）
         """
-        import sys
-
         # 優先級 1: 直接指定
         if config_file and os.path.exists(config_file):
-            print(f"[Config] Using specified config: {config_file}")
+            logger.info(f"[Config] Using specified config: {config_file}")
             return config_file
 
         # 優先級 2: 命令列參數 --config
@@ -64,7 +67,7 @@ class ConfigManager:
             if arg == "--config" and i + 1 < len(sys.argv):
                 cli_config = sys.argv[i + 1]
                 if os.path.exists(cli_config):
-                    print(f"[Config] Using CLI config: {cli_config}")
+                    logger.info(f"[Config] Using CLI config: {cli_config}")
                     return cli_config
                 else:
                     raise FileNotFoundError(f"命令列指定的配置檔案不存在: {cli_config}")
@@ -72,18 +75,18 @@ class ConfigManager:
         # 優先級 3: 環境變量
         env_config = os.environ.get("CONFIG_FILE")
         if env_config and os.path.exists(env_config):
-            print(f"[Config] Using environment config: {env_config}")
+            logger.info(f"[Config] Using environment config: {env_config}")
             return env_config
 
         # 優先級 4: 預設配置 (如果存在)
         default_config = os.path.join("config", "default.yaml")
         if os.path.exists(default_config):
             default_config = os.path.abspath(default_config)
-            print(f"[Config] Using default config: {default_config}")
+            logger.info(f"[Config] Using default config: {default_config}")
             return default_config
 
         # 如果都沒有指定，返回 None（使用舊方法：CardLevelConfig.py）
-        print(f"[Config] No YAML config found, using legacy method (CardLevelConfig.py)")
+        logger.info(f"[Config] No YAML config found, using legacy method (CardLevelConfig.py)")
         return None
 
     def _load_config(self) -> Dict[str, Any]:
@@ -104,7 +107,6 @@ class ConfigManager:
         Returns:
             成員名稱，如果無法提取則返回 None（表示使用預設 log/ 目錄）
         """
-        import re
         # 嘗試匹配 member-{name} 格式
         match = re.search(r'member-([^/\\\.]+)', config_file)
         if match:
@@ -219,20 +221,20 @@ class ConfigManager:
 
     def print_summary(self):
         """列印配置摘要"""
-        print("=" * 60)
-        print("配置摘要")
-        print("=" * 60)
-        print(f"配置檔案: {self.config_file}")
-        print(f"成員名稱: {self.member_name}")
-        print(f"開發者ID: {self.developer_id}")
-        print(f"運行時間: {self.run_timestamp}")
-        print(f"日誌目錄: {self.get_log_dir()}")
-        print(f"臨時目錄: {self.get_temp_dir()}")
-        print(f"快取目錄: {self.get_cache_dir()}")
-        print(f"歌曲數量: {len(self.get_songs_config())}")
-        print(f"卡牌數量: {len(self.get_card_ids())}")
-        print(f"賽季模式: {self.get_season_mode()}")
-        print("=" * 60)
+        logger.info("=" * 60)
+        logger.info("配置摘要")
+        logger.info("=" * 60)
+        logger.info(f"配置檔案: {self.config_file}")
+        logger.info(f"成員名稱: {self.member_name}")
+        logger.info(f"開發者ID: {self.developer_id}")
+        logger.info(f"運行時間: {self.run_timestamp}")
+        logger.info(f"日誌目錄: {self.get_log_dir()}")
+        logger.info(f"臨時目錄: {self.get_temp_dir()}")
+        logger.info(f"快取目錄: {self.get_cache_dir()}")
+        logger.info(f"歌曲數量: {len(self.get_songs_config())}")
+        logger.info(f"卡牌數量: {len(self.get_card_ids())}")
+        logger.info(f"賽季模式: {self.get_season_mode()}")
+        logger.info("=" * 60)
 
 
 # 全局配置實例 (延遲初始化)
@@ -263,8 +265,11 @@ def reset_config():
 
 if __name__ == "__main__":
     # 測試配置管理器
+    # 設定基本日誌格式以便測試
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
+
     try:
         config = ConfigManager()
         config.print_summary()
-    except FileNotFoundError as e:
-        print(f"錯誤: {e}")
+    except (FileNotFoundError, ValueError) as e:
+        logger.error(f"錯誤: {e}")
