@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
         LOG_DIR = config.get_log_dir()
         logger.info(f"log 目錄: {LOG_DIR}")
-    except (ImportError, FileNotFoundError) as e:
+    except (ImportError, ValueError, FileNotFoundError) as e:
         # 如果沒有配置管理器或找不到配置，使用默認的 log 目錄
         LOG_DIR = "log"
         logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用默認 log 目錄: {LOG_DIR}")

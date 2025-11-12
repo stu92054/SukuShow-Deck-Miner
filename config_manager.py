@@ -92,7 +92,7 @@ class ConfigManager:
             config = yaml.safe_load(f)
         return config
 
-    def _extract_member_name(self, config_file: str) -> str:
+    def _extract_member_name(self, config_file: str) -> Optional[str]:
         """
         從配置檔案路徑中提取成員名稱
 
@@ -102,15 +102,15 @@ class ConfigManager:
             config_file: 配置檔案路徑
 
         Returns:
-            成員名稱，如果無法提取則返回 developer_id
+            成員名稱，如果無法提取則返回 None（表示使用預設 log/ 目錄）
         """
         import re
         # 嘗試匹配 member-{name} 格式
         match = re.search(r'member-([^/\\\.]+)', config_file)
         if match:
             return match.group(1)
-        # 如果無法提取，則使用 developer_id 作為後備
-        return self.developer_id
+        # 如果不是 member 配置（如 default.yaml），返回 None
+        return None
 
     def get_output_dir(self, subdir: str = "") -> str:
         """
@@ -154,16 +154,17 @@ class ConfigManager:
     def get_log_dir(self) -> str:
         """
         獲取最終輸出目錄（不帶時間戳，直接覆蓋過去記錄）
-        格式: log/{member_name}/
+        格式:
+        - member-{name}.yaml -> log/{name}/
+        - default.yaml 或其他 -> log/
         """
         base_dir = "log"
-        enable_isolation = self.config.get("output", {}).get("enable_isolation", True)
 
-        if enable_isolation:
-            # 最終輸出只用 member_name 隔離，不用時間戳
+        # 如果是 member 配置，隔離到 log/{member_name}/
+        if self.member_name:
             output_path = os.path.join(base_dir, self.member_name)
         else:
-            # 不隔離模式 (用於正式運行)
+            # default.yaml 或其他配置，使用 log/
             output_path = base_dir
 
         # 自動創建目錄
