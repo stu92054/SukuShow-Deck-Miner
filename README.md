@@ -120,8 +120,11 @@ Choose and run the following files depending on what you need:
 
 **Configuration Priority:**
 1. Command line: `python MainBatch.py --config config/member1.yaml`
-2. Environment variable: `set CONFIG_FILE=config/member1.yaml`
-3. Default: `config/default.yaml`
+2. Environment variable: `set CONFIG_FILE=config/member1.yaml` (Windows) or `export CONFIG_FILE=config/member1.yaml` (Linux)
+3. Default: `config/default.yaml` (if exists, ignored by git)
+4. CardLevelConfig.py and in-program settings (legacy method, backward compatible)
+
+**Note:** `config/default.yaml` is gitignored. Use `config/default-example.yaml` as a template to create your own `config/default.yaml`.
 
 **Example workflow for guild calculations:**
 ```bash

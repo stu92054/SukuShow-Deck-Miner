@@ -28,20 +28,29 @@ class ConfigManager:
 
         Args:
             config_file: 配置檔案路徑，如果為 None 則自動偵測
+
+        Raises:
+            ValueError: 如果沒有找到任何配置檔案（應使用舊方法）
         """
         self.config_file = self._resolve_config_file(config_file)
+
+        # 如果沒有找到任何配置，拋出異常
+        if self.config_file is None:
+            raise ValueError("No YAML config file found. Using legacy method (CardLevelConfig.py).")
+
         self.config = self._load_config()
         self.developer_id = os.environ.get("DEV_ID", getpass.getuser())
         self.member_name = self._extract_member_name(self.config_file)
         self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    def _resolve_config_file(self, config_file: Optional[str]) -> str:
+    def _resolve_config_file(self, config_file: Optional[str]) -> Optional[str]:
         """
         解析配置檔案路徑優先順序:
         1. 函數參數 config_file
         2. 命令列參數 sys.argv (--config)
         3. 環境變量 CONFIG_FILE
-        4. config/default.yaml
+        4. config/default.yaml (如果存在)
+        5. 如果都沒有，返回 None（使用舊方法：CardLevelConfig.py）
         """
         import sys
 
@@ -66,18 +75,16 @@ class ConfigManager:
             print(f"[Config] Using environment config: {env_config}")
             return env_config
 
-        # 優先級 4: 預設配置
+        # 優先級 4: 預設配置 (如果存在)
         default_config = os.path.join("config", "default.yaml")
         if os.path.exists(default_config):
+            default_config = os.path.abspath(default_config)
             print(f"[Config] Using default config: {default_config}")
             return default_config
 
-        raise FileNotFoundError(
-            f"找不到配置檔案！請使用以下任一方式指定:\n"
-            f"  1. 命令列: python MainBatch.py --config config/member1.yaml\n"
-            f"  2. 環境變量: set CONFIG_FILE=config/member1.yaml\n"
-            f"  3. 創建預設配置: {default_config}"
-        )
+        # 如果都沒有指定，返回 None（使用舊方法：CardLevelConfig.py）
+        print(f"[Config] No YAML config found, using legacy method (CardLevelConfig.py)")
+        return None
 
     def _load_config(self) -> Dict[str, Any]:
         """載入 YAML 配置檔案"""

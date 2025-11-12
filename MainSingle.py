@@ -31,6 +31,19 @@ logging.basicConfig(
 if __name__ == "__main__":
     fix_windows_console_encoding()
 
+    # 嘗試讀取 YAML 配置中的自定義練度（如果有的話）
+    custom_card_levels = None
+    try:
+        from config_manager import get_config
+        yaml_config = get_config()
+        custom_card_levels = yaml_config.get_card_levels()
+        if custom_card_levels:
+            logger.info(f"從配置載入 {len(custom_card_levels)} 張卡牌的自定義練度")
+    except (ImportError, ValueError, FileNotFoundError):
+        # 沒有配置管理器或沒有配置檔案，使用 CardLevelConfig.py
+        logger.info("使用 CardLevelConfig.py 中的練度設定")
+        pass
+
     # 读取歌曲、卡牌、技能db
     musicdb = MusicDB()
     db_carddata = db_load(os.path.join("Data", "CardDatas.json"))
@@ -52,11 +65,13 @@ if __name__ == "__main__":
     """
     # 使用convert_deck_to_simulator_format时可只输入id列表
     # 此时需要在CardLevelConfig中自定义练度，未定义则默认全满级
+    # 如果有 YAML 配置，會優先使用 YAML 中的 card_levels
 
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1041513, 1021701, 1021523, 1022701, 1043516, 1043802]
+            [1041513, 1021701, 1021523, 1022701, 1043516, 1043802],
+            custom_card_levels
         )
     )
 

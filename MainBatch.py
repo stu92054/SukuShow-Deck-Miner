@@ -517,10 +517,25 @@ if __name__ == "__main__":
     use_yaml_config = False
     yaml_config = None
     custom_card_levels = None  # 自定義卡牌練度
+
+    # 如果命令列有 --config，使用指定的配置
     if isinstance(SONGS_CONFIG, dict) and SONGS_CONFIG.get("use_yaml_config"):
         use_yaml_config = True
         logger.info("使用 YAML 配置檔案")
         yaml_config = get_config(SONGS_CONFIG["config_file"])
+    # 否則，嘗試自動檢測配置（環境變數或 default.yaml）
+    elif CONFIG_MANAGER_AVAILABLE and not isinstance(SONGS_CONFIG, dict):
+        try:
+            yaml_config = get_config()
+            use_yaml_config = True
+            logger.info("自動檢測到 YAML 配置")
+        except (ValueError, FileNotFoundError):
+            # 沒有找到配置檔案，使用舊方法
+            logger.info("未找到 YAML 配置，使用舊方法（CardLevelConfig.py）")
+            pass
+
+    # 如果使用 YAML 配置，載入相關設定
+    if use_yaml_config and yaml_config:
         yaml_config.print_summary()
 
         # 從 YAML 載入配置
@@ -675,7 +690,7 @@ if __name__ == "__main__":
 
         # 歌唱人數補正表 (只列出已知的倍數，其他人數使用 1.0)
         SINGING_COUNT_CORRECTION = {
-            'sukushow': {2: 2.75, 8: 1.00, 9: 0.90},
+            'sukushow': {2: 2.75, 4: 1.73, 8: 1.00, 9: 0.90},
             'sukuste': {2: 2.33, 8: 1.00},
         }
 

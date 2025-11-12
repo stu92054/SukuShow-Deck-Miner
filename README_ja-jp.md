@@ -121,8 +121,11 @@ Link！Like！ラブライブ！](https://www.lovelive-anime.jp/hasunosora/syste
 
 **設定の優先順位：**
 1. コマンドライン：`python MainBatch.py --config config/member1.yaml`
-2. 環境変数：`set CONFIG_FILE=config/member1.yaml`
-3. デフォルト：`config/default.yaml`
+2. 環境変数：`set CONFIG_FILE=config/member1.yaml`（Windows）または `export CONFIG_FILE=config/member1.yaml`（Linux）
+3. デフォルト：`config/default.yaml`（存在する場合、git で無視）
+4. CardLevelConfig.py とプログラム内設定（従来の方法、下位互換性あり）
+
+**注意：** `config/default.yaml` は gitignore されています。`config/default-example.yaml` をテンプレートとして使用し、独自の `config/default.yaml` を作成してください。
 
 **ギルド計算のワークフロー例：**
 ```bash

@@ -120,8 +120,11 @@
 
 **配置優先順序：**
 1. 命令列：`python MainBatch.py --config config/member1.yaml`
-2. 環境變數：`set CONFIG_FILE=config/member1.yaml`
-3. 預設：`config/default.yaml`
+2. 環境變數：`set CONFIG_FILE=config/member1.yaml`（Windows）或 `export CONFIG_FILE=config/member1.yaml`（Linux）
+3. 預設：`config/default.yaml`（如果存在，已被 git 忽略）
+4. CardLevelConfig.py 與程式內設定（舊方法，向下相容）
+
+**注意：** `config/default.yaml` 已被 gitignore。請使用 `config/default-example.yaml` 作為範本創建自己的 `config/default.yaml`。
 
 **公會計算工作流程範例：**
 ```bash
