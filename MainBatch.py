@@ -647,28 +647,35 @@ if __name__ == "__main__":
         
 
         # ------------------ Season Fan Lv (動態計算 BONUS_SFL) ------------------
-        # 使用方式：在下方的 FAN_LEVELS 填入 character_id -> fan_lv(1..10)
+        # 優先從 YAML 配置讀取，如果沒有則使用下方的預設值
+        # 使用方式：在 YAML 中配置 fan_levels 和 season_mode
         # 如果對某個成員未指定，預設為 10（保留既有行為，使預設 BONUS_SFL 等於舊有 6.6）
-        # mode: 'sukushow' (スクショウ) 或 'sukuste' (スクステ)
-        SEASON_MODE = 'sukushow'  # 可改為 'sukuste' 以套用スクステ 行為
 
-        # 在此填寫你要覆寫的 Fan Lv（character id -> level 1..10）
-        # 例如: FAN_LEVELS = {1021: 8, 1032: 10}
-        FAN_LEVELS: dict[int, int] = {
-        # 填寫範例（角色編號 -> Fan Lv 1..10）:
-            1011: 0,  # 沙知
-            1021: 0,  # 梢
-            1022: 0,  # 綴理
-            1023: 0,  # 慈
-            1031: 10,  # 帆
-            1032: 10,  # 沙
-            1033: 10,  # 乃
-            1041: 10,  # 吟
-            1042: 10,  # 鈴
-            1043: 10,  # 芽
-            1051: 10,  # 泉
-            1052: 10,  # 塞
-        }
+        # 從 YAML 配置讀取（如果有）
+        if use_yaml_config and yaml_config:
+            SEASON_MODE = yaml_config.get_season_mode()
+            FAN_LEVELS = yaml_config.get_fan_levels()
+            logger.info(f"從配置讀取 Season Mode: {SEASON_MODE}")
+            if FAN_LEVELS:
+                logger.info(f"從配置讀取 Fan Levels: {len(FAN_LEVELS)} 個角色")
+        else:
+            # 使用預設值（向下相容舊方法）
+            SEASON_MODE = 'sukushow'  # 可改為 'sukuste' 以套用スクステ 行為
+            FAN_LEVELS: dict[int, int] = {
+            # 填寫範例（角色編號 -> Fan Lv 1..10）:
+                1011: 0,  # 沙知
+                1021: 0,  # 梢
+                1022: 0,  # 綴理
+                1023: 0,  # 慈
+                1031: 10,  # 帆
+                1032: 10,  # 沙
+                1033: 10,  # 乃
+                1041: 10,  # 吟
+                1042: 10,  # 鈴
+                1043: 10,  # 芽
+                1051: 10,  # 泉
+                1052: 10,  # 塞
+            }
 
         # Fan Lv -> bonus(百分比) 對照表 (轉為小數時需除以100)
         FAN_LV_BONUS_TABLE = {
