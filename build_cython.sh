@@ -57,6 +57,7 @@ echo "Cleaning old build files..."
 rm -rf build
 rm -f optimizer_core.c
 rm -f optimizer_core.*.so
+rm -f optimizer_core.*.pyd
 
 # 編譯 Cython 模組
 echo ""

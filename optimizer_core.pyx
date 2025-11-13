@@ -52,57 +52,62 @@ def optimize_decks(
     cdef int n1 = len(level1_data)
     cdef int n2 = len(level2_data)
 
-    # 分配 C 陣列
-    cdef Deck* level0 = <Deck*>malloc(n0 * sizeof(Deck))
-    cdef Deck* level1 = <Deck*>malloc(n1 * sizeof(Deck))
-    cdef Deck* level2 = <Deck*>malloc(n2 * sizeof(Deck))
+    # 初始化指標為 NULL
+    cdef Deck* level0 = NULL
+    cdef Deck* level1 = NULL
+    cdef Deck* level2 = NULL
+    cdef int i
+    cdef BestCombo result
 
-    if not level0 or not level1 or not level2:
+    try:
+        # 分配 C 陣列
+        level0 = <Deck*>malloc(n0 * sizeof(Deck))
+        level1 = <Deck*>malloc(n1 * sizeof(Deck))
+        level2 = <Deck*>malloc(n2 * sizeof(Deck))
+
+        if not level0 or not level1 or not level2:
+            raise MemoryError("Failed to allocate memory for deck arrays")
+
+        # 將 Python 資料複製到 C 結構
+        for i in range(n0):
+            level0[i].mask = level0_data[i]["mask"]
+            level0[i].rank = level0_data[i]["rank"]
+            level0[i].score = level0_data[i]["score"]
+            level0[i].pt = level0_data[i]["pt"]
+            level0[i].deck_idx = i
+
+        for i in range(n1):
+            level1[i].mask = level1_data[i]["mask"]
+            level1[i].rank = level1_data[i]["rank"]
+            level1[i].score = level1_data[i]["score"]
+            level1[i].pt = level1_data[i]["pt"]
+            level1[i].deck_idx = i
+
+        for i in range(n2):
+            level2[i].mask = level2_data[i]["mask"]
+            level2[i].rank = level2_data[i]["rank"]
+            level2[i].score = level2_data[i]["score"]
+            level2[i].pt = level2_data[i]["pt"]
+            level2[i].deck_idx = i
+
+        # 執行核心搜尋
+        result = search_best_combo(
+            level0, n0,
+            level1, n1,
+            level2, n2,
+            callback
+        )
+
+        if result.pt <= 0:
+            return None
+
+        return (result.pt, result.deck1_idx, result.deck2_idx, result.deck3_idx)
+
+    finally:
+        # 無論如何都釋放記憶體
         free(level0)
         free(level1)
         free(level2)
-        raise MemoryError("Failed to allocate memory for deck arrays")
-
-    # 將 Python 資料複製到 C 結構
-    cdef int i
-    for i in range(n0):
-        level0[i].mask = level0_data[i]["mask"]
-        level0[i].rank = level0_data[i]["rank"]
-        level0[i].score = level0_data[i]["score"]
-        level0[i].pt = level0_data[i]["pt"]
-        level0[i].deck_idx = i
-
-    for i in range(n1):
-        level1[i].mask = level1_data[i]["mask"]
-        level1[i].rank = level1_data[i]["rank"]
-        level1[i].score = level1_data[i]["score"]
-        level1[i].pt = level1_data[i]["pt"]
-        level1[i].deck_idx = i
-
-    for i in range(n2):
-        level2[i].mask = level2_data[i]["mask"]
-        level2[i].rank = level2_data[i]["rank"]
-        level2[i].score = level2_data[i]["score"]
-        level2[i].pt = level2_data[i]["pt"]
-        level2[i].deck_idx = i
-
-    # 執行核心搜尋
-    cdef BestCombo result = search_best_combo(
-        level0, n0,
-        level1, n1,
-        level2, n2,
-        callback
-    )
-
-    # 釋放記憶體
-    free(level0)
-    free(level1)
-    free(level2)
-
-    if result.pt <= 0:
-        return None
-
-    return (result.pt, result.deck1_idx, result.deck2_idx, result.deck3_idx)
 
 
 cdef BestCombo search_best_combo(
@@ -208,59 +213,64 @@ def optimize_decks_debug(
     cdef int n1 = len(level1_data)
     cdef int n2 = len(level2_data)
 
-    cdef Deck* level0 = <Deck*>malloc(n0 * sizeof(Deck))
-    cdef Deck* level1 = <Deck*>malloc(n1 * sizeof(Deck))
-    cdef Deck* level2 = <Deck*>malloc(n2 * sizeof(Deck))
-
-    if not level0 or not level1 or not level2:
-        free(level0)
-        free(level1)
-        free(level2)
-        raise MemoryError("Failed to allocate memory")
-
+    # 初始化指標為 NULL
+    cdef Deck* level0 = NULL
+    cdef Deck* level1 = NULL
+    cdef Deck* level2 = NULL
     cdef int i
-    for i in range(n0):
-        level0[i].mask = level0_data[i]["mask"]
-        level0[i].pt = level0_data[i]["pt"]
-        level0[i].deck_idx = i
-
-    for i in range(n1):
-        level1[i].mask = level1_data[i]["mask"]
-        level1[i].pt = level1_data[i]["pt"]
-        level1[i].deck_idx = i
-
-    for i in range(n2):
-        level2[i].mask = level2_data[i]["mask"]
-        level2[i].pt = level2_data[i]["pt"]
-        level2[i].deck_idx = i
-
-    # 執行帶統計的搜尋
     cdef int64_t iterations = 0
     cdef int64_t conflicts = 0
     cdef int64_t pruned = 0
+    cdef BestCombo best
 
-    cdef BestCombo best = search_best_combo_debug(
-        level0, n0,
-        level1, n1,
-        level2, n2,
-        &iterations,
-        &conflicts,
-        &pruned
-    )
+    try:
+        level0 = <Deck*>malloc(n0 * sizeof(Deck))
+        level1 = <Deck*>malloc(n1 * sizeof(Deck))
+        level2 = <Deck*>malloc(n2 * sizeof(Deck))
 
-    free(level0)
-    free(level1)
-    free(level2)
+        if not level0 or not level1 or not level2:
+            raise MemoryError("Failed to allocate memory")
 
-    return {
-        "best_pt": best.pt,
-        "deck1_idx": best.deck1_idx,
-        "deck2_idx": best.deck2_idx,
-        "deck3_idx": best.deck3_idx,
-        "iterations": iterations,
-        "conflicts": conflicts,
-        "pruned": pruned
-    }
+        for i in range(n0):
+            level0[i].mask = level0_data[i]["mask"]
+            level0[i].pt = level0_data[i]["pt"]
+            level0[i].deck_idx = i
+
+        for i in range(n1):
+            level1[i].mask = level1_data[i]["mask"]
+            level1[i].pt = level1_data[i]["pt"]
+            level1[i].deck_idx = i
+
+        for i in range(n2):
+            level2[i].mask = level2_data[i]["mask"]
+            level2[i].pt = level2_data[i]["pt"]
+            level2[i].deck_idx = i
+
+        # 執行帶統計的搜尋
+        best = search_best_combo_debug(
+            level0, n0,
+            level1, n1,
+            level2, n2,
+            &iterations,
+            &conflicts,
+            &pruned
+        )
+
+        return {
+            "best_pt": best.pt,
+            "deck1_idx": best.deck1_idx,
+            "deck2_idx": best.deck2_idx,
+            "deck3_idx": best.deck3_idx,
+            "iterations": iterations,
+            "conflicts": conflicts,
+            "pruned": pruned
+        }
+
+    finally:
+        # 無論如何都釋放記憶體
+        free(level0)
+        free(level1)
+        free(level2)
 
 
 cdef BestCombo search_best_combo_debug(
