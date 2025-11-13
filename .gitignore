@@ -16,3 +16,24 @@
 
 # 允許 requirements.txt
 !requirements.txt
+
+# === Cython 相關檔案 ===
+# 允許 Cython 原始碼和配置
+!*.pyx
+!setup.py
+!build_cython.bat
+!build_cython.sh
+
+# 允許 Cython 文件
+!README_CYTHON.md
+!QUICKSTART_CYTHON.txt
+
+# 排除 Cython 編譯產物
+*.c                    # Cython 產生的 C 檔案
+*.pyd                  # Windows 編譯模組
+*.so                   # Linux/Mac 編譯模組
+*.html                 # Cython 註解檔案
+build/                 # 編譯臨時目錄
+
+# 排除 Cython 優化版輸出
+best_3_song_combo_cython.txt
