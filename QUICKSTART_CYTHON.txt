@@ -1,0 +1,122 @@
+==============================================================================
+Multi Optimizer 2 - Cython 加速版快速入門
+==============================================================================
+
+📋 檔案列表
+-----------
+optimizer_core.pyx            - Cython 核心模組（C擴充原始碼）
+setup.py                      - 編譯配置檔
+multi_optimizer_2_cython.py   - 優化版主程式
+benchmark_optimizer.py        - 效能對比測試
+build_cython.bat             - Windows 編譯腳本
+build_cython.sh              - Linux/Mac 編譯腳本
+README_CYTHON.md             - 詳細文件
+
+
+🚀 快速開始（3步）
+-----------------
+
+第 1 步：安裝依賴
+    pip install cython
+
+    Windows: 安裝 Visual Studio Build Tools
+             https://visualstudio.microsoft.com/downloads/
+             選擇 "Desktop development with C++"
+
+    Linux:   sudo apt-get install build-essential python3-dev
+    macOS:   xcode-select --install
+
+
+第 2 步：編譯模組
+    Windows: 雙擊執行 build_cython.bat
+             或執行: python setup.py build_ext --inplace
+
+    Linux/Mac: chmod +x build_cython.sh
+               ./build_cython.sh
+
+
+第 3 步：執行優化
+    python multi_optimizer_2_cython.py
+
+
+✅ 編譯成功標誌
+--------------
+看到以下檔案說明編譯成功：
+  Windows: optimizer_core.cp311-win_amd64.pyd (檔名中的數字是Python版本)
+  Linux:   optimizer_core.cpython-311-x86_64-linux-gnu.so
+  macOS:   optimizer_core.cpython-311-darwin.so
+
+
+📊 效能測試
+----------
+對比 Python 原版和 Cython 版本：
+    python benchmark_optimizer.py
+
+自訂測試參數：
+    python benchmark_optimizer.py --top-n 3000 --runs 5
+
+
+🎯 使用建議
+----------
+1. TOP_N 越大，加速效果越明顯
+2. 首次使用建議 TOP_N=1000 進行測試
+3. 確認無誤後可提高到 5000 或更高
+
+
+⚙️ 配置選項
+-----------
+在 multi_optimizer_2_cython.py 中修改：
+
+CHALLENGE_SONGS = [
+    ("405121", "02"),  # 歌曲ID和難度
+    ("405107", "02"),
+]
+
+TOP_N = 5000  # 每首歌保留的卡組數量
+
+
+🐛 常見問題
+----------
+
+問：編譯失敗 - 找不到 MSVC
+答：安裝 Visual Studio Build Tools
+    https://visualstudio.microsoft.com/downloads/
+
+問：ImportError: No module named 'optimizer_core'
+答：編譯未成功，重新執行 build_cython.bat
+    或檢查 Python 版本是否匹配（編譯和執行時必須使用相同版本）
+
+問：執行時崩潰
+答：1. 減小 TOP_N 值
+    2. 檢查 JSON 資料檔案是否完整
+    3. 確保卡牌數量 <= 64
+
+問：Python 版本不匹配
+答：編譯的 .pyd 檔案名稱包含版本號（如 cp312 = Python 3.12）
+    必須使用相同版本執行，或用目標版本重新編譯
+
+
+📈 預期效能
+----------
+    資料規模           Python        Cython       加速比
+    TOP_N = 1000      5-10秒        0.5-1秒      10-20x
+    TOP_N = 5000      100-200秒     5-15秒       15-40x
+    TOP_N = 10000     600-1000秒    30-60秒      20-50x
+
+實際效能取決於 CPU、資料特徵和剪枝效率
+
+
+🔍 偵錯模式
+----------
+顯示詳細統計資訊：
+    python multi_optimizer_2_cython.py --debug
+
+
+📚 更多說明
+----------
+詳細文件請參閱：README_CYTHON.md
+
+
+==============================================================================
+祝使用愉快！如有問題請查看詳細文件或提交 Issue
+==============================================================================
