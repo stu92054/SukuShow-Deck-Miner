@@ -22,7 +22,7 @@ def timing(self, message, *args, **kws):
 logging.Logger.timing = timing
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.TIMING,
     format='%(message)s',
     # filename=f"log\log_{int(time.time())}.txt",
     # encoding="utf-8"
@@ -70,15 +70,15 @@ if __name__ == "__main__":
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1041513, 1021701, 1021523, 1022701, 1043516, 1043802],
+            [1032532, 1042519, 1052901, 1033902, 1033528, 1051503],
             custom_card_levels
         )
     )
 
     # 歌曲、难度设置
     # 难度 01 / 02 / 03 / 04 对应 Normal / Hard / Expert / Master
-    fixed_music_id = "405105"  # Very! Very! COCO夏っ
-    fixed_difficulty = "02"
+    fixed_music_id = "405123"
+    fixed_difficulty = "04"
     fixed_player_master_level = 50
 
     # 强制替换歌曲C位和颜色
@@ -268,9 +268,7 @@ if __name__ == "__main__":
                                         new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
                                     else:
                                         new_afk_mental = DEATH_NOTE[cid]
-                        # 如果沒有剩餘的背水卡，血線重置為100%（不需要背水）
-                        if new_afk_mental == 0:
-                            new_afk_mental = 100
+                        # 如果沒有剩餘的背水卡，血線重置為0（禁用背水）
                         afk_mental = new_afk_mental
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug(f"  動態血線更新: {afk_mental}%")
@@ -307,9 +305,7 @@ if __name__ == "__main__":
                                         new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
                                     else:
                                         new_afk_mental = DEATH_NOTE[cid]
-                        # 如果沒有剩餘的背水卡，血線重置為100%（不需要背水）
-                        if new_afk_mental == 0:
-                            new_afk_mental = 100
+                        # 如果沒有剩餘的背水卡，血線重置為0（禁用背水）
                         afk_mental = new_afk_mental
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug(f"  動態血線更新: {afk_mental}%")
