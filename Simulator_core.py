@@ -143,9 +143,7 @@ def run_game_simulation(
                         new_afk_mental = min(new_afk_mental, DEATH_NOTE[cid])
                     else:
                         new_afk_mental = DEATH_NOTE[cid]
-        # 如果沒有剩餘的背水卡，血線重置為100%（不需要背水）
-        if new_afk_mental == 0:
-            new_afk_mental = 100
+        # 如果沒有剩餘的背水卡，血線重置為0（禁用背水）
         afk_mental = new_afk_mental
 
     # 提取重复的技能触发逻辑为内联函数
