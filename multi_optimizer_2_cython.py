@@ -14,9 +14,11 @@ import time
 import sys
 import argparse
 from tqdm import tqdm
-from CardLevelConfig import fix_windows_console_encoding
-from Simulator_core import DB_CARDDATA
-from RChart import MusicDB
+
+
+from src.config.CardLevelConfig import fix_windows_console_encoding
+from src.core.Simulator_core import DB_CARDDATA
+from src.core.RChart import MusicDB
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ CHALLENGE_SONGS = [
 ]
 
 # 每首歌只保留得分排名前 N 名的卡組用於求解
-TOP_N = 56005
+TOP_N = 5000
 
 # 角色名稱映射
 CHARACTER_NAMES = {
@@ -110,8 +112,9 @@ def get_song_title(music_id: str, music_db=None) -> str:
 if __name__ == "__main__":
     fix_windows_console_encoding()
 
-    # 嘗試匯入 Cython 模組
+    # 嘗試匯入 Cython 模組（從 cython 目錄）
     try:
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'cython')))
         import optimizer_core
         logger.info("✓ Cython module loaded successfully")
     except ImportError as e:
@@ -136,7 +139,7 @@ if __name__ == "__main__":
 
     # 嘗試讀取配置管理器以取得正確的 log 目錄
     try:
-        from config_manager import get_config
+        from src.config.config_manager import get_config
         if args.config:
             config = get_config(args.config)
             logger.info(f"使用命令列指定的配置檔: {args.config}")

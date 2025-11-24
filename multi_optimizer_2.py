@@ -5,9 +5,11 @@ import time
 import sys
 import argparse
 from tqdm import tqdm
-from CardLevelConfig import fix_windows_console_encoding
-from Simulator_core import DB_CARDDATA
-from RChart import MusicDB
+
+
+from src.config.CardLevelConfig import fix_windows_console_encoding
+from src.core.Simulator_core import DB_CARDDATA
+from src.core.RChart import MusicDB
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ logging.basicConfig(
 # 求解前需运行 MainBatch.py 生成对应的卡组得分记录
 CHALLENGE_SONGS = [
     # 若只输入两首歌则会寻找仅针对两面的最优解，不考虑第三面
-    # ("405119", "02"),  # 一生に夢が咲くように
+    ("405119", "02"),  # 一生に夢が咲くように
     ("405121", "02"),  # ハートにQ
     ("405107", "02"),  # Shocking Party
 ]
@@ -110,7 +112,7 @@ if __name__ == "__main__":
 
     # 嘗試讀取配置管理器以獲取正確的 log 目錄
     try:
-        from config_manager import get_config
+        from src.config.config_manager import get_config
         if args.config:
             # 使用命令列指定的配置檔
             config = get_config(args.config)

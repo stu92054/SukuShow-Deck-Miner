@@ -4,13 +4,13 @@ Multi Optimizer 2 - Cython 加速版快速入門
 
 📋 檔案列表
 -----------
-optimizer_core.pyx            - Cython 核心模組（C擴充原始碼）
-setup.py                      - 編譯配置檔
-multi_optimizer_2_cython.py   - 優化版主程式
-benchmark_optimizer.py        - 效能對比測試
-build_cython.bat             - Windows 編譯腳本
-build_cython.sh              - Linux/Mac 編譯腳本
-README_CYTHON.md             - 詳細文件
+cython/optimizer_core.pyx            - Cython 核心模組（C擴充原始碼）
+cython/setup.py                      - 編譯配置檔
+cython/build_cython.bat              - Windows 編譯腳本
+cython/build_cython.sh               - Linux/Mac 編譯腳本
+multi_optimizer_2_cython.py          - 優化版主程式（根目錄）
+benchmark_optimizer.py               - 效能對比測試（根目錄）
+docs/README_CYTHON.md                - 詳細文件
 
 
 🚀 快速開始（3步）
@@ -28,11 +28,21 @@ README_CYTHON.md             - 詳細文件
 
 
 第 2 步：編譯模組
-    Windows: 雙擊執行 build_cython.bat
-             或執行: python setup.py build_ext --inplace
+    Windows:
+        cd cython
+        build_cython.bat
+        cd ..
 
-    Linux/Mac: chmod +x build_cython.sh
-               ./build_cython.sh
+    Linux/Mac:
+        cd cython
+        chmod +x build_cython.sh
+        ./build_cython.sh
+        cd ..
+
+    或手動編譯:
+        cd cython
+        python setup.py build_ext --inplace
+        cd ..
 
 
 第 3 步：執行優化
@@ -41,10 +51,10 @@ README_CYTHON.md             - 詳細文件
 
 ✅ 編譯成功標誌
 --------------
-看到以下檔案說明編譯成功：
-  Windows: optimizer_core.cp311-win_amd64.pyd (檔名中的數字是Python版本)
-  Linux:   optimizer_core.cpython-311-x86_64-linux-gnu.so
-  macOS:   optimizer_core.cpython-311-darwin.so
+看到以下檔案說明編譯成功（在 cython/ 目錄中）：
+  Windows: cython/optimizer_core.cp311-win_amd64.pyd (檔名中的數字是Python版本)
+  Linux:   cython/optimizer_core.cpython-311-x86_64-linux-gnu.so
+  macOS:   cython/optimizer_core.cpython-311-darwin.so
 
 
 📊 效能測試
@@ -83,7 +93,9 @@ TOP_N = 5000  # 每首歌保留的卡組數量
     https://visualstudio.microsoft.com/downloads/
 
 問：ImportError: No module named 'optimizer_core'
-答：編譯未成功，重新執行 build_cython.bat
+答：編譯未成功，重新執行：
+    Windows: cython\build_cython.bat
+    Linux/Mac: cython/build_cython.sh
     或檢查 Python 版本是否匹配（編譯和執行時必須使用相同版本）
 
 問：執行時崩潰
@@ -114,7 +126,7 @@ TOP_N = 5000  # 每首歌保留的卡組數量
 
 📚 更多說明
 ----------
-詳細文件請參閱：README_CYTHON.md
+詳細文件請參閱：docs/README_CYTHON.md
 
 
 ==============================================================================

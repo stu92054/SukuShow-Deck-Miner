@@ -82,7 +82,6 @@ echo.
 echo You can now run:
 echo   python multi_optimizer_2_cython.py
 echo.
-echo Or run the benchmark:
-echo   python benchmark_optimizer.py
+echo Note: Run from project root directory
 echo.
 pause
