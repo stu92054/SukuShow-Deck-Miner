@@ -64,7 +64,36 @@ Choose and run the following files depending on what you need:
 
 **For users who need to run simulations for multiple guild members**, we provide a YAML-based configuration system that allows easy switching between different member configurations:
 
-**Quick Start:**
+**🌐 Web-based Config Generator (Easiest Method):**
+
+We provide a visual web interface to generate configuration files without manually editing YAML:
+
+1. **Start the local server:**
+   ```bash
+   # Windows
+   start-web-server.bat
+
+   # Linux/Mac
+   ./start-web-server.sh
+
+   # Or manually
+   python -m http.server 8000
+   ```
+
+2. **Open in browser:** `http://localhost:8000/web/config-generator.html`
+
+3. **Fill in the form:**
+   - Enter member name
+   - Select characters and cards from dropdown menus (card IDs auto-filled)
+   - Set fan levels and card levels
+   - Add target songs
+   - Download the generated `member-*.yaml` file
+
+4. **Place the file:** Move the downloaded file to the `config/` directory
+
+See [web/README.md](web/README.md) for detailed instructions.
+
+**Manual Configuration:**
 
 1. **Create a configuration file for each guild member:**
    ```bash
