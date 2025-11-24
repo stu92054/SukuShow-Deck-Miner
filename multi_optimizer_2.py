@@ -29,7 +29,7 @@ CHALLENGE_SONGS = [
 ]
 
 # 每首歌只保留得分排名前 N 名的卡组用于求解
-TOP_N = 56005
+TOP_N = 5000
 
 # 角色名称映射
 CHARACTER_NAMES = {
