@@ -1,6 +1,6 @@
 import logging
 import os
-from RSkill import *
+from .RSkill import *
 from copy import copy
 from math import ceil
 from enum import Enum

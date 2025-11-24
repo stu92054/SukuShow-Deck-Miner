@@ -5,8 +5,10 @@ import time
 import sys
 import argparse
 from tqdm import tqdm
-from CardLevelConfig import fix_windows_console_encoding
-from Simulator_core import DB_CARDDATA
+
+
+from src.config.CardLevelConfig import fix_windows_console_encoding
+from src.core.Simulator_core import DB_CARDDATA
 
 
 # Set up logging for this script

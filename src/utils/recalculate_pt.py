@@ -6,8 +6,8 @@
 import json
 import os
 import logging
-from RChart import MusicDB
-from CardLevelConfig import CARD_CACHE
+from ..core.RChart import MusicDB
+from ..config.CardLevelConfig import CARD_CACHE
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(message)s')

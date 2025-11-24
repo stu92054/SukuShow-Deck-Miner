@@ -4,7 +4,7 @@
 
 ---
 
-**[English](README.md) | [简体中文](README_zh-cn.md) | [繁體中文](README_zh-tw.md) | [日本語](README_ja-jp.md)**
+**[English](../README.md) | [简体中文](README_zh-cn.md) | [繁體中文](README_zh-tw.md) | [日本語](README_ja-jp.md)**
 
 ---
 
@@ -157,15 +157,15 @@ python MainBatch.py --config config/member-bob.yaml
 
 也可以根據需要直接調整 Python 檔案中的設定：
 
-- `CardLevelConfig.py`: 設定所有卡牌的**預設等級**和**個別卡牌的等級** (`CARD_CACHE`)。預設情況下，所有卡牌均設定為滿級。
+- [src/config/CardLevelConfig.py](../src/config/CardLevelConfig.py): 設定所有卡牌的**預設等級**和**個別卡牌的等級** (`CARD_CACHE`)。預設情況下，所有卡牌均設定為滿級。
 利用 `DEATH_NOTE` 設定背水卡牌的掛機血線。卡組中存在多張設定了血線的背水卡時，以最低血線為準。
-- `DeckGen2.py`: 負責卡組生成邏輯。可以在此設定卡牌衝突規則 (`CARD_CONFLICT_RULES`)、卡組技能條件 (`check_skill_tags`) 等約束限制，以實現卡組生成時的進一步剪枝優化。
-- `MainBatch.py`: **批次模擬的主要設定檔。** 詳見下方設定指南。
-- `MainSingle.py`: 設定單次模擬的卡組與曲目，可在 `logging.basicConfig` 中設定模擬過程的輸出詳細程度。
+- [src/deck_gen/DeckGen2.py](../src/deck_gen/DeckGen2.py): 負責卡組生成邏輯。可以在此設定卡牌衝突規則 (`CARD_CONFLICT_RULES`)、卡組技能條件 (`check_skill_tags`) 等約束限制，以實現卡組生成時的進一步剪枝優化。
+- [MainBatch.py](../MainBatch.py): **批次模擬的主要設定檔。** 詳見下方設定指南。
+- [MainSingle.py](../MainSingle.py): 設定單次模擬的卡組與曲目，可在 `logging.basicConfig` 中設定模擬過程的輸出詳細程度。
   - INFO: 僅輸出卡組與模擬結果
   - DEBUG: 輸出詳細的技能使用記錄
   - TIMING: 輸出包括所有 Note 與 CD 結束時間點的日誌，Note 會刷屏所以建議將日誌輸出至文字檔案檢視
-- `Simulator_core.py`: 可以透過修改程式碼調整批次模擬時的音遊策略，只要你知道自己在做什麼。
+- [src/core/Simulator_core.py](../src/core/Simulator_core.py): 可以透過修改程式碼調整批次模擬時的音遊策略，只要你知道自己在做什麼。
 在這裡進行的修改只影響批次模擬，單次模擬的音遊策略需要在 `MainSingle.py` 中另行修改。
 
 ### 📘 MainBatch.py 設定指南

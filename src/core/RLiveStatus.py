@@ -1,7 +1,7 @@
 import logging
 from functools import lru_cache
 from platform import python_implementation
-from RDeck import Deck
+from .RDeck import Deck
 
 logger = logging.getLogger(__name__)
 

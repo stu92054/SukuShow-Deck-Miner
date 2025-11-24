@@ -5,7 +5,7 @@ Link！Like！ラブライブ！](https://www.lovelive-anime.jp/hasunosora/syste
 
 ---
 
-**[English](README.md) | [简体中文](README_zh-cn.md) | [繁體中文](README_zh-tw.md) | [日本語](README_ja-jp.md)**
+**[English](../README.md) | [简体中文](README_zh-cn.md) | [繁體中文](README_zh-tw.md) | [日本語](README_ja-jp.md)**
 
 ---
 
@@ -158,16 +158,16 @@ python MainBatch.py --config config/member-bob.yaml
 
 Pythonファイルで直接設定を調整することもできます：
 
-- `CardLevelConfig.py`: すべてのカードの**デフォルト練度**と**個別のカード練度** (`CARD_CACHE`) を設定します。デフォルトでは、すべてのカードが最大レベルに設定されています。
+- [src/config/CardLevelConfig.py](../src/config/CardLevelConfig.py): すべてのカードの**デフォルト練度**と**個別のカード練度** (`CARD_CACHE`) を設定します。デフォルトでは、すべてのカードが最大レベルに設定されています。
 また、`DEATH_NOTE` を利用して背水カードの放置HPラインを構成できます。デッキ内に複数の背水カードが設定されている場合、最も低いHPラインが適用されます。
-- `DeckGen2.py`: デッキ生成ロジックを扱います。ここでカードの競合ルール (`CARD_CONFLICT_RULES`) やデッキスキル条件 (`check_skill_tags`) などの制約を設定し、デッキ生成時のさらなる枝刈り最適化を実現できます。
-- `MainBatch.py`: **一括シミュレーションの主要な設定ファイル。** 詳細な設定ガイドは以下を参照してください。
-- `MainSingle.py`: 単一シミュレーションのデッキと楽曲を設定します。
+- [src/deck_gen/DeckGen2.py](../src/deck_gen/DeckGen2.py): デッキ生成ロジックを扱います。ここでカードの競合ルール (`CARD_CONFLICT_RULES`) やデッキスキル条件 (`check_skill_tags`) などの制約を設定し、デッキ生成時のさらなる枝刈り最適化を実現できます。
+- [MainBatch.py](../MainBatch.py): **一括シミュレーションの主要な設定ファイル。** 詳細な設定ガイドは以下を参照してください。
+- [MainSingle.py](../MainSingle.py): 単一シミュレーションのデッキと楽曲を設定します。
 また、`logging.basicConfig` でシミュレーション過程のログ出力レベルを調整できます。
     - `INFO`: デッキとシミュレーション結果のみを出力します。
     - `DEBUG`: 詳細なスキル使用記録を出力します。
     - `TIMING`: すべてのノートおよびCD終了時点を含むログを出力します。ノート数が多いため、画面が流れる可能性があるため、ログをテキストファイルに出力して確認することをお勧めします。
-- `Simulator_core.py`: 何をしているかを理解している限り、コードを直接調整して一括シミュレーション時の音ゲープレイ戦略を調整できます。ここでの変更は一括シミュレーションにのみ影響し、単一シミュレーションの戦略は `MainSingle.py` で別途変更する必要があります。
+- [src/core/Simulator_core.py](../src/core/Simulator_core.py): 何をしているかを理解している限り、コードを直接調整して一括シミュレーション時の音ゲープレイ戦略を調整できます。ここでの変更は一括シミュレーションにのみ影響し、單一シミュレーションの戦略は `MainSingle.py` で別途変更する必要があります。
 
 ### 📘 MainBatch.py 設定ガイド
 

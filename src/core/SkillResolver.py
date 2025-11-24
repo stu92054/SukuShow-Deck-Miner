@@ -1,8 +1,8 @@
 import logging
 from enum import Enum
 from functools import lru_cache
-from RLiveStatus import *
-from RDeck import Card
+from .RLiveStatus import *
+from .RDeck import Card
 
 logger = logging.getLogger(__name__)
 

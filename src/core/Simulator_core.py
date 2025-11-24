@@ -1,12 +1,12 @@
 import logging
 import os
 # 导入所有 R 模块和 db_load 函数
-from RCardData import db_load
-from RChart import Chart, MusicDB
-from RDeck import Deck
-from RLiveStatus import PlayerAttributes
-from SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
-from CardLevelConfig import DEATH_NOTE
+from .RCardData import db_load
+from .RChart import Chart, MusicDB
+from .RDeck import Deck
+from .RLiveStatus import PlayerAttributes
+from .SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
+from ..config.CardLevelConfig import DEATH_NOTE
 
 # --- Configure logging (for the module itself if needed, or rely on main script's config) ---
 # 注意：子进程会继承父进程的logger配置，但为了独立运行和测试，可以保留或简化这里的logger

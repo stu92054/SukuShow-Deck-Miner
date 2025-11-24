@@ -8,16 +8,18 @@ import argparse
 
 from platform import python_implementation
 from tqdm import tqdm
-from RChart import Chart
-from DeckGen import generate_decks_with_sequential_priority_pruning
-from DeckGen2 import generate_decks_with_double_cards
-from CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, CARD_CACHE
-from SkillResolver import SkillEffectType
-from Simulator_core import run_game_simulation, MUSIC_DB
+
+
+from src.core.RChart import Chart
+from src.deck_gen.DeckGen import generate_decks_with_sequential_priority_pruning
+from src.deck_gen.DeckGen2 import generate_decks_with_double_cards
+from src.config.CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, CARD_CACHE
+from src.core.SkillResolver import SkillEffectType
+from src.core.Simulator_core import run_game_simulation, MUSIC_DB
 
 # 導入配置管理器（如果不存在則使用傳統配置）
 try:
-    from config_manager import get_config
+    from src.config.config_manager import get_config
     CONFIG_MANAGER_AVAILABLE = True
 except ImportError:
     CONFIG_MANAGER_AVAILABLE = False

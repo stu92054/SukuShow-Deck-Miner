@@ -5,10 +5,10 @@ import os
 import time
 from collections import defaultdict, Counter
 
-from RChart import Chart, MusicDB
-from RDeck import Rarity
-from Simulator_core import DB_CARDDATA, DB_SKILL
-from SkillResolver import SkillEffectType
+from ..core.RChart import Chart, MusicDB
+from ..core.RDeck import Rarity
+from ..core.Simulator_core import DB_CARDDATA, DB_SKILL
+from ..core.SkillResolver import SkillEffectType
 logger = logging.getLogger(__name__)
 
 CARD_CONFLICT_RULES = {

@@ -4,7 +4,7 @@ A deck simulator and optimizer for the rhythm game mode, School Idol Show (ス�
 
 ---
 
-**[English](README.md) | [简体中文](README_zh-cn.md) | [繁體中文](README_zh-tw.md) | [日本語](README_ja-jp.md)**
+**[English](README.md) | [简体中文](docs/README_zh-cn.md) | [繁體中文](docs/README_zh-tw.md) | [日本語](docs/README_ja-jp.md)**
 
 ---
 
@@ -157,16 +157,16 @@ See `config/member-example.yaml` for a complete example.
 
 You can also adjust configurations directly in Python files as needed:
 
-  - `CardLevelConfig.py`: Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.
+  - [src/config/CardLevelConfig.py](src/config/CardLevelConfig.py): Configure the **default levels** for all cards and **specific levels for individual cards** (`CARD_CACHE`). By default, all cards are set to max level.
   You can also use `DEATH_NOTE` to configure the AFK HP threshold for comeback cards. If multiple comeback cards with configured thresholds are in the deck, the lowest threshold will be used.
-  - `DeckGen2.py`: Handles deck generation logic. You can configure constraints like card conflict rules (`CARD_CONFLICT_RULES`) and deck skills (`check_skill_tags`) here to further optimize deck generation by pruning.
-  - `MainBatch.py`: **Primary configuration file for batch simulations.** See the detailed configuration guide below.
-  - `MainSingle.py`: Configure the specific deck and song for a single simulation.
+  - [src/deck_gen/DeckGen2.py](src/deck_gen/DeckGen2.py): Handles deck generation logic. You can configure constraints like card conflict rules (`CARD_CONFLICT_RULES`) and deck skills (`check_skill_tags`) here to further optimize deck generation by pruning.
+  - [MainBatch.py](MainBatch.py): **Primary configuration file for batch simulations.** See the detailed configuration guide below.
+  - [MainSingle.py](MainSingle.py): Configure the specific deck and song for a single simulation.
   You can also adjust the log output verbosity in `logging.basicConfig`.
       - `INFO`: Outputs only the deck and simulation results.
       - `DEBUG`: Outputs detailed skill usage records.
       - `TIMING`: Outputs logs including all note and CD end timestamps. Since notes can flood the console, it's recommended to output the logs to a text file for review.
-  - `Simulator_core.py`: You can modify the code here to adjust the rhythm game strategy for batch simulations, as long as you know what you're doing. Note that changes made here only affect batch simulations; the strategy for single simulations must be modified separately in `MainSingle.py`.
+  - [src/core/Simulator_core.py](src/core/Simulator_core.py): You can modify the code here to adjust the rhythm game strategy for batch simulations, as long as you know what you're doing. Note that changes made here only affect batch simulations; the strategy for single simulations must be modified separately in `MainSingle.py`.
 
 ### 📘 MainBatch.py Configuration Guide
 

@@ -1,7 +1,7 @@
 import itertools
 import math
 from collections import defaultdict
-from RCardData import db_load
+from ..core.RCardData import db_load
 
 CHAR_ORDERED_PRIORITIES = [
     # 1011,  # 默认沙知优先级最高

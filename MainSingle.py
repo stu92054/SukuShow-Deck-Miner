@@ -1,12 +1,15 @@
 import logging
 import time
 import os
-from RCardData import db_load
-from RChart import Chart, MusicDB
-from RDeck import Deck
-from RLiveStatus import PlayerAttributes
-from SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
-from CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, DEATH_NOTE
+import sys
+
+
+from src.core.RCardData import db_load
+from src.core.RChart import Chart, MusicDB
+from src.core.RDeck import Deck
+from src.core.RLiveStatus import PlayerAttributes
+from src.core.SkillResolver import UseCardSkill, ApplyCenterSkillEffect, ApplyCenterAttribute, CheckCenterSkillCondition
+from src.config.CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, DEATH_NOTE
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ import logging
 import os
 from tqdm import tqdm
 
-from CardLevelConfig import CARD_CACHE
+from ..config.CardLevelConfig import CARD_CACHE
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

@@ -7,6 +7,18 @@
 !*.py
 !README*.md
 
+# 允許新的目錄結構
+!src/
+!src/**/*.py
+!cython/
+!cython/*.pyx
+!cython/*.py
+!cython/*.bat
+!cython/*.sh
+!docs/
+!docs/*.md
+!docs/*.txt
+
 # 允許配置檔案 (但排除個人配置)
 !config/
 !config/default.yaml
@@ -16,17 +28,6 @@
 
 # 允許 requirements.txt
 !requirements.txt
-
-# === Cython 相關檔案 ===
-# 允許 Cython 原始碼和配置
-!*.pyx
-!setup.py
-!build_cython.bat
-!build_cython.sh
-
-# 允許 Cython 文件
-!README_CYTHON.md
-!QUICKSTART_CYTHON.txt
 
 # 排除 Cython 編譯產物
 *.c                    # Cython 產生的 C 檔案
