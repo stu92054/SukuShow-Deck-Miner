@@ -1,8 +1,6 @@
 import logging
 import time
 import os
-import sys
-
 
 from src.core.RCardData import db_load
 from src.core.RChart import Chart, MusicDB
@@ -37,7 +35,7 @@ if __name__ == "__main__":
     # 嘗試讀取 YAML 配置中的自定義練度（如果有的話）
     custom_card_levels = None
     try:
-        from config_manager import get_config
+        from src.config.config_manager import get_config
         yaml_config = get_config()
         custom_card_levels = yaml_config.get_card_levels()
         if custom_card_levels:

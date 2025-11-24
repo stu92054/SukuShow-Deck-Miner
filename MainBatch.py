@@ -52,7 +52,7 @@ def score2pt(results, custom_card_levels=None):
         results: 模擬結果列表
         custom_card_levels: 自定義卡牌練度 (從配置檔案讀取)
     """
-    from CardLevelConfig import default_card_level, default_center_skill_level, default_skill_level
+    from src.config.CardLevelConfig import default_card_level, default_center_skill_level, default_skill_level
 
     card_limitbreak = dict()
     for deck in results:

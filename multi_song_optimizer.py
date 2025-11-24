@@ -349,7 +349,7 @@ if __name__ == "__main__":
 
     # 嘗試讀取配置管理器以獲取正確的 log 目錄
     try:
-        from config_manager import get_config
+        from src.config.config_manager import get_config
         if args.config:
             # 使用命令列指定的配置檔
             config = get_config(args.config)
