@@ -238,6 +238,12 @@ class PlayerAttributes:
         masterlv_bonus = self.masterlv / 100 + 1
         self.base_score = self.deck.appeal * masterlv_bonus
         self.note_score = {
+            # 游戏说明书里说PERFECT+只影响技术分，不影响普通的分数
+            # 但是实战中PERFECT+的得分是PERFECT的1.1667倍
+            # 原文: PERFECT+はTECHNICAL SCOREにのみ影響し、通常スコアに差が出ることはありません。
+            # 出处: https://link-like-lovelive.app/help
+            #       スクールアイドルショウ - プレイヤーレート - PERFECT+
+            "PERFECT+": 35 * self.base_score / all_note_size,
             "PERFECT": 30 * self.base_score / all_note_size,
             "GREAT": 25 * self.base_score / all_note_size,
             "GOOD": 15 * self.base_score / all_note_size,
@@ -265,8 +271,8 @@ class PlayerAttributes:
         if self.combo <= 50:
             self.ap_rate = 1.0 + (self.combo // 10) * 0.1
         match judgement:
-            case "PERFECT" | "GREAT":
-                self.ap += ceil(self.full_ap_plus * self.ap_rate) * 0.0001
+            case "PERFECT+" | "PERFECT" | "GREAT":
+                self.ap += ceil(self.full_ap_plus * self.ap_rate) / 10000
                 self.score_note(judgement)
             case "GOOD":
                 self.ap += ceil(self.half_ap_plus * self.ap_rate) * 0.0001
