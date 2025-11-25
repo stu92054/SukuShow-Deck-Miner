@@ -21,12 +21,22 @@
 !web/
 !web/**
 
+# 允許 GitHub Actions 工作流程（自動部署必需）
+!.github/
+!.github/**
+
 # 允許配置檔案 (但排除個人配置)
 !config/
 !config/default.yaml
 !config/dev-example.yaml
 !config/member-example.yaml
 !config/.gitignore
+
+# 允許 Data 目錄（僅網頁版配置生成器需要的文件）
+!Data/
+!Data/CardDatas.json
+!Data/Musics.yaml
+# 其他大型文件（CenterSkills.json, RhythmGameSkills.json 等）僅用於本地模擬器，不推送
 
 # 允許 requirements.txt
 !requirements.txt
