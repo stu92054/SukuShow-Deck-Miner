@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SukuShow 配置文件生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .version-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .version-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .version-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .version-card.release {
+            border-top: 5px solid #059669;
+        }
+
+        .version-card.dev {
+            border-top: 5px solid #d97706;
+        }
+
+        .version-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .version-card.release .version-badge {
+            background: #059669;
+            color: white;
+        }
+
+        .version-card.dev .version-badge {
+            background: #d97706;
+            color: white;
+        }
+
+        .version-card h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .version-card p {
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .version-card .features {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .version-card .features li {
+            color: #4b5563;
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .version-card .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .version-card.release .features li:before {
+            color: #059669;
+        }
+
+        .version-card.dev .features li:before {
+            color: #d97706;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .version-card.release .cta-button {
+            background: #059669;
+            color: white;
+        }
+
+        .version-card.dev .cta-button {
+            background: #d97706;
+            color: white;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            transition: border-color 0.3s ease;
+        }
+
+        .footer a:hover {
+            border-bottom-color: white;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .version-card {
+                padding: 30px 20px;
+            }
+
+            .version-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SukuShow 配置文件生成器</h1>
+            <p>選擇版本開始使用</p>
+        </div>
+
+        <div class="version-cards">
+            <!-- Release 版本 -->
+            <a href="./release/config-generator.html" class="version-card release">
+                <div class="version-badge">Release</div>
+                <h2>穩定版</h2>
+                <p>經過測試的穩定版本，推薦公會成員日常使用</p>
+                <ul class="features">
+                    <li>穩定可靠</li>
+                    <li>經過完整測試</li>
+                    <li>適合生產環境</li>
+                    <li>推薦使用</li>
+                </ul>
+                <div class="cta-button">進入穩定版</div>
+            </a>
+
+            <!-- Dev 版本 -->
+            <a href="./dev/config-generator.html" class="version-card dev">
+                <div class="version-badge">Development</div>
+                <h2>開發版</h2>
+                <p>包含最新功能的開發版本，供測試和體驗新功能</p>
+                <ul class="features">
+                    <li>最新功能</li>
+                    <li>搶先體驗</li>
+                    <li>可能不穩定</li>
+                    <li>測試環境</li>
+                </ul>
+                <div class="cta-button">進入開發版</div>
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>
+                <a href="https://github.com/stu92054/SukuShow-Deck-Miner" target="_blank">
+                    GitHub 專案
+                </a>
+                ·
+                <a href="https://github.com/stu92054/SukuShow-Deck-Miner/blob/main/README.md" target="_blank">
+                    使用文檔
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 自動檢測當前環境並更新 URL
+        document.addEventListener('DOMContentLoaded', function() {
+            const isGitHubPages = window.location.hostname.includes('github.io');
+            const releaseCard = document.querySelector('.version-card.release');
+            const devCard = document.querySelector('.version-card.dev');
+
+            if (!isGitHubPages) {
+                // 本地環境：檢測當前路徑來決定連結
+                const currentPath = window.location.pathname;
+
+                // 檢查是否有 config-generator.html 存在於相對路徑
+                // 如果 pathname 是 /index.html 或 /web/index.html
+                if (currentPath.includes('/web/')) {
+                    // 情況 1: 從根目錄啟動，訪問 http://localhost:8000/web/index.html
+                    releaseCard.href = './config-generator.html';
+                    devCard.href = './config-generator.html';
+                } else {
+                    // 情況 2: 從 web/ 目錄啟動，訪問 http://localhost:8000/index.html
+                    // 或任何不包含 /web/ 的路徑
+                    // 此時 config-generator.html 就在同一目錄下
+                    releaseCard.href = './config-generator.html';
+                    devCard.href = './config-generator.html';
+                }
+
+                // 提示本地環境沒有版本區分
+                devCard.style.opacity = '0.6';
+                const devBadge = devCard.querySelector('.version-badge');
+                devBadge.textContent = 'LOCAL';
+                devBadge.style.background = '#6b7280';
+                devCard.querySelector('h2').textContent = '本地環境';
+                devCard.querySelector('p').textContent = '本地開發時兩個版本指向相同文件';
+            }
+        });
+    </script>
+</body>
+</html>
