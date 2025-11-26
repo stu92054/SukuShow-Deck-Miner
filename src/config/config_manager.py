@@ -207,6 +207,50 @@ class ConfigManager:
         """獲取公會卡池檔案路徑"""
         return self.config.get("guild_cardpool_file", "guild_cardpools.json")
 
+    def get_optimizer_config(self) -> Dict[str, Any]:
+        """
+        獲取優化器配置 (用於 multi_optimizer_2.py)
+
+        向下兼容：如果配置文件中沒有 optimizer 區塊，返回預設值
+
+        Returns:
+            包含 top_n, show_card_names, forbidden_cards 的字典
+        """
+        default_config = {
+            "top_n": 50000,
+            "show_card_names": True,
+            "forbidden_cards": []
+        }
+        # 如果沒有 optimizer 區塊，返回預設值（向下兼容舊配置）
+        return self.config.get("optimizer", default_config)
+
+    def get_forbidden_cards(self) -> List[int]:
+        """
+        獲取禁用卡牌列表
+
+        向下兼容：如果配置中沒有此項，返回空列表
+        """
+        optimizer_config = self.get_optimizer_config()
+        return optimizer_config.get("forbidden_cards", [])
+
+    def get_optimizer_top_n(self) -> int:
+        """
+        獲取優化器保留的卡組數量
+
+        向下兼容：預設 50000
+        """
+        optimizer_config = self.get_optimizer_config()
+        return optimizer_config.get("top_n", 50000)
+
+    def get_optimizer_show_names(self) -> bool:
+        """
+        獲取是否顯示卡牌名稱
+
+        向下兼容：預設 True
+        """
+        optimizer_config = self.get_optimizer_config()
+        return optimizer_config.get("show_card_names", True)
+
     def print_summary(self):
         """列印配置摘要"""
         logger.info("=" * 60)

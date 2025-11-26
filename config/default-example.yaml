@@ -120,3 +120,10 @@ cache:
   max_fingerprints_in_memory: 5000000
   auto_cleanup: true           # 自動清理臨時快取
   max_cache_age_days: 7        # 快取最大保留天數
+
+# 優化器配置 (用於 multi_optimizer_2.py)
+optimizer:
+  top_n: 50000                 # 每首歌保留得分排名前 N 名的卡組
+  show_card_names: true        # 在輸出中顯示卡牌名稱
+  forbidden_cards: []          # 禁止使用的卡牌 ID 列表 (三面均生效)
+                               # 範例: [1011501, 1052506]  # 禁用特定卡牌
