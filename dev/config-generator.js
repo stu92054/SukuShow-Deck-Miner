@@ -502,6 +502,9 @@ function updateAllMustCardSelects() {
         const songId = parseInt(songDiv.id.replace('song-', ''));
         populateMustCardSelects(songId);
     });
+
+    // 同時更新禁卡選擇列表
+    populateForbiddenCardSelect();
 }
 
 // 添加必須卡片
@@ -569,6 +572,22 @@ function removeMustCard(songId, type, cardId) {
     updateMustCardDisplay(songId, type);
 }
 
+// Helper: 獲取卡片顯示名稱
+function getCardDisplayName(card) {
+    return `[${RARITY_NAMES[card.rarity] || card.rarity}] ${card.characterName} - ${card.name}`;
+}
+
+// Helper: 創建卡片標籤元素
+function createCardTagElement(displayText, removeAction) {
+    const tag = document.createElement('div');
+    tag.className = 'mustcard-tag';
+    tag.innerHTML = `
+        <span>${displayText}</span>
+        <button onclick="${removeAction}">&times;</button>
+    `;
+    return tag;
+}
+
 // 更新必須卡片顯示
 function updateMustCardDisplay(songId, type) {
     const hiddenInput = document.getElementById(`mustcards-${type}-${songId}`);
@@ -581,28 +600,17 @@ function updateMustCardDisplay(songId, type) {
     cardIds.forEach(cardId => {
         // 標準化 ID 為字符串進行比較
         const normalizedCardId = cardId.toString();
-        const card = cards.find(c => c.id.toString() === normalizedCardId);
+        let card = cards.find(c => c.id.toString() === normalizedCardId);
         
+        // 如果在已填寫的卡片中找不到，嘗試直接從資料庫查詢
+        if (!card) {
+            card = getCardById(normalizedCardId);
+        }
+
         if (card) {
-            const tag = document.createElement('div');
-            tag.className = 'mustcard-tag';
-            tag.innerHTML = `
-                <span>[${RARITY_NAMES[card.rarity] || card.rarity}] ${card.characterName} - ${card.name}</span>
-                <button onclick="removeMustCard(${songId}, '${type}', '${cardId}')">&times;</button>
-            `;
-            displayDiv.appendChild(tag);
-        } else {
-            // 如果在已填寫的卡片中找不到，嘗試直接從資料庫查詢
-            const cardInfo = getCardById(normalizedCardId);
-            if (cardInfo) {
-                const tag = document.createElement('div');
-                tag.className = 'mustcard-tag';
-                tag.innerHTML = `
-                    <span>[${RARITY_NAMES[cardInfo.rarity] || cardInfo.rarity}] ${cardInfo.characterName} - ${cardInfo.name}</span>
-                    <button onclick="removeMustCard(${songId}, '${type}', '${cardId}')">&times;</button>
-                `;
-                displayDiv.appendChild(tag);
-            }
+            const displayText = getCardDisplayName(card);
+            const removeAction = `removeMustCard(${songId}, '${type}', '${cardId}')`;
+            displayDiv.appendChild(createCardTagElement(displayText, removeAction));
         }
     });
 }
@@ -629,6 +637,94 @@ function toggleAdvancedOptions() {
     } else {
         content.classList.remove('active');
     }
+}
+
+// 填充禁卡選擇列表
+function populateForbiddenCardSelect() {
+    const cards = getFilledCards();
+    const select = document.getElementById('forbidden-card-select');
+    if (!select) return;
+
+    // 保留第一個默認選項，清除其他選項
+    select.innerHTML = '<option value="">從卡池中選擇卡片...</option>';
+
+    cards.forEach(card => {
+        const option = document.createElement('option');
+        option.value = card.id;
+        option.textContent = `[${RARITY_NAMES[card.rarity] || card.rarity}] ${card.characterName} - ${card.name}`;
+        option.setAttribute('data-card-id', card.id);
+        select.appendChild(option);
+    });
+}
+
+// 添加禁卡
+function addForbiddenCard() {
+    const select = document.getElementById('forbidden-card-select');
+    const hiddenInput = document.getElementById('optimizer-forbidden-cards');
+
+    const cardId = select.value;
+    if (!cardId) return;
+
+    // 獲取當前列表
+    const currentIds = hiddenInput.value ? hiddenInput.value.split(',').map(id => id.trim()) : [];
+
+    // 檢查是否已存在
+    if (currentIds.includes(cardId)) {
+        alert('此卡片已在禁卡列表中');
+        select.value = '';
+        return;
+    }
+
+    // 添加到列表
+    currentIds.push(cardId);
+    hiddenInput.value = currentIds.join(', ');
+
+    // 更新顯示
+    updateForbiddenCardsDisplay();
+
+    // 重置選擇框到默認選項
+    select.value = '';
+}
+
+// 移除禁卡
+function removeForbiddenCard(cardId) {
+    const hiddenInput = document.getElementById('optimizer-forbidden-cards');
+    const currentIds = hiddenInput.value ? hiddenInput.value.split(',').map(id => id.trim()) : [];
+
+    // 移除卡片
+    const newIds = currentIds.filter(id => id !== cardId);
+    hiddenInput.value = newIds.join(', ');
+
+    // 更新顯示
+    updateForbiddenCardsDisplay();
+}
+
+// 更新禁卡顯示
+function updateForbiddenCardsDisplay() {
+    const hiddenInput = document.getElementById('optimizer-forbidden-cards');
+    const displayDiv = document.getElementById('forbidden-cards-display');
+
+    if (!displayDiv) return;
+
+    const cardIds = hiddenInput.value ? hiddenInput.value.split(',').map(id => id.trim()).filter(id => id !== '') : [];
+
+    // 清空顯示區域
+    displayDiv.innerHTML = '';
+
+    // 為每個卡片創建標籤
+    cardIds.forEach(cardId => {
+        let displayText = cardId;
+        
+        if (useCardDatabase) {
+            const cardInfo = getCardById(cardId);
+            if (cardInfo) {
+                displayText = getCardDisplayName(cardInfo);
+            }
+        }
+        
+        const removeAction = `removeForbiddenCard('${cardId}')`;
+        displayDiv.appendChild(createCardTagElement(displayText, removeAction));
+    });
 }
 
 // 解析卡片 ID 列表
@@ -727,6 +823,13 @@ function generateConfig() {
     if (numProcesses && numProcesses.trim() !== '') {
         config.num_processes = parseInt(numProcesses);
     }
+
+    // 收集優化器配置
+    config.optimizer = {
+        top_n: parseInt(document.getElementById('optimizer-top-n').value) || 50000,
+        show_card_names: document.getElementById('optimizer-show-names').value === 'true',
+        forbidden_cards: parseCardIds(document.getElementById('optimizer-forbidden-cards').value)
+    };
 
     return config;
 }
@@ -869,7 +972,16 @@ songs:
     yaml += `cache:\n`;
     yaml += `  max_fingerprints_in_memory: ${config.cache.max_fingerprints_in_memory}  # 記憶體中最多保存的指紋數\n`;
     yaml += `  auto_cleanup: ${config.cache.auto_cleanup}                # 自動清理舊快取\n`;
-    yaml += `  max_cache_age_days: ${config.cache.max_cache_age_days}                    # 快取保存天數\n`;
+    yaml += `  max_cache_age_days: ${config.cache.max_cache_age_days}                    # 快取保存天數\n\n`;
+
+    yaml += `# 優化器配置 (用於 multi_optimizer_2.py)\n`;
+    yaml += `optimizer:\n`;
+    yaml += `  top_n: ${config.optimizer.top_n}                 # 每首歌保留得分排名前 N 名的卡組\n`;
+    yaml += `  show_card_names: ${config.optimizer.show_card_names}        # 在輸出中顯示卡牌名稱\n`;
+    yaml += `  forbidden_cards: [${config.optimizer.forbidden_cards.join(', ')}]          # 禁止使用的卡牌 ID 列表 (三面均生效)\n`;
+    if (config.optimizer.forbidden_cards.length === 0) {
+        yaml += `                               # 範例: [1011501, 1052506]  # 禁用特定卡牌\n`;
+    }
 
     return yaml;
 }
@@ -1111,5 +1223,19 @@ function loadConfigToForm(config) {
     }
     if (config.num_processes) {
         document.getElementById('num-processes').value = config.num_processes;
+    }
+
+    // 載入優化器配置
+    if (config.optimizer) {
+        if (config.optimizer.top_n !== undefined) {
+            document.getElementById('optimizer-top-n').value = config.optimizer.top_n;
+        }
+        if (config.optimizer.show_card_names !== undefined) {
+            document.getElementById('optimizer-show-names').value = config.optimizer.show_card_names ? 'true' : 'false';
+        }
+        if (config.optimizer.forbidden_cards && Array.isArray(config.optimizer.forbidden_cards)) {
+            document.getElementById('optimizer-forbidden-cards').value = config.optimizer.forbidden_cards.join(', ');
+            updateForbiddenCardsDisplay();  // 更新禁卡顯示
+        }
     }
 }
