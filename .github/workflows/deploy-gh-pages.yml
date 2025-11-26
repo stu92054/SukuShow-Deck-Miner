@@ -50,25 +50,6 @@ jobs:
             exit 1
           fi
 
-      - name: Setup deployment directory
-        run: |
-          mkdir -p deploy_temp/${{ steps.deployment.outputs.path }}
-
-          # 複製 web 目錄內容
-          cp -r web/* deploy_temp/${{ steps.deployment.outputs.path }}/
-
-          # 複製 Data 目錄（配置生成器需要）
-          mkdir -p deploy_temp/${{ steps.deployment.outputs.path }}/Data
-          cp -r Data/* deploy_temp/${{ steps.deployment.outputs.path }}/Data/
-
-          # 如果是 main 分支，準備根目錄的 index.html
-          if [[ "${{ steps.deployment.outputs.is_main }}" == "true" ]]; then
-            cp web/index.html deploy_temp/index.html
-          fi
-
-          # 在部署目錄中創建 .nojekyll 文件
-          touch deploy_temp/.nojekyll
-
       - name: Checkout gh-pages branch
         run: |
           git config user.name "github-actions[bot]"
@@ -88,17 +69,31 @@ jobs:
 
       - name: Update deployment files
         run: |
+          # 清理舊的 deploy_temp（不應該被提交到 gh-pages）
+          rm -rf deploy_temp
+          
           # 刪除舊的目標目錄
           rm -rf ${{ steps.deployment.outputs.path }}
 
-          # 複製新的部署文件
-          cp -r deploy_temp/${{ steps.deployment.outputs.path }} .
+          # 使用 git checkout 從來源分支取得最新的 web/ 和 Data/
+          git checkout ${{ github.sha }} -- web Data
+          
+          # 複製 web 目錄到目標路徑
+          mkdir -p ${{ steps.deployment.outputs.path }}
+          cp -r web/* ${{ steps.deployment.outputs.path }}/
+          
+          # 複製 Data 目錄
+          mkdir -p ${{ steps.deployment.outputs.path }}/Data
+          cp -r Data/* ${{ steps.deployment.outputs.path }}/Data/
 
           # 如果是 main 分支部署，更新根目錄的 index.html 和 .nojekyll
           if [[ "${{ steps.deployment.outputs.is_main }}" == "true" ]]; then
-            cp deploy_temp/index.html .
-            cp deploy_temp/.nojekyll .
+            cp web/index.html .
+            touch .nojekyll
           fi
+          
+          # 清理不需要的檔案
+          rm -rf web Data
 
           # 添加所有更改
           git add -A
