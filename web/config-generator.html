@@ -517,17 +517,19 @@
 
         <div class="controls">
             <input type="file" id="file-input" accept=".yaml,.yml" class="hidden">
-            <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">上傳配置文件</button>
+            <input type="file" id="csv-input" accept=".csv" class="hidden">
+            <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">上傳 YAML 配置</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('csv-input').click()">匯入 CSV 卡池</button>
             <button class="btn btn-success" onclick="downloadConfig()">下載配置文件</button>
             <button class="btn btn-primary" onclick="copyToClipboard()">複製配置</button>
         </div>
 
         <div class="content">
             <!-- 上傳區域 -->
-            <div id="upload-area" onclick="document.getElementById('file-input').click()">
+            <div id="upload-area">
                 <div class="upload-icon">📁</div>
-                <h3>點擊或拖曳上傳現有配置文件</h3>
-                <p class="help-text">支援 .yaml 和 .yml 格式</p>
+                <h3>點擊或拖曳上傳檔案</h3>
+                <p class="help-text">支援 YAML 配置檔 (.yaml, .yml) 或 CSV 卡池檔 (.csv)</p>
             </div>
 
             <!-- 基本信息 -->
