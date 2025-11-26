@@ -78,9 +78,11 @@ jobs:
           # 使用 git checkout 從來源分支取得最新的 web/ 和 Data/
           git checkout ${{ github.sha }} -- web Data
           
-          # 複製 web 目錄到目標路徑
+          # 複製 web 目錄到目標路徑（排除 index.html）
           mkdir -p ${{ steps.deployment.outputs.path }}
-          cp -r web/* ${{ steps.deployment.outputs.path }}/
+          cd web
+          find . -type f ! -name 'index.html' -exec cp --parents {} ../${{ steps.deployment.outputs.path }}/ \;
+          cd ..
           
           # 複製 Data 目錄
           mkdir -p ${{ steps.deployment.outputs.path }}/Data
