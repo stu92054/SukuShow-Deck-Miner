@@ -40,6 +40,12 @@ CHALLENGE_SONGS = [
 # 每首歌只保留得分排名前 N 名的卡組用於求解
 TOP_N = 5000
 
+# 禁止使用的卡牌（這些卡牌將不會出現在任何卡組中）
+FORBIDDEN_CARD = []
+
+# 是否在輸出中顯示卡牌名稱
+SHOWNAME = True
+
 # 角色名稱映射
 CHARACTER_NAMES = {
     1011: "大賀美沙知",
@@ -149,6 +155,14 @@ if __name__ == "__main__":
 
         LOG_DIR = config.get_log_dir()
         logger.info(f"log 目錄: {LOG_DIR}")
+
+        # 讀取優化器配置
+        TOP_N = config.get_optimizer_top_n()
+        SHOWNAME = config.get_optimizer_show_names()
+        FORBIDDEN_CARD = config.get_forbidden_cards()
+
+        if FORBIDDEN_CARD:
+            logger.info(f"禁止使用的卡牌: {FORBIDDEN_CARD}")
     except (ImportError, ValueError, FileNotFoundError) as e:
         LOG_DIR = "log"
         logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用預設 log 目錄: {LOG_DIR}")
@@ -174,6 +188,16 @@ if __name__ == "__main__":
             data = json.load(fh)
             total = len(data)
             data.sort(key=lambda x: x["pt"], reverse=True)
+
+            # 過濾禁卡
+            if FORBIDDEN_CARD:
+                original_count = len(data)
+                data = [deck for deck in data if not any(cid in deck["deck_card_ids"] for cid in FORBIDDEN_CARD)]
+                filtered_count = original_count - len(data)
+                if filtered_count > 0:
+                    song_id, difficulty = CHALLENGE_SONGS[i]
+                    logger.info(f"過濾 {song_id}_{difficulty} 中包含禁卡的卡組: {filtered_count} 個")
+
             data = data[:TOP_N]
             levels_raw.append(data)
             for deck in data:
@@ -181,6 +205,18 @@ if __name__ == "__main__":
         song_id, difficulty = CHALLENGE_SONGS[i]
         song_title = get_song_title(song_id, music_db)
         logger.info(f"Loaded top {TOP_N} of {total} results for {song_id}_{difficulty} ({song_title})")
+
+    # 檢查是否有歌曲沒有可用卡組（禁卡後可能導致）
+    for i, data in enumerate(levels_raw):
+        if len(data) == 0:
+            song_id, difficulty = CHALLENGE_SONGS[i]
+            song_title = get_song_title(song_id, music_db)
+            logger.error(f"警告: 歌曲 {song_id}_{difficulty} ({song_title}) 沒有可用的卡組")
+            logger.error("可能原因:")
+            logger.error("  1. 禁卡設定過於嚴格，過濾掉所有卡組")
+            logger.error("  2. 尚未執行 MainBatch.py 生成該歌曲的模擬結果")
+            logger.error("  3. 模擬結果檔案損壞或格式錯誤")
+            sys.exit(1)
 
     # 僅針對兩首歌曲求解時，第三首歌填充假資料
     if len(CHALLENGE_SONGS) == 2:
@@ -205,6 +241,7 @@ if __name__ == "__main__":
     card_to_bit = {cid: i for i, cid in enumerate(sorted(all_cards))}
     logger.info(f"Loaded {len(card_to_bit)} unique cards")
     assert len(card_to_bit) <= 64, "卡牌種類超過64張時需使用更複雜的bitarray方案"
+    assert len(card_to_bit) >= 6 * len(CHALLENGE_SONGS), "可用卡牌過少，必定出現重複卡牌"
 
     # === 轉換deck為bitmask ===
     def deck_to_mask(deck):
@@ -300,7 +337,10 @@ if __name__ == "__main__":
             output.append(f"  Score: {d['score']:,}")
             output.append(f"  Pt: {d['pt']:,}  (Rank: #{d['rank']})")
             output.append(f"  Deck:")
-            output.append(format_deck_with_names(d['deck']))
+            if SHOWNAME:
+                output.append(format_deck_with_names(d['deck']))
+            else:
+                output.append(f"      {d['deck']}")
             output.append("")
 
     output = "\n".join(output)
