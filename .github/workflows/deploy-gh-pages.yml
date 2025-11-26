@@ -88,9 +88,6 @@ jobs:
 
       - name: Update deployment files
         run: |
-          # 添加所有更改（先 add 再檢查，確保新檔案也會被偵測）
-          git add -A
-          
           # 刪除舊的目標目錄
           rm -rf ${{ steps.deployment.outputs.path }}
 
@@ -106,14 +103,20 @@ jobs:
           # 添加所有更改
           git add -A
 
-          # 檢查是否有更改（使用 --cached 比對暫存區與 HEAD）
+          # 顯示變更內容（用於調試）
+          echo "=== Changes to be committed ==="
+          git status --short
+          
+          # 檢查是否有更改
           if git diff --cached --quiet; then
             echo "No changes to deploy"
-          else
-            git commit -m "Deploy ${{ github.ref_name }} to ${{ steps.deployment.outputs.path }} - $(date +'%Y-%m-%d %H:%M:%S')"
-            git push origin gh-pages
-            echo "Deployment successful!"
+            exit 0
           fi
+          
+          # 提交並推送
+          git commit -m "Deploy ${{ github.ref_name }} to ${{ steps.deployment.outputs.path }} - $(date +'%Y-%m-%d %H:%M:%S')"
+          git push origin gh-pages
+          echo "Deployment successful!"
 
       - name: Deployment summary
         run: |
