@@ -199,3 +199,4 @@ A: 將下載的 `member-*.yaml` 文件放在專案根目錄的 `config/` 資料�
 ## 授權
 
 本工具隨 SukuShow Deck Miner 專案一同發布，遵循相同的授權協議。
+ 

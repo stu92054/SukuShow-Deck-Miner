@@ -50,25 +50,6 @@ jobs:
             exit 1
           fi
 
-      - name: Setup deployment directory
-        run: |
-          mkdir -p deploy_temp/${{ steps.deployment.outputs.path }}
-
-          # 複製 web 目錄內容
-          cp -r web/* deploy_temp/${{ steps.deployment.outputs.path }}/
-
-          # 複製 Data 目錄（配置生成器需要）
-          mkdir -p deploy_temp/${{ steps.deployment.outputs.path }}/Data
-          cp -r Data/* deploy_temp/${{ steps.deployment.outputs.path }}/Data/
-
-          # 如果是 main 分支，準備根目錄的 index.html
-          if [[ "${{ steps.deployment.outputs.is_main }}" == "true" ]]; then
-            cp web/index.html deploy_temp/index.html
-          fi
-
-          # 在部署目錄中創建 .nojekyll 文件
-          touch deploy_temp/.nojekyll
-
       - name: Checkout gh-pages branch
         run: |
           git config user.name "github-actions[bot]"
@@ -88,29 +69,51 @@ jobs:
 
       - name: Update deployment files
         run: |
+          # 清理舊的 deploy_temp（不應該被提交到 gh-pages）
+          rm -rf deploy_temp
+          
           # 刪除舊的目標目錄
           rm -rf ${{ steps.deployment.outputs.path }}
 
-          # 複製新的部署文件
-          cp -r deploy_temp/${{ steps.deployment.outputs.path }} .
+          # 使用 git checkout 從來源分支取得最新的 web/ 和 Data/
+          git checkout ${{ github.sha }} -- web Data
+          
+          # 複製 web 目錄到目標路徑（排除 index.html）
+          mkdir -p ${{ steps.deployment.outputs.path }}
+          cd web
+          find . -type f ! -name 'index.html' -exec cp --parents {} ../${{ steps.deployment.outputs.path }}/ \;
+          cd ..
+          
+          # 複製 Data 目錄
+          mkdir -p ${{ steps.deployment.outputs.path }}/Data
+          cp -r Data/* ${{ steps.deployment.outputs.path }}/Data/
 
           # 如果是 main 分支部署，更新根目錄的 index.html 和 .nojekyll
           if [[ "${{ steps.deployment.outputs.is_main }}" == "true" ]]; then
-            cp deploy_temp/index.html .
-            cp deploy_temp/.nojekyll .
+            cp web/index.html .
+            touch .nojekyll
           fi
+          
+          # 清理不需要的檔案
+          rm -rf web Data
 
           # 添加所有更改
           git add -A
 
+          # 顯示變更內容（用於調試）
+          echo "=== Changes to be committed ==="
+          git status --short
+          
           # 檢查是否有更改
-          if git diff-index --quiet HEAD --; then
+          if git diff --cached --quiet; then
             echo "No changes to deploy"
-          else
-            git commit -m "Deploy ${{ github.ref_name }} to ${{ steps.deployment.outputs.path }} - $(date +'%Y-%m-%d %H:%M:%S')"
-            git push origin gh-pages
-            echo "Deployment successful!"
+            exit 0
           fi
+          
+          # 提交並推送
+          git commit -m "Deploy ${{ github.ref_name }} to ${{ steps.deployment.outputs.path }} - $(date +'%Y-%m-%d %H:%M:%S')"
+          git push origin gh-pages
+          echo "Deployment successful!"
 
       - name: Deployment summary
         run: |

@@ -27,6 +27,13 @@ logger = logging.getLogger(__name__)
 class ConfigManager:
     """配置管理器 - 處理多環境配置隔離"""
 
+    # 優化器預設配置
+    DEFAULT_OPTIMIZER_CONFIG = {
+        "top_n": 50000,
+        "show_card_names": True,
+        "forbidden_cards": []
+    }
+
     def __init__(self, config_file: Optional[str] = None):
         """
         初始化配置管理器
@@ -206,6 +213,50 @@ class ConfigManager:
     def get_guild_cardpool_file(self) -> str:
         """獲取公會卡池檔案路徑"""
         return self.config.get("guild_cardpool_file", "guild_cardpools.json")
+
+    def get_optimizer_config(self) -> Dict[str, Any]:
+        """
+        獲取優化器配置 (用於 multi_optimizer_2.py)
+
+        向下兼容：如果配置文件中沒有 optimizer 區塊，返回預設值
+        會將使用者配置與預設配置合併，確保所有欄位都存在
+
+        Returns:
+            包含 top_n, show_card_names, forbidden_cards 的字典
+        """
+        user_config = self.config.get("optimizer", {})
+        if user_config is None:
+            user_config = {}
+            
+        # 合併預設配置與使用者配置
+        merged_config = self.DEFAULT_OPTIMIZER_CONFIG.copy()
+        merged_config.update(user_config)
+        
+        return merged_config
+
+    def get_forbidden_cards(self) -> List[int]:
+        """
+        獲取禁用卡牌列表
+
+        向下兼容：如果配置中沒有此項，返回空列表
+        """
+        return self.get_optimizer_config()["forbidden_cards"]
+
+    def get_optimizer_top_n(self) -> int:
+        """
+        獲取優化器保留的卡組數量
+
+        向下兼容：預設 50000
+        """
+        return self.get_optimizer_config()["top_n"]
+
+    def get_optimizer_show_names(self) -> bool:
+        """
+        獲取是否顯示卡牌名稱
+
+        向下兼容：預設 True
+        """
+        return self.get_optimizer_config()["show_card_names"]
 
     def print_summary(self):
         """列印配置摘要"""

@@ -329,9 +329,12 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id: str, card:
     """
     根据ID检查给定条件是否满足。
 
+    支持逗号分隔的多个条件（AND 逻辑）。
+    例如: "1000000,2100002" 表示两个条件都需要满足。
+
     Args:
         player_attrs (PlayerAttributes): 玩家属性实例。
-        condition_id (str): 技能条件ID。
+        condition_id (str): 技能条件ID（可包含逗号分隔的多个条件）。
         card (Card): 如果条件是 UsedSkillCount，指定要检查的卡牌
 
     Returns:
@@ -343,6 +346,19 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id: str, card:
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("  条件: 无条件 -> 满足")
         return True
+
+    # 处理多个条件（AND 逻辑）
+    if ',' in condition_id:
+        conditions = condition_id.split(',')
+        result = True
+        for cond in conditions:
+            cond = cond.strip()
+            if not CheckSkillCondition(player_attrs, cond, card):
+                result = False
+                break
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"  多条件 AND 检查 [{condition_id}] -> {'满足' if result else '不满足'}")
+        return result
 
     condition_type, operator_or_flag, condition_value = parse_condition_id(condition_id)
 
@@ -419,6 +435,26 @@ def CheckSkillCondition(player_attrs: PlayerAttributes, condition_id: str, card:
             logger.error(f"  未知条件类型: {condition_type.name} ({condition_id})。 -> 不满足")
 
     return is_satisfied
+
+
+def CheckMultiSkillCondition(player_attrs: PlayerAttributes, condition_id: list[str], card: Card = None) -> bool:
+    """
+    检查多个技能条件（AND 逻辑）。
+
+    这个函数是为了与 upstream 保持 API 一致性而提供的包装函数。
+    内部调用 CheckSkillCondition，后者已支持逗号分隔的条件。
+
+    Args:
+        player_attrs (PlayerAttributes): 玩家属性实例。
+        condition_id (list[str]): 技能条件ID列表。
+        card (Card): 如果条件是 UsedSkillCount，指定要检查的卡牌
+
+    Returns:
+        bool: 如果所有条件都满足则返回 True，否则返回 False。
+    """
+    # 使用 all() 实现 AND 逻辑
+    result = all(CheckSkillCondition(player_attrs, condition, card) for condition in condition_id)
+    return result
 
 
 class SkillEffectType(Enum):

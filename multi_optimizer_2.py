@@ -31,6 +31,13 @@ CHALLENGE_SONGS = [
 # 每首歌只保留得分排名前 N 名的卡组用于求解
 TOP_N = 5000
 
+# 禁止使用的卡牌 ID 列表 (三面均生效)
+# 填写格式: [卡牌id1, 卡牌id2, ...]
+FORBIDDEN_CARD = []
+
+# 在控制台与文件输出中显示卡牌名称
+SHOWNAME = True
+
 # 角色名称映射
 CHARACTER_NAMES = {
     1011: "大賀美沙知",
@@ -110,7 +117,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    # 嘗試讀取配置管理器以獲取正確的 log 目錄
+    # 嘗試讀取配置管理器以獲取正確的 log 目錄和優化器設定
     try:
         from src.config.config_manager import get_config
         if args.config:
@@ -124,10 +131,21 @@ if __name__ == "__main__":
 
         LOG_DIR = config.get_log_dir()
         logger.info(f"log 目錄: {LOG_DIR}")
+
+        # 從配置讀取優化器設定（覆蓋全局常量）
+        TOP_N = config.get_optimizer_top_n()
+        SHOWNAME = config.get_optimizer_show_names()
+        FORBIDDEN_CARD = config.get_forbidden_cards()
+
+        logger.info(f"優化器配置: TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
+                   f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
+
     except (ImportError, ValueError, FileNotFoundError) as e:
-        # 如果沒有配置管理器或找不到配置，使用默認的 log 目錄
+        # 如果沒有配置管理器或找不到配置，使用默認的 log 目錄和全局常量
         LOG_DIR = "log"
-        logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用默認 log 目錄: {LOG_DIR}")
+        logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用默認值")
+        logger.info(f"log 目錄: {LOG_DIR}, TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
+                   f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
 
     level_files = []
     for music_id, difficulty in CHALLENGE_SONGS:
@@ -143,6 +161,15 @@ if __name__ == "__main__":
             data = json.load(fh)
             total = len(data)
             data.sort(key=lambda x: x["pt"], reverse=True)
+            
+            # 在切片前先過濾禁卡，確保 TOP_N 是有效的卡組
+            if FORBIDDEN_CARD:
+                original_count = len(data)
+                data = [d for d in data if not any(cid in d["deck_card_ids"] for cid in FORBIDDEN_CARD)]
+                filtered_count = len(data)
+                if original_count != filtered_count:
+                    logger.info(f"  Filtered {original_count - filtered_count} decks containing forbidden cards")
+
             data = data[:TOP_N]
             levels_raw.append(data)
             for deck in data:
@@ -175,6 +202,7 @@ if __name__ == "__main__":
     card_to_bit = {cid: i for i, cid in enumerate(sorted(all_cards))}
     logger.info(f"Loaded {len(card_to_bit)} unique cards")
     assert len(card_to_bit) <= 64, "卡牌种类超过64张时需使用更复杂的bitarray方案"
+    assert len(card_to_bit) >= 6 * len(CHALLENGE_SONGS), "可用卡牌过少，必定出现重复卡牌"
 
     # === 转换deck为bitmask ===
     def deck_to_mask(deck):
@@ -187,6 +215,7 @@ if __name__ == "__main__":
     for data in levels_raw:
         decks = []
         for i, deck in enumerate(data, start=1):
+            # 禁卡已在載入時過濾，此處無需再次檢查
             decks.append({
                 "mask": deck_to_mask(deck),
                 "rank": i,
@@ -253,25 +282,41 @@ if __name__ == "__main__":
     output = []
     output.append("=== Best Combination ===")
     output.append("")
-    output.append(f"Total Pt: {best_pt:,}")
-    output.append("")
 
-    for i, d in enumerate(best_combo):
-        if i < len(CHALLENGE_SONGS):
-            song_id, difficulty = CHALLENGE_SONGS[i]
-            song_title = get_song_title(song_id)
-            output.append(f"Song {i+1}: {song_id} (Difficulty: {difficulty}) - {song_title}")
-            output.append(f"  Score: {d['score']:,}")
-            output.append(f"  Pt: {d['pt']:,}  (Rank: #{d['rank']})")
-            output.append(f"  Deck:")
-            # 使用新的格式化函數顯示卡組
-            output.append(format_deck_with_names(d['deck']))
-            output.append("")
+    if best_pt > 0:
+        output.append(f"Total Pt: {best_pt:,}")
+        output.append("")
 
-    output = "\n".join(output)
-    logger.info(f"\n{output}")
+        for i, d in enumerate(best_combo):
+            if i < len(CHALLENGE_SONGS):
+                song_id, difficulty = CHALLENGE_SONGS[i]
+                song_title = get_song_title(song_id)
+                output.append(f"Song {i+1}: {song_id} (Difficulty: {difficulty}) - {song_title}")
+                output.append(f"  Score: {d['score']:,}")
+                output.append(f"  Pt: {d['pt']:,}  (Rank: #{d['rank']})")
+                output.append(f"  Deck:")
+                # 使用新的格式化函數顯示卡組
+                output.append(format_deck_with_names(d['deck']))
+                output.append("")
 
-    with open("best_3_song_combo.txt", "w", encoding="utf-8") as f:
-        f.write(output)
-        f.write("\n")
-    logger.info(f"Best 3-song combination saved to best_3_song_combo.txt")
+        output = "\n".join(output)
+        logger.info(f"\n{output}")
+
+        with open("best_3_song_combo.txt", "w", encoding="utf-8") as f:
+            f.write(output)
+            f.write("\n")
+        logger.info(f"Best 3-song combination saved to best_3_song_combo.txt")
+    else:
+        logger.warning("=" * 60)
+        logger.warning("警告: 無法找到有效的三首歌卡組組合")
+        logger.warning("=" * 60)
+        logger.warning("可能的原因:")
+        logger.warning("  1. 禁卡設定過於嚴格，導致可用卡組不足")
+        logger.warning("  2. TOP_N 設定過小，保留的卡組數量不足")
+        logger.warning("  3. 卡組之間存在過多重複卡牌，無法找到不重複的組合")
+        logger.warning("")
+        logger.warning("建議:")
+        logger.warning("  1. 檢查配置中的 optimizer.forbidden_cards 設定")
+        logger.warning(f"  2. 增加 optimizer.top_n 的值 (目前: {TOP_N})")
+        logger.warning("  3. 嘗試使用兩首歌的組合 (未來版本將自動降級)")
+        logger.warning("=" * 60)

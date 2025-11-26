@@ -199,7 +199,7 @@ def run_game_simulation(
                         else:
                             player.combo_add("MISS", event)
                 else:
-                    player.combo_add("PERFECT")
+                    player.combo_add("PERFECT+")
 
                 if player.CDavailable:
                     try_use_skill()
@@ -225,7 +225,7 @@ def run_game_simulation(
                     else:
                         player.combo_add("MISS", note_type)
                 else:
-                    player.combo_add("PERFECT")
+                    player.combo_add("PERFECT+")
 
             case "LiveStart" | "LiveEnd" | "FeverStart":
                 if event == "FeverStart":
