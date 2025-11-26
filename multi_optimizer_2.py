@@ -161,6 +161,15 @@ if __name__ == "__main__":
             data = json.load(fh)
             total = len(data)
             data.sort(key=lambda x: x["pt"], reverse=True)
+            
+            # 在切片前先過濾禁卡，確保 TOP_N 是有效的卡組
+            if FORBIDDEN_CARD:
+                original_count = len(data)
+                data = [d for d in data if not any(cid in d["deck_card_ids"] for cid in FORBIDDEN_CARD)]
+                filtered_count = len(data)
+                if original_count != filtered_count:
+                    logger.info(f"  Filtered {original_count - filtered_count} decks containing forbidden cards")
+
             data = data[:TOP_N]
             levels_raw.append(data)
             for deck in data:
@@ -206,9 +215,7 @@ if __name__ == "__main__":
     for data in levels_raw:
         decks = []
         for i, deck in enumerate(data, start=1):
-            # 忽略包含特定卡牌的卡組
-            if FORBIDDEN_CARD and any(cid in deck["deck_card_ids"] for cid in FORBIDDEN_CARD):
-                continue
+            # 禁卡已在載入時過濾，此處無需再次檢查
             decks.append({
                 "mask": deck_to_mask(deck),
                 "rank": i,

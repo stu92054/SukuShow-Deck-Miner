@@ -160,12 +160,13 @@ if __name__ == "__main__":
         TOP_N = config.get_optimizer_top_n()
         SHOWNAME = config.get_optimizer_show_names()
         FORBIDDEN_CARD = config.get_forbidden_cards()
-
-        if FORBIDDEN_CARD:
-            logger.info(f"禁止使用的卡牌: {FORBIDDEN_CARD}")
+        logger.info(f"優化器配置: TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
+                   f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
     except (ImportError, ValueError, FileNotFoundError) as e:
         LOG_DIR = "log"
         logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用預設 log 目錄: {LOG_DIR}")
+        logger.info(f"使用預設優化器配置: TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
+                   f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
 
     level_files = []
     for music_id, difficulty in CHALLENGE_SONGS:
@@ -193,10 +194,9 @@ if __name__ == "__main__":
             if FORBIDDEN_CARD:
                 original_count = len(data)
                 data = [deck for deck in data if not any(cid in deck["deck_card_ids"] for cid in FORBIDDEN_CARD)]
-                filtered_count = original_count - len(data)
-                if filtered_count > 0:
-                    song_id, difficulty = CHALLENGE_SONGS[i]
-                    logger.info(f"過濾 {song_id}_{difficulty} 中包含禁卡的卡組: {filtered_count} 個")
+                filtered_count = len(data)
+                if original_count != filtered_count:
+                    logger.info(f"  Filtered {original_count - filtered_count} decks containing forbidden cards")
 
             data = data[:TOP_N]
             levels_raw.append(data)

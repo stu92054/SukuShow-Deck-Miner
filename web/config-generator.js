@@ -572,6 +572,22 @@ function removeMustCard(songId, type, cardId) {
     updateMustCardDisplay(songId, type);
 }
 
+// Helper: 獲取卡片顯示名稱
+function getCardDisplayName(card) {
+    return `[${RARITY_NAMES[card.rarity] || card.rarity}] ${card.characterName} - ${card.name}`;
+}
+
+// Helper: 創建卡片標籤元素
+function createCardTagElement(displayText, removeAction) {
+    const tag = document.createElement('div');
+    tag.className = 'mustcard-tag';
+    tag.innerHTML = `
+        <span>${displayText}</span>
+        <button onclick="${removeAction}">&times;</button>
+    `;
+    return tag;
+}
+
 // 更新必須卡片顯示
 function updateMustCardDisplay(songId, type) {
     const hiddenInput = document.getElementById(`mustcards-${type}-${songId}`);
@@ -584,28 +600,17 @@ function updateMustCardDisplay(songId, type) {
     cardIds.forEach(cardId => {
         // 標準化 ID 為字符串進行比較
         const normalizedCardId = cardId.toString();
-        const card = cards.find(c => c.id.toString() === normalizedCardId);
+        let card = cards.find(c => c.id.toString() === normalizedCardId);
         
+        // 如果在已填寫的卡片中找不到，嘗試直接從資料庫查詢
+        if (!card) {
+            card = getCardById(normalizedCardId);
+        }
+
         if (card) {
-            const tag = document.createElement('div');
-            tag.className = 'mustcard-tag';
-            tag.innerHTML = `
-                <span>[${RARITY_NAMES[card.rarity] || card.rarity}] ${card.characterName} - ${card.name}</span>
-                <button onclick="removeMustCard(${songId}, '${type}', '${cardId}')">&times;</button>
-            `;
-            displayDiv.appendChild(tag);
-        } else {
-            // 如果在已填寫的卡片中找不到，嘗試直接從資料庫查詢
-            const cardInfo = getCardById(normalizedCardId);
-            if (cardInfo) {
-                const tag = document.createElement('div');
-                tag.className = 'mustcard-tag';
-                tag.innerHTML = `
-                    <span>[${RARITY_NAMES[cardInfo.rarity] || cardInfo.rarity}] ${cardInfo.characterName} - ${cardInfo.name}</span>
-                    <button onclick="removeMustCard(${songId}, '${type}', '${cardId}')">&times;</button>
-                `;
-                displayDiv.appendChild(tag);
-            }
+            const displayText = getCardDisplayName(card);
+            const removeAction = `removeMustCard(${songId}, '${type}', '${cardId}')`;
+            displayDiv.appendChild(createCardTagElement(displayText, removeAction));
         }
     });
 }
@@ -708,27 +713,17 @@ function updateForbiddenCardsDisplay() {
 
     // 為每個卡片創建標籤
     cardIds.forEach(cardId => {
+        let displayText = cardId;
+        
         if (useCardDatabase) {
             const cardInfo = getCardById(cardId);
             if (cardInfo) {
-                const tag = document.createElement('div');
-                tag.className = 'mustcard-tag';
-                tag.innerHTML = `
-                    <span>[${RARITY_NAMES[cardInfo.rarity] || cardInfo.rarity}] ${cardInfo.characterName} - ${cardInfo.name}</span>
-                    <button onclick="removeForbiddenCard('${cardId}')">&times;</button>
-                `;
-                displayDiv.appendChild(tag);
+                displayText = getCardDisplayName(cardInfo);
             }
-        } else {
-            // 沒有數據庫時只顯示 ID
-            const tag = document.createElement('div');
-            tag.className = 'mustcard-tag';
-            tag.innerHTML = `
-                <span>${cardId}</span>
-                <button onclick="removeForbiddenCard('${cardId}')">&times;</button>
-            `;
-            displayDiv.appendChild(tag);
         }
+        
+        const removeAction = `removeForbiddenCard('${cardId}')`;
+        displayDiv.appendChild(createCardTagElement(displayText, removeAction));
     });
 }
 
