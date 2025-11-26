@@ -17,6 +17,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 添加拖放事件監聽
     const uploadArea = document.getElementById('upload-area');
 
+    uploadArea.addEventListener('click', () => {
+        // 創建一個臨時 input 接受所有檔案類型
+        const tempInput = document.createElement('input');
+        tempInput.type = 'file';
+        tempInput.accept = '.yaml,.yml,.csv';
+        tempInput.onchange = (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (file.name.endsWith('.csv')) {
+                    handleCSVUpload(file);
+                } else {
+                    handleFileUpload(file);
+                }
+            }
+        };
+        tempInput.click();
+    });
+
     uploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadArea.classList.add('dragover');
@@ -32,7 +50,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            handleFileUpload(files[0]);
+            const file = files[0];
+            if (file.name.endsWith('.csv')) {
+                handleCSVUpload(file);
+            } else {
+                handleFileUpload(file);
+            }
         }
     });
 
@@ -40,6 +63,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('file-input').addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             handleFileUpload(e.target.files[0]);
+        }
+    });
+
+    // CSV 文件輸入變化
+    document.getElementById('csv-input').addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleCSVUpload(e.target.files[0]);
         }
     });
 
@@ -1065,6 +1095,352 @@ function handleFileUpload(file) {
     };
 
     reader.readAsText(file);
+}
+
+// 處理 CSV 文件上傳
+function handleCSVUpload(file) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        try {
+            const csvContent = e.target.result;
+            parseCSVAndFillCards(csvContent);
+            alert('CSV 卡池已成功匯入！');
+        } catch (error) {
+            alert('解析 CSV 文件時出錯: ' + error.message);
+            console.error(error);
+        }
+    };
+
+    reader.readAsText(file, 'UTF-8');
+}
+
+// 解析 CSV 並填充卡片表格
+function parseCSVAndFillCards(csvContent) {
+    // 分割行
+    const lines = csvContent.split('\n').map(line => line.trim()).filter(line => line);
+    
+    if (lines.length < 2) {
+        throw new Error('CSV 文件格式不正確');
+    }
+
+    // 跳過標題行，從第二行開始
+    const dataLines = lines.slice(1);
+    
+    // 清空現有卡片
+    for (let i = 0; i < MAX_CARDS; i++) {
+        if (useCardDatabase) {
+            const charInput = document.getElementById(`char-input-${i}`);
+            const cardInput = document.getElementById(`card-input-${i}`);
+            if (charInput) charInput.value = '';
+            if (cardInput) {
+                cardInput.value = '';
+                cardInput.disabled = true;
+            }
+        }
+        document.getElementById(`card-id-${i}`).value = '';
+        document.getElementById(`card-level-${i}`).value = '';
+        document.getElementById(`center-skill-${i}`).value = '';
+        document.getElementById(`skill-level-${i}`).value = '';
+    }
+
+    let cardIndex = 0;
+    const notFoundCards = [];
+    const songData = { A: null, B: null, C: null };
+
+    for (const line of dataLines) {
+        if (cardIndex >= MAX_CARDS) {
+            console.warn(`已達到最大卡片數量 (${MAX_CARDS})，忽略剩餘卡片`);
+            break;
+        }
+
+        // 使用正規表達式分割 CSV，處理包含逗號的引號字段
+        const fields = parseCSVLine(line);
+        
+        // 跳過空行或無效行
+        if (fields.length < 6) continue;
+        
+        // 先處理一般卡片（列 0-5）
+        let characterName = fields[0].trim();
+        let cardId = fields[2].trim();
+        let level = fields[3].trim();
+        let centerSkill = fields[4].trim();
+        let skillLevel = fields[5].trim();
+        
+        // 檢查列 7-11 是歌曲資訊還是 DR 卡資訊
+        // 歌曲：列7=A/B/C, 列8=50, 列9=難度, 列10=歌曲ID
+        // DR卡：列7=角色名, 列8=卡片名, 列9=等級, 列10=C位, 列11=主技能, 列12=ID
+        if (fields.length >= 11) {
+            const col7 = fields[7].trim();
+            
+            // 如果列 7 是 A/B/C，視為歌曲資訊
+            if (col7 === 'A' || col7 === 'B' || col7 === 'C') {
+                const stage = col7;
+                const masteryLevel = fields[8].trim();
+                const difficulty = fields[9].trim();
+                const musicId = fields[10].trim();
+                
+                if (musicId && !songData[stage]) {
+                    songData[stage] = {
+                        music_id: musicId,
+                        difficulty: difficulty || 'Master',
+                        mastery_level: masteryLevel || '50'
+                    };
+                }
+            }
+        }
+
+        // 跳過 "- - -" 這類的佔位行
+        if (characterName === '- - -' || !cardId || cardId === '') continue;
+
+        // 跳過 DR 卡（等級為 1 1 1 的一般卡片）
+        if (level === '1' && centerSkill === '1' && skillLevel === '1') {
+            continue;
+        }
+
+        // 處理一般卡片
+
+        if (useCardDatabase) {
+            // 使用數據庫模式
+            const cardInfo = getCardById(cardId);
+            
+            if (cardInfo) {
+                const charInput = document.getElementById(`char-input-${cardIndex}`);
+                const cardInput = document.getElementById(`card-input-${cardIndex}`);
+                
+                // 設置角色
+                const charDatalist = document.getElementById(`char-list-${cardIndex}`);
+                let charText = '';
+                for (const option of charDatalist.options) {
+                    if (parseInt(option.getAttribute('data-char-id')) === cardInfo.characterId) {
+                        charText = option.value;
+                        break;
+                    }
+                }
+                
+                if (charText) {
+                    charInput.value = charText;
+                    onCharacterInput(cardIndex);
+                    
+                    // 設置卡片
+                    const cardDatalist = document.getElementById(`card-list-${cardIndex}`);
+                    for (const option of cardDatalist.options) {
+                        if (option.getAttribute('data-card-id') === cardId) {
+                            cardInput.value = option.value;
+                            break;
+                        }
+                    }
+                    onCardInput(cardIndex);
+                }
+            } else {
+                // 如果找不到，直接填入 ID
+                document.getElementById(`card-id-${cardIndex}`).value = cardId;
+                notFoundCards.push(cardId);
+            }
+        } else {
+            // 手動模式
+            document.getElementById(`card-id-${cardIndex}`).value = cardId;
+        }
+
+        // 填入練度（無論數值為何都填入）
+        if (level) {
+            const levelElem = document.getElementById(`card-level-${cardIndex}`);
+            if (levelElem) {
+                levelElem.value = level;
+            }
+        }
+        if (centerSkill) {
+            const centerElem = document.getElementById(`center-skill-${cardIndex}`);
+            if (centerElem) {
+                centerElem.value = centerSkill;
+            }
+        }
+        if (skillLevel) {
+            const skillElem = document.getElementById(`skill-level-${cardIndex}`);
+            if (skillElem) {
+                skillElem.value = skillLevel;
+            }
+        }
+
+        cardIndex++;
+        
+        // 處理 DR 卡片（與歌曲共用欄位 7-12）
+        // 只有當列 7 不是 A/B/C（歌曲標記）時才可能是 DR 卡
+        // 格式：列7=角色名, 列8=卡片名, 列9=等級, 列10=C位, 列11=主技能, 列12=ID
+        if (fields.length >= 13 && cardIndex < MAX_CARDS) {
+            const col7 = fields[7].trim();
+            
+            // 確認不是歌曲資訊（A/B/C）且不是表頭（"DR"）
+            if (col7 && col7 !== 'A' && col7 !== 'B' && col7 !== 'C' && col7 !== 'DR') {
+                const drCharName = col7;
+                const drCardName = fields[8].trim();
+                const drLevel = fields[9].trim();
+                const drCenter = fields[10].trim();
+                const drSkill = fields[11].trim();
+                let drCardId = fields[12].trim();
+                
+                // 處理 "- ID" 格式，提取純數字
+                if (drCardId.startsWith('-')) {
+                    drCardId = drCardId.substring(1).trim();
+                }
+                
+                // 只處理有 ID 且不是 1 1 1 的 DR 卡
+                if (drCardId && drCardId !== '' && 
+                    !(drLevel === '1' && drCenter === '1' && drSkill === '1')) {
+                    
+                    if (useCardDatabase) {
+                        const cardInfo = getCardById(drCardId);
+                        
+                        if (cardInfo) {
+                            const charInput = document.getElementById(`char-input-${cardIndex}`);
+                            const cardInput = document.getElementById(`card-input-${cardIndex}`);
+                            
+                            const charDatalist = document.getElementById(`char-list-${cardIndex}`);
+                            let charText = '';
+                            for (const option of charDatalist.options) {
+                                if (parseInt(option.getAttribute('data-char-id')) === cardInfo.characterId) {
+                                    charText = option.value;
+                                    break;
+                                }
+                            }
+                            
+                            if (charText) {
+                                charInput.value = charText;
+                                onCharacterInput(cardIndex);
+                                
+                                const cardDatalist = document.getElementById(`card-list-${cardIndex}`);
+                                for (const option of cardDatalist.options) {
+                                    if (option.getAttribute('data-card-id') === drCardId) {
+                                        cardInput.value = option.value;
+                                        break;
+                                    }
+                                }
+                                onCardInput(cardIndex);
+                            }
+                        } else {
+                            document.getElementById(`card-id-${cardIndex}`).value = drCardId;
+                            notFoundCards.push(drCardId);
+                        }
+                    } else {
+                        document.getElementById(`card-id-${cardIndex}`).value = drCardId;
+                    }
+
+                    // 填入 DR 卡練度
+                    if (drLevel) {
+                        const levelElem = document.getElementById(`card-level-${cardIndex}`);
+                        if (levelElem) levelElem.value = drLevel;
+                    }
+                    if (drCenter) {
+                        const centerElem = document.getElementById(`center-skill-${cardIndex}`);
+                        if (centerElem) centerElem.value = drCenter;
+                    }
+                    if (drSkill) {
+                        const skillElem = document.getElementById(`skill-level-${cardIndex}`);
+                        if (skillElem) skillElem.value = drSkill;
+                    }
+
+                    cardIndex++;
+                }
+            }
+        }
+    }
+
+    updateCardCount();
+    updateAllMustCardSelects();
+
+    // 填充歌曲資訊
+    fillSongsFromCSV(songData);
+
+    if (notFoundCards.length > 0) {
+        console.warn('以下卡片 ID 在資料庫中找不到:', notFoundCards);
+        alert(`成功匯入 ${cardIndex} 張卡片！\n\n注意：${notFoundCards.length} 張卡片在資料庫中找不到，已直接填入 ID。`);
+    }
+}
+
+// 從 CSV 歌曲資料填充歌曲配置
+function fillSongsFromCSV(songData) {
+    // 清空現有歌曲
+    document.getElementById('songs-container').innerHTML = '';
+    songCounter = 0;
+
+    // 按順序添加 A, B, C 面的歌曲
+    const stages = ['A', 'B', 'C'];
+    for (const stage of stages) {
+        if (songData[stage]) {
+            addSong();
+            const songId = songCounter - 1;
+            const song = songData[stage];
+
+            // 使用 setTimeout 確保 DOM 元素已創建
+            setTimeout(() => {
+                // 填入歌曲 ID
+                if (song.music_id) {
+                    const musicIdElem = document.getElementById(`music-id-${songId}`);
+                    if (musicIdElem) {
+                        musicIdElem.value = song.music_id;
+                    }
+                    
+                    // 如果使用歌曲資料庫，設置歌曲名稱
+                    if (useSongDatabase) {
+                        const songInput = document.getElementById(`song-input-${songId}`);
+                        if (songInput) {
+                            const songInfo = getSongById(song.music_id);
+                            if (songInfo) {
+                                songInput.value = formatSongName(songInfo);
+                            }
+                        }
+                    }
+                }
+                
+                // 填入難度
+                if (song.difficulty) {
+                    const difficultyElem = document.getElementById(`difficulty-${songId}`);
+                    if (difficultyElem) {
+                        // 將難度文字轉換為數字代碼
+                        const difficultyMap = {
+                            'Normal': '01',
+                            'Hard': '02',
+                            'Expert': '03',
+                            'Master': '04'
+                        };
+                        const difficultyValue = difficultyMap[song.difficulty] || song.difficulty;
+                        difficultyElem.value = difficultyValue;
+                    }
+                }
+                
+                // 填入歌曲等級
+                if (song.mastery_level) {
+                    const masteryElem = document.getElementById(`mastery-${songId}`);
+                    if (masteryElem) {
+                        masteryElem.value = song.mastery_level;
+                    }
+                }
+            }, 100);  // 延遲 100ms 確保 DOM 已更新
+        }
+    }
+}
+
+// 解析 CSV 行（處理引號和逗號）
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    result.push(current);
+    return result;
 }
 
 // 從配置對象載入到表單
