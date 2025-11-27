@@ -62,7 +62,15 @@ card_ids:
   - 1052901  # BR塞
   - 1052503  # 十六夜塞
 
+# 賽季模式 (用於計算粉絲等級加成)
+# - "sukushow": 只計算歌唱成員 (預設)
+# - "sukuste": 計算所有成員
 season_mode: "sukushow"
+
+# LGP 模式 (是否允許同角色雙卡)
+# - false: 日常模式，每個角色最多1張卡
+# - true: LGP 大賽模式，允許0-3個角色使用雙卡 (預設)
+lgp_mode: true
 
 # Alice 的粉絲等級
 fan_levels:

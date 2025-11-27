@@ -66,23 +66,37 @@ def count_skill_tags(card_ids_input: list[int]):
     return tag_counts
 
 
-def generate_role_distributions(all_characters):
+def generate_role_distributions(all_characters, allow_double_cards=True):
     """
-    生成6个卡位的角色分布，允许部分角色双卡。
-    返回的每个分布是一个长度6的角色ID列表，可能包含重复（表示双卡）。
+    生成6个卡位的角色分布
+
+    Args:
+        all_characters: 可用角色ID列表
+        allow_double_cards: 是否允许双卡
+            - True: LGP模式，允许0-3个角色双卡
+            - False: 日常模式，每个角色最多1张卡
+
+    Returns:
+        角色分布列表，每个分布是一个长度6的角色ID元组
     """
     results = []
 
-    # 0,1,2,3个角色双卡
-    for double_count in range(0, 4):
-        for doubles in itertools.combinations(all_characters, double_count):
-            remaining_roles_needed = 6 - 2 * double_count
-            for singles in itertools.combinations(
-                [r for r in all_characters if r not in doubles],
-                remaining_roles_needed
-            ):
-                distribution = list(doubles) * 2 + list(singles)
-                results.append(tuple(sorted(distribution)))
+    if allow_double_cards:
+        # LGP模式：允许0,1,2,3个角色双卡
+        for double_count in range(0, 4):
+            for doubles in itertools.combinations(all_characters, double_count):
+                remaining_roles_needed = 6 - 2 * double_count
+                for singles in itertools.combinations(
+                    [r for r in all_characters if r not in doubles],
+                    remaining_roles_needed
+                ):
+                    distribution = list(doubles) * 2 + list(singles)
+                    results.append(tuple(sorted(distribution)))
+    else:
+        # 日常模式：每个角色最多1张卡（6个不同角色）
+        if len(all_characters) >= 6:
+            for singles in itertools.combinations(all_characters, 6):
+                results.append(tuple(sorted(singles)))
 
     return list(set(results))
 
@@ -101,12 +115,24 @@ def load_simulated_decks(path: str):
 
 
 class DeckGeneratorWithDoubleCards:
-    def __init__(self, cardpool: list[int], mustcards: list[list[int]], center_char=None, force_dr=False, log_path: str = None):
+    def __init__(self, cardpool: list[int], mustcards: list[list[int]], center_char=None, force_dr=False, log_path: str = None, allow_double_cards=True):
+        """
+        卡组生成器（支持单卡/双卡模式）
+
+        Args:
+            cardpool: 卡池列表
+            mustcards: 必须包含的卡片列表 [mustcards_all, mustcards_any, mustskills_all]
+            center_char: C位角色ID
+            force_dr: 是否强制包含DR卡
+            log_path: 日志路径（用于去重已模拟的卡组）
+            allow_double_cards: 是否允许双卡（True=LGP模式，False=日常模式）
+        """
         self.cardpool = cardpool
         self.center_char = center_char
         self.char_id_to_cards = defaultdict(list)
         self.force_dr = force_dr
         self.mustcards = mustcards
+        self.allow_double_cards = allow_double_cards
         self.simulated_decks = load_simulated_decks(log_path)
         for card_id in self.cardpool:
             char_id = card_id // 1000
@@ -117,9 +143,10 @@ class DeckGeneratorWithDoubleCards:
         self.total_decks = self.compute_total_count()
 
     def __iter__(self):
-        if len(self.all_available_chars) < 3:
+        min_chars_required = 6 if not self.allow_double_cards else 3
+        if len(self.all_available_chars) < min_chars_required:
             return
-        for char_distribution in generate_role_distributions(self.all_available_chars):
+        for char_distribution in generate_role_distributions(self.all_available_chars, self.allow_double_cards):
             if self.center_char and self.center_char not in char_distribution:
                 continue
             yield from self._generate_decks_for_distribution(char_distribution)
@@ -127,15 +154,26 @@ class DeckGeneratorWithDoubleCards:
     def check_skill_tags(self, tag_counts: Counter, force_dr=False):
         """
         检查卡组中的技能类型是否符合给定条件。
-        默认检查洗牌、分、电、分加成、电加成均不为0，且DR数量<=1。
+
+        - LGP 模式（双卡）：DR数量<=1
+        - 日常模式（单卡）：不限制DR数量
         """
-        if all(tag_counts[skill] for skill in self.mustcards[2]) and \
-                tag_counts[Rarity.DR] <= 1:
-            if not force_dr:
-                return True
-            elif tag_counts[Rarity.DR] == 1:
-                return True
-        return False
+        # 检查必须技能
+        if not all(tag_counts[skill] for skill in self.mustcards[2]):
+            return False
+
+        # DR 数量限制
+        if self.allow_double_cards:
+            # LGP 模式：限制 DR <= 1
+            if tag_counts[Rarity.DR] > 1:
+                return False
+        # 日常模式：不限制 DR 数量
+
+        # force_dr 检查
+        if force_dr and tag_counts[Rarity.DR] == 0:
+            return False
+
+        return True
 
     def _generate_valid_permutations(self, deck):
         """
@@ -278,20 +316,32 @@ class DeckGeneratorWithDoubleCards:
 
     def compute_total_count(self):
         total = 0
-        if len(self.all_available_chars) < 3:
+        min_chars_required = 6 if not self.allow_double_cards else 3
+        if len(self.all_available_chars) < min_chars_required:
             return 0
-        for char_distribution in generate_role_distributions(self.all_available_chars):
+        for char_distribution in generate_role_distributions(self.all_available_chars, self.allow_double_cards):
             if self.center_char and self.center_char not in char_distribution:
                 continue
             total += self._count_decks_for_distribution(char_distribution)
         return total
 
 
-def generate_decks_with_double_cards(cardpool: list[int], mustcards: list[list[int]], center_char: int = None, force_dr: bool = False, log_path: str = None):
+def generate_decks_with_double_cards(cardpool: list[int], mustcards: list[list[int]], center_char: int = None, force_dr: bool = False, log_path: str = None, allow_double_cards: bool = True):
     """
-    外部接口函数，返回支持双卡规则的卡组生成器
+    外部接口函数，返回卡组生成器（支持单卡/双卡模式）
+
+    Args:
+        cardpool: 卡池列表
+        mustcards: 必须包含的卡片列表 [mustcards_all, mustcards_any, mustskills_all]
+        center_char: C位角色ID
+        force_dr: 是否强制包含DR卡
+        log_path: 日志路径（用于去重已模拟的卡组）
+        allow_double_cards: 是否允许双卡（True=LGP模式，False=日常模式）
+
+    Returns:
+        DeckGeneratorWithDoubleCards 实例
     """
-    return DeckGeneratorWithDoubleCards(cardpool, mustcards, center_char, force_dr, log_path)
+    return DeckGeneratorWithDoubleCards(cardpool, mustcards, center_char, force_dr, log_path, allow_double_cards)
 
 
 if __name__ == "__main__":

@@ -199,8 +199,18 @@ class ConfigManager:
         return self.config.get("debug_deck_cards", None)
 
     def get_season_mode(self) -> str:
-        """獲取賽季模式"""
+        """獲取賽季模式（用於計算粉絲等級加成）"""
         return self.config.get("season_mode", "sukushow")
+
+    def get_lgp_mode(self) -> bool:
+        """
+        獲取 LGP 模式（是否允許雙卡）
+
+        Returns:
+            True: LGP 大賽模式，允許同角色雙卡
+            False: 日常模式，每個角色最多1張卡（預設）
+        """
+        return self.config.get("lgp_mode", False)
 
     def get_batch_size(self) -> int:
         """獲取批次大小"""
@@ -272,6 +282,7 @@ class ConfigManager:
         logger.info(f"歌曲數量: {len(self.get_songs_config())}")
         logger.info(f"卡牌數量: {len(self.get_card_ids())}")
         logger.info(f"賽季模式: {self.get_season_mode()}")
+        logger.info(f"LGP 模式: {'啟用（允許雙卡）' if self.get_lgp_mode() else '停用（單卡規則）'}")
         logger.info("=" * 60)
 
 
