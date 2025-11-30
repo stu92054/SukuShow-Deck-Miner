@@ -945,8 +945,16 @@ songs:
         yaml += ` # ...\n`;
     }
 
-    yaml += `\n# 遊戲模式 (固定為 sukushow)\n`;
+    yaml += `\n# 賽季模式 (用於計算粉絲等級加成)\n`;
+    yaml += `# - "sukushow": 只計算歌唱成員 (預設)\n`;
+    yaml += `# - "sukuste": 計算所有成員\n`;
     yaml += `season_mode: "sukushow"\n\n`;
+
+    yaml += `# LGP 模式 (是否允許同角色雙卡)\n`;
+    yaml += `# - false: 日常模式，每個角色最多1張卡\n`;
+    yaml += `# - true: LGP 大賽模式，允許0-3個角色使用雙卡 (預設)\n`;
+    const lgpMode = document.getElementById('lgp-mode').value === 'true';
+    yaml += `lgp_mode: ${lgpMode}\n\n`;
 
     // 粉絲等級
     const fanLevelFullNames = {
@@ -1591,6 +1599,11 @@ function loadConfigToForm(config) {
             if (song.color_override) document.getElementById(`color-override-${songId}`).value = song.color_override;
             if (song.leader_designation) document.getElementById(`leader-designation-${songId}`).value = song.leader_designation;
         });
+    }
+
+    // 載入 LGP 模式
+    if (config.lgp_mode !== undefined) {
+        document.getElementById('lgp-mode').value = config.lgp_mode ? 'true' : 'false';
     }
 
     // 載入進階配置
