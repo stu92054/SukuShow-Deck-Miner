@@ -762,13 +762,22 @@ if __name__ == "__main__":
 
         logger.info("Pre-calculating deck amount...")
 
+        # 判斷是否使用雙卡模式（LGP）
+        if use_yaml_config and yaml_config:
+            allow_double_cards = yaml_config.get_lgp_mode()
+        else:
+            allow_double_cards = True  # 預設使用雙卡模式（向下相容）
+
+        logger.info(f"卡組生成模式: {'LGP（允許雙卡）' if allow_double_cards else '日常（單卡規則）'}")
+
         # 3. 获取卡组生成器
         decks_generator = generate_decks_with_double_cards(
             cardpool=current_card_ids,
             mustcards=[mustcards_all, mustcards_any, mustskills_all],
             center_char=pre_initialized_chart.music.CenterCharacterId,
             force_dr=force_dr,
-            log_path=os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
+            log_path=os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json"),
+            allow_double_cards=allow_double_cards
         )
         total_decks_to_simulate = decks_generator.total_decks
         logger.info(f"{total_decks_to_simulate} decks to be simulated.")
