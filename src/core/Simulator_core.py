@@ -226,9 +226,13 @@ def run_game_simulation(
                 if player.CDavailable and player.ap < cardnow.cost:
                     ap_deficit = cardnow.cost - player.ap
                     if cached_ap_gain > 0:
+                        # 計算還需要幾個 note 才能累積足夠的 AP
                         notes_needed = int(ceil(ap_deficit / cached_ap_gain))
-                        if i_event + notes_needed < chart_length:
-                            next_ap_time = chart_events[i_event + notes_needed][0]
+                        # AP 會在處理完第 (i_event + notes_needed - 1) 個 note 後達到要求
+                        # 快轉應該在該 note 之前停止，讓正常流程處理並觸發技能
+                        target_index = i_event + notes_needed - 1
+                        if target_index >= 0 and target_index < chart_length:
+                            next_ap_time = chart_events[target_index][0]
 
                 safe_horizon = min(next_cd_time, next_ap_time)
 
