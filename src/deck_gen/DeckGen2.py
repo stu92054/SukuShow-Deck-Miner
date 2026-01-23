@@ -304,20 +304,19 @@ class DeckGeneratorWithDoubleCards:
 
                     # 為每個 C 位卡生成一個卡組
                     for center_card_index in center_cards:
+                        perm_list = list(perm)
                         # 助戰卡迴圈
                         if self.friend_card:
-                            any_valid = False
-                            for friend in self.friend_card:
-                                # 好友卡不能與卡組中的卡牌重複
-                                if friend not in perm:
-                                    yield (list(perm), center_card_index, friend)
-                                    any_valid = True
-                            # 如果所有好友卡都與卡組重複，回退到無好友卡模式
-                            if not any_valid:
-                                yield (list(perm), center_card_index, None)
+                            valid_friends = [f for f in self.friend_card if f not in perm]
+                            if not valid_friends:
+                                # 如果所有好友卡都與卡組重複，回退到無好友卡模式
+                                yield (perm_list, center_card_index, None)
+                            else:
+                                for friend in valid_friends:
+                                    yield (perm_list, center_card_index, friend)
                         else:
                             # 沒有助戰卡時，friend 為 None
-                            yield (list(perm), center_card_index, None)
+                            yield (perm_list, center_card_index, None)
 
     def _count_decks_for_distribution(self, char_distribution):
         char_counts = {char_id: char_distribution.count(char_id) for char_id in set(char_distribution)}
