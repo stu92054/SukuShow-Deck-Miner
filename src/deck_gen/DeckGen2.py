@@ -306,10 +306,15 @@ class DeckGeneratorWithDoubleCards:
                     for center_card_index in center_cards:
                         # 助戰卡迴圈
                         if self.friend_card:
+                            any_valid = False
                             for friend in self.friend_card:
                                 # 好友卡不能與卡組中的卡牌重複
                                 if friend not in perm:
                                     yield (list(perm), center_card_index, friend)
+                                    any_valid = True
+                            # 如果所有好友卡都與卡組重複，回退到無好友卡模式
+                            if not any_valid:
+                                yield (list(perm), center_card_index, None)
                         else:
                             # 沒有助戰卡時，friend 為 None
                             yield (list(perm), center_card_index, None)
@@ -344,10 +349,10 @@ class DeckGeneratorWithDoubleCards:
             if self.check_skill_tags(count_skill_tags(deck), self.force_dr):
                 # 使用优化的计数方法
                 count = self._count_valid_permutations(deck)
-                # 乘以有效助戰卡數量（排除與卡組重複的）
+                # 乘以有效助戰卡數量（排除與卡組重複的，至少為1表示無好友卡模式）
                 if self.friend_card:
                     valid_friends = sum(1 for f in self.friend_card if f not in deck)
-                    count *= valid_friends
+                    count *= max(valid_friends, 1)  # 回退到無好友卡模式
                 total += count
         return total
 
