@@ -243,7 +243,7 @@ ENABLE_DR_PRUNING = False  # 推荐：False（让算法自动决定）
 
 ```python
 mustskills_all = [
-    SkillEffectType.DeckReset,  # 洗牌（DR）
+    SkillEffectType.DeckReset,  # 洗牌
     SkillEffectType.ScoreGain,  # 分数提升
     # 添加其他必需的技能类型
 ]
