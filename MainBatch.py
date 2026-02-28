@@ -26,7 +26,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(message)s'
 )
 
@@ -752,7 +752,7 @@ if __name__ == "__main__":
 
         # 歌唱人數補正表 (只列出已知的倍數，其他人數使用 1.0)
         SINGING_COUNT_CORRECTION = {
-            'sukushow': {2: 2.75, 4: 1.73, 8: 1.00, 9: 0.90},
+            'sukushow': {1: 3.88, 2: 2.75, 4: 1.73, 8: 1.00, 9: 0.90},
             'sukuste': {2: 2.33, 8: 1.00},
         }
 
