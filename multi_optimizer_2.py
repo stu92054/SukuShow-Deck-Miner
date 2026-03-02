@@ -7,9 +7,51 @@ import argparse
 from tqdm import tqdm
 
 
-from src.config.CardLevelConfig import fix_windows_console_encoding
-from src.core.Simulator_core import DB_CARDDATA
-from src.core.RChart import MusicDB
+try:
+    from src.config.CardLevelConfig import fix_windows_console_encoding
+    from src.core.Simulator_core import DB_CARDDATA
+    from src.core.RChart import MusicDB
+except ImportError:
+    # 獨立運行模式：不依賴 src/，直接載入資料檔案
+    def fix_windows_console_encoding():
+        if sys.platform == "win32":
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
+    def _load_json_db(filename):
+        for path in [os.path.join("GameData", filename), os.path.join("Data", filename)]:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        return {}
+
+    DB_CARDDATA = _load_json_db("CardDatas.json")
+
+    class MusicDB:
+        def __init__(self, yaml_filepath=None):
+            self._id_map = {}
+            try:
+                import yaml
+                for path in [os.path.join("GameData", "Musics.yaml"), os.path.join("Data", "Musics.yaml")]:
+                    if os.path.exists(path):
+                        with open(path, 'r', encoding='utf-8') as f:
+                            for m in yaml.safe_load(f) or []:
+                                self._id_map[m.get("Id")] = m
+                        break
+            except ImportError:
+                pass
+
+        def get_music_by_id(self, music_id):
+            if isinstance(music_id, str):
+                music_id = int(music_id)
+            m = self._id_map.get(music_id)
+            if m:
+                class _Music:
+                    pass
+                obj = _Music()
+                obj.Title = m.get("Title", f"Unknown({music_id})")
+                return obj
+            return None
 
 logger = logging.getLogger(__name__)
 
@@ -172,9 +214,51 @@ if __name__ == "__main__":
                     logger.info(f"  {mid}_{diff}: {banned}")
 
     except (ImportError, ValueError, FileNotFoundError) as e:
-        # 如果沒有配置管理器或找不到配置，使用默認的 log 目錄和全局常量
-        LOG_DIR = "log"
-        logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用默認值")
+        # 獨立運行模式：直接讀取 YAML 配置檔
+        logger.info(f"配置管理器不可用 ({e})，嘗試直接讀取配置檔...")
+
+        if args.config and os.path.exists(args.config):
+            try:
+                import yaml
+                with open(args.config, 'r', encoding='utf-8') as f:
+                    raw_config = yaml.safe_load(f) or {}
+
+                # 從檔名推導 member_name 和 LOG_DIR
+                config_basename = os.path.splitext(os.path.basename(args.config))[0]
+                # 從 config 路徑推導專案根目錄 (config/ 的上層)
+                project_root = os.path.dirname(os.path.dirname(os.path.abspath(args.config)))
+                if config_basename.startswith("member-"):
+                    member_name = config_basename[len("member-"):]
+                    LOG_DIR = os.path.join(project_root, "log", member_name)
+                else:
+                    LOG_DIR = os.path.join(project_root, "log")
+
+                # 讀取 optimizer 設定
+                opt = raw_config.get("optimizer", {})
+                TOP_N = opt.get("top_n", TOP_N)
+                SHOWNAME = opt.get("show_card_names", SHOWNAME)
+                FORBIDDEN_CARD = opt.get("forbidden_cards", FORBIDDEN_CARD)
+
+                # 讀取歌曲配置（優先 optimizer.songs，否則用主 songs）
+                opt_songs = opt.get("songs")
+                main_songs = raw_config.get("songs", [])
+                songs_list = opt_songs if opt_songs else main_songs
+                if songs_list:
+                    CHALLENGE_SONGS = [(s["music_id"], s["difficulty"]) for s in songs_list]
+                    for song in songs_list:
+                        mid = song.get("music_id")
+                        diff = song.get("difficulty")
+                        banned = song.get("banned_cards", [])
+                        if mid and diff:
+                            song_banned_cards[(mid, diff)] = banned
+
+                logger.info(f"直接讀取配置檔成功: {args.config}")
+            except Exception as e2:
+                LOG_DIR = "log"
+                logger.warning(f"直接讀取配置檔失敗 ({e2})，使用默認值")
+        else:
+            LOG_DIR = "log"
+
         logger.info(f"log 目錄: {LOG_DIR}, TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
                    f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
 
