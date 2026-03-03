@@ -872,60 +872,68 @@ if __name__ == "__main__":
                 chunksize = 500
             results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize)
 
-            for result in tqdm(results_iterator, total=total_decks_to_simulate):
-                current_score = result['final_score']
-                original_index = result['original_deck_index']
-                current_log = result["cards_played_log"]
-                deck_card_ids = result['deck_card_ids']
-                center_card = result['center_card']
+            try:
+                for result in tqdm(results_iterator, total=total_decks_to_simulate):
+                    current_score = result['final_score']
+                    original_index = result['original_deck_index']
+                    current_log = result["cards_played_log"]
+                    deck_card_ids = result['deck_card_ids']
+                    center_card = result['center_card']
 
-                # 记录当前卡组的得分、卡牌、C位卡牌、助戰卡，添加到结果列表中
-                current_batch_results.append({
-                    "deck_card_ids": deck_card_ids,  # 使用卡牌ID列表
-                    "center_card": center_card,
-                    "friend_card": result.get('friend_card'),  # 助戰卡 (可能為 None)
-                    "score": current_score,
-                })
-                results_processed_count += 1
+                    # 记录当前卡组的得分、卡牌、C位卡牌、助戰卡，添加到结果列表中
+                    current_batch_results.append({
+                        "deck_card_ids": deck_card_ids,  # 使用卡牌ID列表
+                        "center_card": center_card,
+                        "friend_card": result.get('friend_card'),  # 助戰卡 (可能為 None)
+                        "score": current_score,
+                    })
+                    results_processed_count += 1
 
-                if current_score > highest_score_overall:
-                    highest_score_overall = current_score
-                    highest_score_deck_info = {
-                        "original_index": original_index,
-                        "deck_card_ids": deck_card_ids,
-                        "score": current_score
-                    }
-                    best_log = current_log
-                    logger.info(f"\nNEW HI-SCORE! Deck: {original_index}, Score: {current_score:,}")
-                    logger.info(f"  Deck: {deck_card_ids}")
+                    if current_score > highest_score_overall:
+                        highest_score_overall = current_score
+                        highest_score_deck_info = {
+                            "original_index": original_index,
+                            "deck_card_ids": deck_card_ids,
+                            "score": current_score
+                        }
+                        best_log = current_log
+                        logger.info(f"\nNEW HI-SCORE! Deck: {original_index}, Score: {current_score:,}")
+                        logger.info(f"  Deck: {deck_card_ids}")
 
-                if len(current_batch_results) >= BATCH_SIZE:
+                    if len(current_batch_results) >= BATCH_SIZE:
+                        batch_counter += 1
+                        temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
+                        save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
+                        temp_files.append(temp_filename)
+                        current_batch_results = []  # 清空当前批次列表
+            except (Exception, KeyboardInterrupt) as e:
+                logger.warning(f"\n[WARN] 模擬中斷: {type(e).__name__}: {e}")
+                logger.warning(f"[WARN] 已處理 {results_processed_count} 筆結果，嘗試保存已有資料...")
+            finally:
+                # 無論模擬是否異常中斷，都確保已累積的結果被寫入磁碟
+                if current_batch_results:
                     batch_counter += 1
                     temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
                     save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
                     temp_files.append(temp_filename)
-                    current_batch_results = []  # 清空当前批次列表
-
-            # --- 处理最后一批可能不满BATCH_SIZE的结果 ---
-            if current_batch_results:
-                batch_counter += 1
-                temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
-                save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
-                temp_files.append(temp_filename)
-                current_batch_results = []  # 清空
+                    current_batch_results = []
 
         song_end_time = time.time()
         logger.info(f"--- Song {fixed_music_id} simulation completed! ---")
         logger.info(f"Simulation time: {song_end_time - start_time:.2f} seconds")
 
         # --- Step 4: Save all results to JSON ---
+        # 即使模擬中斷，仍合併已有的 temp 檔案
         all_simulation_results = []
         for temp_file in tqdm(temp_files, desc="Merging Files"):
             with open(temp_file, 'r') as f:
                 all_simulation_results.extend(json.load(f))
             os.remove(temp_file)
         json_output_filename = os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
-        save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True, custom_card_levels=custom_card_levels)
+        if all_simulation_results:
+            save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True, custom_card_levels=custom_card_levels)
+        else:
+            logger.warning("[WARN] 沒有任何模擬結果可保存")
 
         # --- Step 5: Final Summary ---
         logger.info(f"\n--- Final Simulation Summary for {fixed_music_id} ---")
