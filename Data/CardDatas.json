@@ -13001,6 +13001,50 @@
       30325334
     ]
   },
+  "1032534": {
+    "CardSeriesId": 1032534,
+    "Name": "リブウト",
+    "Description": "村野 さやか",
+    "CharactersId": 1032,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10325340,
+    "CenterAttributeSeriesId": 20325340,
+    "MaxSmile": [
+      2175,
+      3045,
+      4350,
+      4785,
+      5220
+    ],
+    "MaxPure": [
+      2925,
+      4095,
+      5850,
+      6435,
+      7020
+    ],
+    "MaxCool": [
+      2100,
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30325340,
+      30325340,
+      30325342,
+      30325343,
+      30325344
+    ]
+  },
   "1032801": {
     "CardSeriesId": 1032801,
     "Name": "Prism Echo",
@@ -13155,6 +13199,45 @@
       30329012,
       30329013,
       30329014
+    ]
+  },
+  "1032902": {
+    "CardSeriesId": 1032902,
+    "Name": "18th Birthday",
+    "Description": "村野 さやか",
+    "CharactersId": 1032,
+    "Rarity": 9,
+    "CenterSkillSeriesId": 10329020,
+    "CenterAttributeSeriesId": 20329020,
+    "MaxSmile": [
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxPure": [
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxCool": [
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxMental": [
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30329020,
+      30329022,
+      30329023,
+      30329024
     ]
   },
   "1033301": {
@@ -15533,6 +15616,133 @@
       30335324
     ]
   },
+  "1033533": {
+    "CardSeriesId": 1033533,
+    "Name": "Echoes Beyond",
+    "Description": "大沢 瑠璃乃",
+    "CharactersId": 1033,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10335330,
+    "CenterAttributeSeriesId": 20335330,
+    "MaxSmile": [
+      2150,
+      3010,
+      4300,
+      4730,
+      5160
+    ],
+    "MaxPure": [
+      3100,
+      4340,
+      6200,
+      6820,
+      7440
+    ],
+    "MaxCool": [
+      1800,
+      2520,
+      3600,
+      3960,
+      4320
+    ],
+    "MaxMental": [
+      255,
+      357,
+      510,
+      510,
+      510
+    ],
+    "RhythmGameSkillSeriesId": [
+      30335330,
+      30335330,
+      30335332,
+      30335333,
+      30335334
+    ]
+  },
+  "1033534": {
+    "CardSeriesId": 1033534,
+    "Name": "平成ギャルズ!!!!",
+    "Description": "大沢 瑠璃乃",
+    "CharactersId": 1033,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10335340,
+    "CenterAttributeSeriesId": 20335340,
+    "MaxSmile": [
+      3990,
+      5700,
+      6270,
+      6840
+    ],
+    "MaxPure": [
+      3570,
+      5100,
+      5610,
+      6120
+    ],
+    "MaxCool": [
+      2590,
+      3700,
+      4070,
+      4440
+    ],
+    "MaxMental": [
+      329,
+      470,
+      470,
+      470
+    ],
+    "RhythmGameSkillSeriesId": [
+      30335340,
+      30335342,
+      30335343,
+      30335344
+    ]
+  },
+  "1033535": {
+    "CardSeriesId": 1033535,
+    "Name": "トモダチになれる場所",
+    "Description": "大沢 瑠璃乃",
+    "CharactersId": 1033,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10335350,
+    "CenterAttributeSeriesId": 20335350,
+    "MaxSmile": [
+      3100,
+      4340,
+      6200,
+      6820,
+      7440
+    ],
+    "MaxPure": [
+      2425,
+      3395,
+      4850,
+      5335,
+      5820
+    ],
+    "MaxCool": [
+      1575,
+      2205,
+      3150,
+      3465,
+      3780
+    ],
+    "MaxMental": [
+      250,
+      350,
+      500,
+      500,
+      500
+    ],
+    "RhythmGameSkillSeriesId": [
+      30335350,
+      30335350,
+      30335352,
+      30335353,
+      30335354
+    ]
+  },
   "1033801": {
     "CardSeriesId": 1033801,
     "Name": "Prism Echo",
@@ -17639,6 +17849,50 @@
       30424054
     ]
   },
+  "1042406": {
+    "CardSeriesId": 1042406,
+    "Name": "拝啓、未来の君へ",
+    "Description": "徒町 小鈴",
+    "CharactersId": 1042,
+    "Rarity": 4,
+    "CenterSkillSeriesId": 10424060,
+    "CenterAttributeSeriesId": 20424060,
+    "MaxSmile": [
+      1950,
+      2730,
+      3900,
+      4290,
+      4680
+    ],
+    "MaxPure": [
+      2450,
+      3430,
+      4900,
+      5390,
+      5880
+    ],
+    "MaxCool": [
+      1900,
+      2660,
+      3800,
+      4180,
+      4560
+    ],
+    "MaxMental": [
+      210,
+      294,
+      420,
+      420,
+      420
+    ],
+    "RhythmGameSkillSeriesId": [
+      30424060,
+      30424060,
+      30424062,
+      30424063,
+      30424064
+    ]
+  },
   "1042501": {
     "CardSeriesId": 1042501,
     "Name": "Dream Believers",
@@ -18556,6 +18810,94 @@
       30425212,
       30425213,
       30425214
+    ]
+  },
+  "1042522": {
+    "CardSeriesId": 1042522,
+    "Name": "Jolie Mademoiselle",
+    "Description": "徒町 小鈴",
+    "CharactersId": 1042,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10425220,
+    "CenterAttributeSeriesId": 20425220,
+    "MaxSmile": [
+      2050,
+      2870,
+      4100,
+      4510,
+      4920
+    ],
+    "MaxPure": [
+      2225,
+      3115,
+      4450,
+      4895,
+      5340
+    ],
+    "MaxCool": [
+      2950,
+      4130,
+      5900,
+      6490,
+      7080
+    ],
+    "MaxMental": [
+      238,
+      333,
+      475,
+      475,
+      475
+    ],
+    "RhythmGameSkillSeriesId": [
+      30425220,
+      30425220,
+      30425222,
+      30425223,
+      30425224
+    ]
+  },
+  "1042523": {
+    "CardSeriesId": 1042523,
+    "Name": "リブウト",
+    "Description": "徒町 小鈴",
+    "CharactersId": 1042,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10425230,
+    "CenterAttributeSeriesId": 20425230,
+    "MaxSmile": [
+      2250,
+      3150,
+      4500,
+      4950,
+      5400
+    ],
+    "MaxPure": [
+      2875,
+      4025,
+      5750,
+      6325,
+      6900
+    ],
+    "MaxCool": [
+      2075,
+      2905,
+      4150,
+      4565,
+      4980
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30425230,
+      30425230,
+      30425232,
+      30425233,
+      30425234
     ]
   },
   "1042801": {
@@ -20034,6 +20376,133 @@
       30435214
     ]
   },
+  "1043522": {
+    "CardSeriesId": 1043522,
+    "Name": "Echoes Beyond",
+    "Description": "安養寺 姫芽",
+    "CharactersId": 1043,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10435220,
+    "CenterAttributeSeriesId": 20435220,
+    "MaxSmile": [
+      2175,
+      3045,
+      4350,
+      4785,
+      5220
+    ],
+    "MaxPure": [
+      3150,
+      4410,
+      6300,
+      6930,
+      7560
+    ],
+    "MaxCool": [
+      1725,
+      2415,
+      3450,
+      3795,
+      4140
+    ],
+    "MaxMental": [
+      255,
+      357,
+      510,
+      510,
+      510
+    ],
+    "RhythmGameSkillSeriesId": [
+      30435220,
+      30435220,
+      30435222,
+      30435223,
+      30435224
+    ]
+  },
+  "1043523": {
+    "CardSeriesId": 1043523,
+    "Name": "IcHiGo milK love",
+    "Description": "安養寺 姫芽",
+    "CharactersId": 1043,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10435230,
+    "CenterAttributeSeriesId": 20435230,
+    "MaxSmile": [
+      2660,
+      3800,
+      4180,
+      4560
+    ],
+    "MaxPure": [
+      3430,
+      4900,
+      5390,
+      5880
+    ],
+    "MaxCool": [
+      3990,
+      5700,
+      6270,
+      6840
+    ],
+    "MaxMental": [
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30435230,
+      30435232,
+      30435233,
+      30435234
+    ]
+  },
+  "1043524": {
+    "CardSeriesId": 1043524,
+    "Name": "トモダチになれる場所",
+    "Description": "安養寺 姫芽",
+    "CharactersId": 1043,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10435240,
+    "CenterAttributeSeriesId": 20435240,
+    "MaxSmile": [
+      3150,
+      4410,
+      6300,
+      6930,
+      7560
+    ],
+    "MaxPure": [
+      2450,
+      3430,
+      4900,
+      5390,
+      5880
+    ],
+    "MaxCool": [
+      1500,
+      2100,
+      3000,
+      3300,
+      3600
+    ],
+    "MaxMental": [
+      250,
+      350,
+      500,
+      500,
+      500
+    ],
+    "RhythmGameSkillSeriesId": [
+      30435240,
+      30435240,
+      30435242,
+      30435243,
+      30435244
+    ]
+  },
   "1043801": {
     "CardSeriesId": 1043801,
     "Name": "Ether Aria",
@@ -20454,6 +20923,50 @@
       30514034
     ]
   },
+  "1051404": {
+    "CardSeriesId": 1051404,
+    "Name": "ドライブ・スペード・クレイジー",
+    "Description": "桂城 泉",
+    "CharactersId": 1051,
+    "Rarity": 4,
+    "CenterSkillSeriesId": 10514040,
+    "CenterAttributeSeriesId": 20514040,
+    "MaxSmile": [
+      2050,
+      2870,
+      4100,
+      4510,
+      4920
+    ],
+    "MaxPure": [
+      2400,
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxCool": [
+      1700,
+      2380,
+      3400,
+      3740,
+      4080
+    ],
+    "MaxMental": [
+      225,
+      315,
+      450,
+      450,
+      450
+    ],
+    "RhythmGameSkillSeriesId": [
+      30514040,
+      30514040,
+      30514042,
+      30514043,
+      30514044
+    ]
+  },
   "1051501": {
     "CardSeriesId": 1051501,
     "Name": "Dream Believers",
@@ -20845,6 +21358,94 @@
       30515094
     ]
   },
+  "1051510": {
+    "CardSeriesId": 1051510,
+    "Name": "蓮ノ空歌留多",
+    "Description": "桂城 泉",
+    "CharactersId": 1051,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10515100,
+    "CenterAttributeSeriesId": 20515100,
+    "MaxSmile": [
+      1925,
+      2695,
+      3850,
+      4235,
+      4620
+    ],
+    "MaxPure": [
+      2375,
+      3325,
+      4750,
+      5225,
+      5700
+    ],
+    "MaxCool": [
+      2850,
+      3990,
+      5700,
+      6270,
+      6840
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      30515100,
+      30515100,
+      30515102,
+      30515103,
+      30515104
+    ]
+  },
+  "1051511": {
+    "CardSeriesId": 1051511,
+    "Name": "廻天の車窓",
+    "Description": "桂城 泉",
+    "CharactersId": 1051,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10515110,
+    "CenterAttributeSeriesId": 20515110,
+    "MaxSmile": [
+      1600,
+      2240,
+      3200,
+      3520,
+      3840
+    ],
+    "MaxPure": [
+      3200,
+      4480,
+      6400,
+      7040,
+      7680
+    ],
+    "MaxCool": [
+      2450,
+      3430,
+      4900,
+      5390,
+      5880
+    ],
+    "MaxMental": [
+      235,
+      329,
+      470,
+      470,
+      470
+    ],
+    "RhythmGameSkillSeriesId": [
+      30515110,
+      30515110,
+      30515112,
+      30515113,
+      30515114
+    ]
+  },
   "1051801": {
     "CardSeriesId": 1051801,
     "Name": "Oracle Étude",
@@ -21141,6 +21742,50 @@
       30524032,
       30524033,
       30524034
+    ]
+  },
+  "1052404": {
+    "CardSeriesId": 1052404,
+    "Name": "いちご123",
+    "Description": "セラス 柳田 リリエンフェルト",
+    "CharactersId": 1052,
+    "Rarity": 4,
+    "CenterSkillSeriesId": 10524040,
+    "CenterAttributeSeriesId": 20524040,
+    "MaxSmile": [
+      2475,
+      3465,
+      4950,
+      5445,
+      5940
+    ],
+    "MaxPure": [
+      2100,
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxCool": [
+      1675,
+      2345,
+      3350,
+      3685,
+      4020
+    ],
+    "MaxMental": [
+      215,
+      301,
+      430,
+      430,
+      430
+    ],
+    "RhythmGameSkillSeriesId": [
+      30524040,
+      30524040,
+      30524042,
+      30524043,
+      30524044
     ]
   },
   "1052501": {
@@ -21537,6 +22182,94 @@
       30525092,
       30525093,
       30525094
+    ]
+  },
+  "1052510": {
+    "CardSeriesId": 1052510,
+    "Name": "蓮ノ空歌留多",
+    "Description": "セラス 柳田 リリエンフェルト",
+    "CharactersId": 1052,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10525100,
+    "CenterAttributeSeriesId": 20525100,
+    "MaxSmile": [
+      1875,
+      2625,
+      3750,
+      4125,
+      4500
+    ],
+    "MaxPure": [
+      2400,
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxCool": [
+      2875,
+      4025,
+      5750,
+      6325,
+      6900
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      30525100,
+      30525100,
+      30525102,
+      30525103,
+      30525104
+    ]
+  },
+  "1052511": {
+    "CardSeriesId": 1052511,
+    "Name": "再臨の車窓",
+    "Description": "セラス 柳田 リリエンフェルト",
+    "CharactersId": 1052,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10525110,
+    "CenterAttributeSeriesId": 20525110,
+    "MaxSmile": [
+      1575,
+      2205,
+      3150,
+      3465,
+      3780
+    ],
+    "MaxPure": [
+      3100,
+      4340,
+      6200,
+      6820,
+      7440
+    ],
+    "MaxCool": [
+      2575,
+      3605,
+      5150,
+      5665,
+      6180
+    ],
+    "MaxMental": [
+      235,
+      329,
+      470,
+      470,
+      470
+    ],
+    "RhythmGameSkillSeriesId": [
+      30525110,
+      30525110,
+      30525112,
+      30525113,
+      30525114
     ]
   },
   "1052801": {
