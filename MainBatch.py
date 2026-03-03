@@ -26,7 +26,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(message)s'
 )
 
@@ -903,6 +903,8 @@ if __name__ == "__main__":
                         highest_score_deck_info = {
                             "original_index": original_index,
                             "deck_card_ids": deck_card_ids,
+                            "center_card": center_card,
+                            "friend_card": result.get('friend_card'),
                             "score": current_score
                         }
                         best_log = current_log
@@ -950,7 +952,7 @@ if __name__ == "__main__":
         logger.info(f"Total simulations run: {total_decks_to_simulate}")
         if highest_score_overall != -1:
             logger.info(f"Overall Highest Score: {highest_score_overall:,}")
-            logger.info(f"Highest Score Deck: {highest_score_deck_info['original_index']}")
+            logger.info(f"Highest Score Deck: {highest_score_deck_info['original_index']}\t Center: {highest_score_deck_info['center_card']}\t Friend: {highest_score_deck_info.get('friend_card')}")
             logger.info(f"Cards: {highest_score_deck_info['deck_card_ids']}")
             logger.info(f"Log: {best_log}")
         else:
