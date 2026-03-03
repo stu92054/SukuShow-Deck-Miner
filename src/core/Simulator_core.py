@@ -42,6 +42,9 @@ MISS_TIMING = {
 # 快轉優化用的 Note 類型集合
 NOTE_TYPES = frozenset({"Single", "Hold", "HoldMid", "Flick", "Trace"})
 
+# 快轉優化開關 (預設開啟)
+FAST_FORWARD_MODE = True
+
 
 def run_game_simulation(
     task_args: tuple  # This will be (deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id)
@@ -202,7 +205,7 @@ def run_game_simulation(
 
         # === 快轉邏輯 (僅處理 chart_events 中的 Note) ===
         # 快轉條件：Combo >= 50, 無背水卡, 有待打的卡, 且無法發動技能
-        if from_chart and event in NOTE_TYPES:
+        if FAST_FORWARD_MODE and from_chart and event in NOTE_TYPES:
             can_fast_forward = (
                 player.combo >= 50 and
                 afk_mental == 0 and

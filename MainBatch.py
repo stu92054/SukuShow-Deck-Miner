@@ -16,6 +16,7 @@ from src.deck_gen.DeckGen2 import generate_decks_with_double_cards
 from src.config.CardLevelConfig import convert_deck_to_simulator_format, fix_windows_console_encoding, CARD_CACHE
 from src.core.SkillResolver import SkillEffectType
 from src.core.Simulator_core import run_game_simulation, MUSIC_DB
+import src.core.Simulator_core as _sim_core
 
 # 導入配置管理器（如果不存在則使用傳統配置）
 try:
@@ -178,8 +179,15 @@ def parse_arguments(unified_config):
                        help='Debug模式：指定難度（01=Normal, 02=Hard, 03=Expert, 04=Master）')
     parser.add_argument('--mastery', type=int, metavar='LEVEL',
                        help='Debug模式：指定熟練度（1-50）')
+    parser.add_argument('--no-fast-forward', action='store_true',
+                       help='關閉快轉優化（預設開啟）')
 
     args = parser.parse_args()
+
+    # 快轉優化開關
+    if args.no_fast_forward:
+        _sim_core.FAST_FORWARD_MODE = False
+        logger.info("快轉優化: 關閉")
 
     # 如果是 Debug 模式，返回特殊標記
     if args.debug is not None:
