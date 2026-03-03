@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from math import ceil
 # 导入所有 R 模块和 db_load 函数
 from .RCardData import db_load
 from .RChart import Chart, MusicDB
@@ -39,9 +40,11 @@ MISS_TIMING = {
     "Trace": 0.070,
 }
 
+# 快轉優化用的 Note 類型集合
+NOTE_TYPES = frozenset({"Single", "Hold", "HoldMid", "Flick", "Trace"})
 
 def run_game_simulation(
-    task_args: tuple  # This will be (deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id)
+    task_args: tuple  # (deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id, fast_forward)
 ) -> dict:
     """
     Runs a single game simulation and includes the original deck index in the result.
@@ -57,6 +60,7 @@ def run_game_simulation(
         deck_card_ids (list[int]): List of card IDs in the deck.
         center_card_index (int): Index of the center card (-1 for auto selection).
         friendcard_id (int): Friend card ID (None if no friend card).
+        fast_forward (bool): Whether to enable fast-forward optimization (default True).
 
     Returns:
         dict: A dictionary containing key simulation results (e.g., final score, card log).
@@ -64,7 +68,13 @@ def run_game_simulation(
     """
     # NOTE: DBs (MUSIC_DB, DB_CARDDATA, DB_SKILL) are now global to this module
     # and inherited by child processes (copy-on-write).
-    deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id = task_args
+    if len(task_args) == 8:
+        deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id, fast_forward = task_args
+    elif len(task_args) == 7:
+        deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id = task_args
+        fast_forward = True
+    else:
+        raise ValueError(f"task_args 長度必須為 7 或 8，收到 {len(task_args)}")
 
     d = Deck(DB_CARDDATA, DB_SKILL, deck_card_data)
     c: Chart = chart_obj
@@ -182,13 +192,86 @@ def run_game_simulation(
             heapq.heappush(extra_events, (cdtime_float, "CDavailable"))
             cardnow = d.topcard()
 
+    # 快轉優化用的緩存變數
+    cached_ap_gain = 0.0
+    cached_note_score = 0
+
     while i_event < chart_length or extra_events:
         # Choose the earliest event from either queue
+        # 注意: MainBatch.py 會在傳入前將 chart_events 的 timestamp 轉為 float
         if i_event < chart_length and (not extra_events or chart_events[i_event][0] <= extra_events[0][0]):
             timestamp, event = chart_events[i_event]
-            i_event += 1
+            from_chart = True
         else:
             timestamp, event = heapq.heappop(extra_events)
+            from_chart = False
+
+        # === 快轉邏輯 (僅處理 chart_events 中的 Note) ===
+        # 快轉條件：Combo >= 50, 無背水卡, 有待打的卡, 且無法發動技能
+        if fast_forward and from_chart and event in NOTE_TYPES:
+            can_fast_forward = (
+                player.combo >= 50 and
+                afk_mental == 0 and
+                cardnow is not None and
+                (not player.CDavailable or player.ap < cardnow.cost)
+            )
+
+            if can_fast_forward:
+                # 計算緩存值
+                cached_ap_gain = ceil(player.full_ap_plus * 1.5) / 10000
+                cached_note_score = int(ceil(player.note_score["PERFECT+"] * player.voltage.bonus))
+
+                # 計算終點 1: CD 轉好時刻
+                if player.CDavailable:
+                    next_cd_time = float('inf')
+                else:
+                    next_cd_time = extra_events[0][0] if extra_events else float('inf')
+
+                # 計算終點 2: AP 足夠時刻
+                next_ap_time = float('inf')
+                if player.CDavailable and player.ap < cardnow.cost:
+                    ap_deficit = cardnow.cost - player.ap
+                    if cached_ap_gain > 0:
+                        # 計算還需要幾個 note 才能累積足夠的 AP
+                        notes_needed = int(ceil(ap_deficit / cached_ap_gain))
+                        # AP 會在處理完第 (i_event + notes_needed - 1) 個 note 後達到要求
+                        # 快轉應該在該 note 之前停止，讓正常流程處理並觸發技能
+                        target_index = i_event + notes_needed - 1
+                        if target_index < chart_length:
+                            next_ap_time = chart_events[target_index][0]
+
+                safe_horizon = min(next_cd_time, next_ap_time)
+
+                # 只有當 safe_horizon 嚴格大於當前時間時才快轉
+                # 否則讓正常流程處理當前 Note
+                if safe_horizon > timestamp:
+                    # 快轉迴圈 - 處理到 safe_horizon 之前的所有 Note
+                    # 注意：當前事件還沒推進 i_event，先處理當前 Note
+                    while i_event < chart_length:
+                        ts, ev = chart_events[i_event]
+
+                        # 停止條件 1: 超出安全時間 (這個 Note 可能觸發技能，需正常處理)
+                        if ts >= safe_horizon:
+                            break
+
+                        # 停止條件 2: 遇到特殊事件
+                        if ev not in NOTE_TYPES:
+                            break
+
+                        # 快速處理 Note
+                        player.combo += 1
+                        player.ap += cached_ap_gain
+                        player.score += cached_note_score
+                        combo_count += 1
+
+                        i_event += 1
+
+                    # 快轉後，回到主迴圈重新選擇下一個事件
+                    continue
+
+        # 推進 chart_events 索引 (如果是從 chart 取得)
+        if from_chart:
+            i_event += 1
 
         match event:
             case "Single" | "Hold" | "HoldMid" | "Flick" | "Trace":
