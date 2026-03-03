@@ -68,11 +68,13 @@ def run_game_simulation(
     """
     # NOTE: DBs (MUSIC_DB, DB_CARDDATA, DB_SKILL) are now global to this module
     # and inherited by child processes (copy-on-write).
-    try:
+    if len(task_args) == 8:
         deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id, fast_forward = task_args
-    except ValueError:
+    elif len(task_args) == 7:
         deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id = task_args
         fast_forward = True
+    else:
+        raise ValueError(f"task_args 長度必須為 7 或 8，收到 {len(task_args)}")
 
     d = Deck(DB_CARDDATA, DB_SKILL, deck_card_data)
     c: Chart = chart_obj
