@@ -196,8 +196,51 @@ if __name__ == "__main__":
                     logger.info(f"  {mid}_{diff}: {banned}")
 
     except (ImportError, ValueError, FileNotFoundError) as e:
-        LOG_DIR = "log"
-        logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用默認值")
+        # 獨立運行模式：直接讀取 YAML 配置檔
+        logger.info(f"配置管理器不可用 ({e})，嘗試直接讀取配置檔...")
+
+        if args.config and os.path.exists(args.config):
+            try:
+                import yaml
+                with open(args.config, 'r', encoding='utf-8') as f:
+                    raw_config = yaml.safe_load(f) or {}
+
+                # 從檔名推導 member_name 和 LOG_DIR
+                config_basename = os.path.splitext(os.path.basename(args.config))[0]
+                # 從 config 路徑推導專案根目錄 (config/ 的上層)
+                project_root = os.path.dirname(os.path.dirname(os.path.abspath(args.config)))
+                if config_basename.startswith("member-"):
+                    member_name = config_basename[len("member-"):]
+                    LOG_DIR = os.path.join(project_root, "log", member_name)
+                else:
+                    LOG_DIR = os.path.join(project_root, "log")
+
+                # 讀取 optimizer 設定
+                opt = raw_config.get("optimizer", {})
+                TOP_N = opt.get("top_n", TOP_N)
+                SHOWNAME = opt.get("show_card_names", SHOWNAME)
+                FORBIDDEN_CARD = opt.get("forbidden_cards", FORBIDDEN_CARD)
+
+                # 讀取歌曲配置（優先 optimizer.songs，否則用主 songs）
+                opt_songs = opt.get("songs")
+                main_songs = raw_config.get("songs", [])
+                songs_list = opt_songs if opt_songs else main_songs
+                if songs_list:
+                    CHALLENGE_SONGS = [(s["music_id"], s["difficulty"]) for s in songs_list]
+                    for song in songs_list:
+                        mid = song.get("music_id")
+                        diff = song.get("difficulty")
+                        banned = song.get("banned_cards", [])
+                        if mid and diff:
+                            song_banned_cards[(mid, diff)] = banned
+
+                logger.info(f"直接讀取配置檔成功: {args.config}")
+            except (yaml.YAMLError, IOError, KeyError, TypeError, ValueError) as e2:
+                LOG_DIR = "log"
+                logger.warning(f"直接讀取配置檔失敗 ({e2})，使用默認值")
+        else:
+            LOG_DIR = "log"
+
         logger.info(f"log 目錄: {LOG_DIR}, TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
                    f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
 
@@ -285,7 +328,7 @@ if __name__ == "__main__":
     # === 建立卡牌ID到bit位的映射 ===
     card_to_bit = {cid: i for i, cid in enumerate(sorted(all_cards))}
     logger.info(f"Loaded {len(card_to_bit)} unique cards")
-    assert len(card_to_bit) <= 64, "卡牌種類超過64張時需使用更複雜的bitarray方案"
+    assert len(card_to_bit) <= 63, "Cython 版使用 int64_t，卡牌種類超過 63 張時請使用普通版"
     assert len(card_to_bit) >= 6 * len(working_songs), "可用卡牌過少，必定出現重複卡牌"
 
     # === 轉換deck為bitmask ===
