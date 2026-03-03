@@ -59,7 +59,8 @@ class Music:
     def __post_init__(self):
         if isinstance(self.SingerCharacterId, str):
             try:
-                self.SingerCharacterId = [int(x.strip()) for x in self.SingerCharacterId.split(',') if x.strip()]
+                # 0 代表無副唱 (solo 曲)，需過濾掉
+                self.SingerCharacterId = [v for v in (int(x.strip()) for x in self.SingerCharacterId.split(',') if x.strip()) if v != 0]
             except ValueError:
                 self.SingerCharacterId = []  # Handle cases where string is not valid integers
 
