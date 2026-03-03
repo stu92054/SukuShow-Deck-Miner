@@ -68,9 +68,9 @@ def run_game_simulation(
     """
     # NOTE: DBs (MUSIC_DB, DB_CARDDATA, DB_SKILL) are now global to this module
     # and inherited by child processes (copy-on-write).
-    if len(task_args) >= 8:
+    try:
         deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id, fast_forward = task_args
-    else:
+    except ValueError:
         deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id = task_args
         fast_forward = True
 
@@ -235,7 +235,7 @@ def run_game_simulation(
                         # AP 會在處理完第 (i_event + notes_needed - 1) 個 note 後達到要求
                         # 快轉應該在該 note 之前停止，讓正常流程處理並觸發技能
                         target_index = i_event + notes_needed - 1
-                        if target_index >= 0 and target_index < chart_length:
+                        if target_index < chart_length:
                             next_ap_time = chart_events[target_index][0]
 
                 safe_horizon = min(next_cd_time, next_ap_time)
