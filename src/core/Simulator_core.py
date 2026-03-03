@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from math import ceil
 # 导入所有 R 模块和 db_load 函数
 from .RCardData import db_load
 from .RChart import Chart, MusicDB
@@ -42,12 +43,8 @@ MISS_TIMING = {
 # 快轉優化用的 Note 類型集合
 NOTE_TYPES = frozenset({"Single", "Hold", "HoldMid", "Flick", "Trace"})
 
-# 快轉優化開關 (預設開啟)
-FAST_FORWARD_MODE = True
-
-
 def run_game_simulation(
-    task_args: tuple  # This will be (deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id)
+    task_args: tuple  # (deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id, fast_forward)
 ) -> dict:
     """
     Runs a single game simulation and includes the original deck index in the result.
@@ -63,6 +60,7 @@ def run_game_simulation(
         deck_card_ids (list[int]): List of card IDs in the deck.
         center_card_index (int): Index of the center card (-1 for auto selection).
         friendcard_id (int): Friend card ID (None if no friend card).
+        fast_forward (bool): Whether to enable fast-forward optimization (default True).
 
     Returns:
         dict: A dictionary containing key simulation results (e.g., final score, card log).
@@ -70,7 +68,11 @@ def run_game_simulation(
     """
     # NOTE: DBs (MUSIC_DB, DB_CARDDATA, DB_SKILL) are now global to this module
     # and inherited by child processes (copy-on-write).
-    deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id = task_args
+    if len(task_args) >= 8:
+        deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id, fast_forward = task_args
+    else:
+        deck_card_data, chart_obj, player_master_level, original_deck_index, deck_card_ids, center_card_index, friendcard_id = task_args
+        fast_forward = True
 
     d = Deck(DB_CARDDATA, DB_SKILL, deck_card_data)
     c: Chart = chart_obj
@@ -189,7 +191,6 @@ def run_game_simulation(
             cardnow = d.topcard()
 
     # 快轉優化用的緩存變數
-    from math import ceil
     cached_ap_gain = 0.0
     cached_note_score = 0
 
@@ -205,7 +206,7 @@ def run_game_simulation(
 
         # === 快轉邏輯 (僅處理 chart_events 中的 Note) ===
         # 快轉條件：Combo >= 50, 無背水卡, 有待打的卡, 且無法發動技能
-        if FAST_FORWARD_MODE and from_chart and event in NOTE_TYPES:
+        if fast_forward and from_chart and event in NOTE_TYPES:
             can_fast_forward = (
                 player.combo >= 50 and
                 afk_mental == 0 and
