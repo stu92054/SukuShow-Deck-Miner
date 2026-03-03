@@ -131,7 +131,7 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
         logger.error(f"Error saving simulation results to JSON: {e}")
 
 
-def task_generator_func(decks_generator, chart, player_level, leader_designation, custom_card_levels=None):
+def task_generator_func(decks_generator, chart, player_level, leader_designation, custom_card_levels=None, fast_forward=True):
     """
     一个生成器函数，从 decks_generator 获取每个卡组，
     并将其转换为 run_game_simulation 所需的任务格式。
@@ -140,14 +140,15 @@ def task_generator_func(decks_generator, chart, player_level, leader_designation
 
     Args:
         custom_card_levels: 自定義卡牌練度 (從配置檔案讀取)
+        fast_forward: 是否啟用快轉優化 (預設 True)
     """
     task_index = 0
 
     for deck_card_ids_list, center_card_index, friend_card in decks_generator:
         # DeckGen2 已經處理了 C 位卡索引和助戰卡，直接使用
         sim_deck_format = convert_deck_to_simulator_format(deck_card_ids_list, custom_card_levels)
-        # 傳遞給模擬器：(sim_deck_format, chart, player_level, task_index, deck_card_ids, center_index, friendcard_id)
-        yield (sim_deck_format, chart, player_level, task_index, deck_card_ids_list, center_card_index, friend_card)
+        # 傳遞給模擬器：(sim_deck_format, chart, player_level, task_index, deck_card_ids, center_index, friendcard_id, fast_forward)
+        yield (sim_deck_format, chart, player_level, task_index, deck_card_ids_list, center_card_index, friend_card, fast_forward)
         task_index += 1
 
 
@@ -178,8 +179,15 @@ def parse_arguments(unified_config):
                        help='Debug模式：指定難度（01=Normal, 02=Hard, 03=Expert, 04=Master）')
     parser.add_argument('--mastery', type=int, metavar='LEVEL',
                        help='Debug模式：指定熟練度（1-50）')
+    parser.add_argument('--no-fast-forward', action='store_true',
+                       help='關閉快轉優化（預設開啟）')
 
     args = parser.parse_args()
+
+    # 快轉優化開關
+    fast_forward = not args.no_fast_forward
+    if not fast_forward:
+        logger.info("快轉優化: 關閉")
 
     # 如果是 Debug 模式，返回特殊標記
     if args.debug is not None:
@@ -227,7 +235,7 @@ def parse_arguments(unified_config):
             debug_config["use_yaml_config"] = True
             debug_config["config_file"] = args.config
 
-        return debug_config
+        return debug_config, fast_forward
 
     # 如果提供了 --config 但沒有其他參數，從 YAML 載入配置
     if args.config:
@@ -235,12 +243,12 @@ def parse_arguments(unified_config):
             logger.error("錯誤：config_manager.py 不可用，無法使用 --config 參數")
             logger.error("請確保 config_manager.py 存在於專案目錄中")
             sys.exit(1)
-        return {"use_yaml_config": True, "config_file": args.config}
+        return {"use_yaml_config": True, "config_file": args.config}, fast_forward
 
     # 如果沒有命令列參數，使用預設配置
     if not args.songs:
         logger.info("未提供命令列參數，使用預設配置")
-        return None  # 返回 None 表示使用統一配置
+        return None, fast_forward  # 返回 None 表示使用統一配置
 
     # 解析命令列參數（格式：music_id difficulty mastery_level leader_designation）
     if len(args.songs) % 4 != 0:
@@ -268,10 +276,10 @@ def parse_arguments(unified_config):
             logger.error(f"參數組 {i//3 + 1}: {args.songs[i:i+3]}")
             sys.exit(1)
 
-    return songs_config
+    return songs_config, fast_forward
 
 
-def run_debug_mode(deck_cards, center_index, config, custom_card_levels=None, friend_card=None, debug_song_config=None):
+def run_debug_mode(deck_cards, center_index, config, custom_card_levels=None, friend_card=None, debug_song_config=None, fast_forward=True):
     """
     Debug模式：計算單一固定牌組的分數
 
@@ -363,7 +371,7 @@ def run_debug_mode(deck_cards, center_index, config, custom_card_levels=None, fr
 
         # 調用 run_game_simulation
         result = run_game_simulation(
-            (sim_deck_format, pre_initialized_chart, fixed_player_master_level, 0, deck_cards, center_idx, friend_card)
+            (sim_deck_format, pre_initialized_chart, fixed_player_master_level, 0, deck_cards, center_idx, friend_card, fast_forward)
         )
 
         current_score = result['final_score']
@@ -536,7 +544,7 @@ if __name__ == "__main__":
     # --- Step 2: Prepare simulation tasks ---
 
     # 解析命令列參數或使用預設配置
-    SONGS_CONFIG = parse_arguments(UNIFIED_CONFIG)
+    SONGS_CONFIG, FAST_FORWARD = parse_arguments(UNIFIED_CONFIG)
 
     # 檢查是否使用 YAML 配置
     use_yaml_config = False
@@ -598,7 +606,8 @@ if __name__ == "__main__":
             UNIFIED_CONFIG,
             custom_card_levels,
             debug_mode_config.get("friend_card"),
-            debug_song_config if debug_song_config else None
+            debug_song_config if debug_song_config else None,
+            FAST_FORWARD
         )
         end_time = time.time()
         logger.info(f"\n總耗時: {end_time - start_time:.2f} 秒")
@@ -846,7 +855,7 @@ if __name__ == "__main__":
         # 指定C位的點在`task_generator_func`裡面。上面卡組沒有做到這點
         
         simulation_tasks_generator = task_generator_func(
-            decks_generator, pre_initialized_chart, mastery_level, leader_designation, custom_card_levels
+            decks_generator, pre_initialized_chart, mastery_level, leader_designation, custom_card_levels, FAST_FORWARD
         )
 
         os.makedirs(TEMP_OUTPUT_DIR, exist_ok=True)
