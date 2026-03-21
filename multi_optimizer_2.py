@@ -27,6 +27,9 @@ except ImportError:
 
     DB_CARDDATA = _load_json_db("CardDatas.json")
 
+    class _Music:
+        pass
+
     class MusicDB:
         def __init__(self, yaml_filepath=None):
             self._id_map = {}
@@ -46,8 +49,6 @@ except ImportError:
                 music_id = int(music_id)
             m = self._id_map.get(music_id)
             if m:
-                class _Music:
-                    pass
                 obj = _Music()
                 obj.Title = m.get("Title", f"Unknown({music_id})")
                 return obj
@@ -136,10 +137,11 @@ def format_deck_with_names(deck_card_ids: list) -> str:
     return '\n'.join(lines)
 
 
-def get_song_title(music_id: str) -> str:
+def get_song_title(music_id: str, music_db=None) -> str:
     """根据歌曲ID获取歌名"""
     try:
-        music_db = MusicDB()
+        if music_db is None:
+            music_db = MusicDB()
         music = music_db.get_music_by_id(music_id)
         if music:
             return music.Title
@@ -253,7 +255,7 @@ if __name__ == "__main__":
                             song_banned_cards[(mid, diff)] = banned
 
                 logger.info(f"直接讀取配置檔成功: {args.config}")
-            except Exception as e2:
+            except (yaml.YAMLError, IOError, KeyError, TypeError, ValueError) as e2:
                 LOG_DIR = "log"
                 logger.warning(f"直接讀取配置檔失敗 ({e2})，使用默認值")
         else:
@@ -270,6 +272,13 @@ if __name__ == "__main__":
     logger.info("Preparing data...")
     levels_raw = []
     all_cards = set()
+
+    # 初始化一次 MusicDB 避免重複載入
+    try:
+        music_db = MusicDB()
+    except Exception:
+        music_db = None
+        logger.warning("Failed to load MusicDB, song titles will show as Unknown")
 
     for i, f in enumerate(level_files):
         with open(f, "r", encoding="utf-8") as fh:
@@ -298,8 +307,20 @@ if __name__ == "__main__":
             for deck in data:
                 all_cards.update(deck["deck_card_ids"])
 
-        song_title = get_song_title(song_id)
+        song_title = get_song_title(song_id, music_db)
         logger.info(f"Loaded top {TOP_N} of {total} results for {song_id}_{difficulty} ({song_title})")
+
+    # 檢查是否有歌曲沒有可用卡組（禁卡後可能導致）
+    for i, data in enumerate(levels_raw):
+        if len(data) == 0:
+            song_id, difficulty = CHALLENGE_SONGS[i]
+            song_title = get_song_title(song_id, music_db)
+            logger.error(f"警告: 歌曲 {song_id}_{difficulty} ({song_title}) 沒有可用的卡組")
+            logger.error("可能原因:")
+            logger.error("  1. 禁卡設定過於嚴格，過濾掉所有卡組")
+            logger.error("  2. 尚未執行 MainBatch.py 生成該歌曲的模擬結果")
+            logger.error("  3. 模擬結果檔案損壞或格式錯誤")
+            sys.exit(1)
 
     # 仅针对两首歌曲求解时，第三首歌填充假数据
     if len(CHALLENGE_SONGS) == 2:
@@ -328,7 +349,6 @@ if __name__ == "__main__":
     # === 建立卡牌ID到bit位的映射 ===
     card_to_bit = {cid: i for i, cid in enumerate(sorted(all_cards))}
     logger.info(f"Loaded {len(card_to_bit)} unique cards")
-    assert len(card_to_bit) <= 64, "卡牌种类超过64张时需使用更复杂的bitarray方案"
     assert len(card_to_bit) >= 6 * len(working_songs), "可用卡牌过少，必定出现重复卡牌"
 
     # === 转换deck为bitmask ===
@@ -417,8 +437,8 @@ if __name__ == "__main__":
         for idx1, idx2 in two_song_combinations:
             song1_id, song1_diff = working_songs[idx1]
             song2_id, song2_diff = working_songs[idx2]
-            song1_title = get_song_title(song1_id)
-            song2_title = get_song_title(song2_id)
+            song1_title = get_song_title(song1_id, music_db)
+            song2_title = get_song_title(song2_id, music_db)
 
             logger.info(f"嘗試組合 [{idx1+1}+{idx2+1}]:")
             logger.info(f"  • Song {idx1+1}: {song1_title} ({song1_id})")
@@ -486,7 +506,7 @@ if __name__ == "__main__":
 
             if i < len(working_songs):
                 song_id, difficulty = working_songs[i]
-                song_title = get_song_title(song_id)
+                song_title = get_song_title(song_id, music_db)
                 output.append(f"Song {i+1}: {song_id} (Difficulty: {difficulty}) - {song_title}")
                 output.append(f"  Score: {d['score']:,}")
                 output.append(f"  Pt: {d['pt']:,}  (Rank: #{d['rank']})")

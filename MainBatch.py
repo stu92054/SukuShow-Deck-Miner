@@ -5,6 +5,7 @@ import multiprocessing
 import json
 import sys
 import argparse
+import heapq
 
 from platform import python_implementation
 from tqdm import tqdm
@@ -26,7 +27,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(message)s'
 )
 
@@ -131,7 +132,7 @@ def save_simulation_results(results_data: list, filename: str = os.path.join("lo
         logger.error(f"Error saving simulation results to JSON: {e}")
 
 
-def task_generator_func(decks_generator, chart, player_level, leader_designation, custom_card_levels=None):
+def task_generator_func(decks_generator, chart, player_level, leader_designation, custom_card_levels=None, fast_forward=True):
     """
     一个生成器函数，从 decks_generator 获取每个卡组，
     并将其转换为 run_game_simulation 所需的任务格式。
@@ -140,15 +141,18 @@ def task_generator_func(decks_generator, chart, player_level, leader_designation
 
     Args:
         custom_card_levels: 自定義卡牌練度 (從配置檔案讀取)
+        fast_forward: 是否啟用快轉優化 (預設 True)
     """
     task_index = 0
 
     for deck_card_ids_list, center_card_index, friend_card in decks_generator:
         # DeckGen2 已經處理了 C 位卡索引和助戰卡，直接使用
         sim_deck_format = convert_deck_to_simulator_format(deck_card_ids_list, custom_card_levels)
-        # 傳遞給模擬器：(sim_deck_format, chart, player_level, task_index, deck_card_ids, center_index, friendcard_id)
-        yield (sim_deck_format, chart, player_level, task_index, deck_card_ids_list, center_card_index, friend_card)
+        # 傳遞給模擬器：(sim_deck_format, chart, player_level, task_index, deck_card_ids, center_index, friendcard_id, fast_forward)
+        yield (sim_deck_format, chart, player_level, task_index, deck_card_ids_list, center_card_index, friend_card, fast_forward)
         task_index += 1
+
+
 
 
 def parse_arguments(unified_config):
@@ -178,8 +182,21 @@ def parse_arguments(unified_config):
                        help='Debug模式：指定難度（01=Normal, 02=Hard, 03=Expert, 04=Master）')
     parser.add_argument('--mastery', type=int, metavar='LEVEL',
                        help='Debug模式：指定熟練度（1-50）')
+    parser.add_argument('--no-fast-forward', action='store_true',
+                       help='關閉快轉優化（預設開啟）')
+    parser.add_argument('--legacy-pipeline', action='store_true',
+                       help='使用舊版 pipeline（結果批次寫入暫存檔再合併，預設使用 min-heap 記憶體收集）')
 
     args = parser.parse_args()
+
+    # 快轉優化開關
+    fast_forward = not args.no_fast_forward
+    if not fast_forward:
+        logger.info("快轉優化: 關閉")
+
+    legacy_pipeline = args.legacy_pipeline
+    if legacy_pipeline:
+        logger.info("Pipeline: 使用舊版 per-permutation pipeline")
 
     # 如果是 Debug 模式，返回特殊標記
     if args.debug is not None:
@@ -227,7 +244,7 @@ def parse_arguments(unified_config):
             debug_config["use_yaml_config"] = True
             debug_config["config_file"] = args.config
 
-        return debug_config
+        return debug_config, fast_forward, legacy_pipeline
 
     # 如果提供了 --config 但沒有其他參數，從 YAML 載入配置
     if args.config:
@@ -235,12 +252,12 @@ def parse_arguments(unified_config):
             logger.error("錯誤：config_manager.py 不可用，無法使用 --config 參數")
             logger.error("請確保 config_manager.py 存在於專案目錄中")
             sys.exit(1)
-        return {"use_yaml_config": True, "config_file": args.config}
+        return {"use_yaml_config": True, "config_file": args.config}, fast_forward, legacy_pipeline
 
     # 如果沒有命令列參數，使用預設配置
     if not args.songs:
         logger.info("未提供命令列參數，使用預設配置")
-        return None  # 返回 None 表示使用統一配置
+        return None, fast_forward, legacy_pipeline  # 返回 None 表示使用統一配置
 
     # 解析命令列參數（格式：music_id difficulty mastery_level leader_designation）
     if len(args.songs) % 4 != 0:
@@ -268,10 +285,10 @@ def parse_arguments(unified_config):
             logger.error(f"參數組 {i//3 + 1}: {args.songs[i:i+3]}")
             sys.exit(1)
 
-    return songs_config
+    return songs_config, fast_forward, legacy_pipeline
 
 
-def run_debug_mode(deck_cards, center_index, config, custom_card_levels=None, friend_card=None, debug_song_config=None):
+def run_debug_mode(deck_cards, center_index, config, custom_card_levels=None, friend_card=None, debug_song_config=None, fast_forward=True):
     """
     Debug模式：計算單一固定牌組的分數
 
@@ -363,7 +380,7 @@ def run_debug_mode(deck_cards, center_index, config, custom_card_levels=None, fr
 
         # 調用 run_game_simulation
         result = run_game_simulation(
-            (sim_deck_format, pre_initialized_chart, fixed_player_master_level, 0, deck_cards, center_idx, friend_card)
+            (sim_deck_format, pre_initialized_chart, fixed_player_master_level, 0, deck_cards, center_idx, friend_card, fast_forward)
         )
 
         current_score = result['final_score']
@@ -536,7 +553,7 @@ if __name__ == "__main__":
     # --- Step 2: Prepare simulation tasks ---
 
     # 解析命令列參數或使用預設配置
-    SONGS_CONFIG = parse_arguments(UNIFIED_CONFIG)
+    SONGS_CONFIG, FAST_FORWARD, LEGACY_PIPELINE = parse_arguments(UNIFIED_CONFIG)
 
     # 檢查是否使用 YAML 配置
     use_yaml_config = False
@@ -598,7 +615,8 @@ if __name__ == "__main__":
             UNIFIED_CONFIG,
             custom_card_levels,
             debug_mode_config.get("friend_card"),
-            debug_song_config if debug_song_config else None
+            debug_song_config if debug_song_config else None,
+            FAST_FORWARD
         )
         end_time = time.time()
         logger.info(f"\n總耗時: {end_time - start_time:.2f} 秒")
@@ -841,101 +859,205 @@ if __name__ == "__main__":
         total_decks_to_simulate = decks_generator.total_decks
         logger.info(f"{total_decks_to_simulate} decks to be simulated.")
 
-        # 4. 创建模拟任务生成器
-        # task_generator_func 会按需从 generated_decks_generator 中拉取卡组
-        # 指定C位的點在`task_generator_func`裡面。上面卡組沒有做到這點
-        
-        simulation_tasks_generator = task_generator_func(
-            decks_generator, pre_initialized_chart, mastery_level, leader_designation, custom_card_levels
-        )
-
         os.makedirs(TEMP_OUTPUT_DIR, exist_ok=True)
         os.makedirs(FINAL_OUTPUT_DIR, exist_ok=True)
-
-        # Use multiprocessing.Pool with imap_unordered
         num_processes = os.cpu_count() or 1
-        logger.info(f"Starting parallel simulations using {num_processes} processes...")
+        json_output_filename = os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
+
         highest_score_overall = -1
-        highest_score_deck_info = None  # 存储最佳卡组的完整信息
-        best_log = []
+        highest_score_deck_info = None
+        results_processed_count = 0
 
-        current_batch_results = []  # 存储当前批次的结果
-        temp_files = []            # 存储所有临时文件的路径
-        batch_counter = 0          # 批次计数器
-        results_processed_count = 0  # 已处理结果的总数
+        if LEGACY_PIPELINE:
+            # ==================== 舊版 Pipeline ====================
+            # 4. 创建模拟任务生成器
+            total_decks_to_simulate = decks_generator.total_decks
+            logger.info(f"{total_decks_to_simulate} decks to be simulated.")
 
-        with multiprocessing.Pool(processes=num_processes) as pool:
-            # 優化：經過測試，chunksize=7500 在 PyPy 下性能最佳（比 10000 快 1.3%）
-            if pypy_impl:
-                chunksize = 7500
+            simulation_tasks_generator = task_generator_func(
+                decks_generator, pre_initialized_chart, mastery_level, leader_designation, custom_card_levels, FAST_FORWARD
+            )
+
+            logger.info(f"Starting parallel simulations using {num_processes} processes (legacy pipeline)...")
+            best_log = []
+            current_batch_results = []
+            temp_files = []
+            batch_counter = 0
+
+            with multiprocessing.Pool(processes=num_processes) as pool:
+                if pypy_impl:
+                    chunksize = 7500
+                else:
+                    chunksize = 500
+                results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize)
+
+                try:
+                    for result in tqdm(results_iterator, total=total_decks_to_simulate):
+                        current_score = result['final_score']
+                        original_index = result['original_deck_index']
+                        current_log = result["cards_played_log"]
+                        deck_card_ids = result['deck_card_ids']
+                        center_card = result['center_card']
+
+                        current_batch_results.append({
+                            "deck_card_ids": deck_card_ids,
+                            "center_card": center_card,
+                            "friend_card": result.get('friend_card'),
+                            "score": current_score,
+                        })
+                        results_processed_count += 1
+
+                        if current_score > highest_score_overall:
+                            highest_score_overall = current_score
+                            highest_score_deck_info = {
+                                "original_index": original_index,
+                                "deck_card_ids": deck_card_ids,
+                                "center_card": center_card,
+                                "friend_card": result.get('friend_card'),
+                                "score": current_score
+                            }
+                            best_log = current_log
+                            logger.info(f"\nNEW HI-SCORE! Deck: {original_index}, Score: {current_score:,}")
+                            logger.info(f"  Deck: {deck_card_ids}")
+
+                        if len(current_batch_results) >= BATCH_SIZE:
+                            batch_counter += 1
+                            temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
+                            save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
+                            temp_files.append(temp_filename)
+                            current_batch_results = []
+                except (Exception, KeyboardInterrupt) as e:
+                    logger.warning(f"\n[WARN] 模擬中斷: {type(e).__name__}: {e}")
+                    logger.warning(f"[WARN] 已處理 {results_processed_count} 筆結果，嘗試保存已有資料...")
+                finally:
+                    if current_batch_results:
+                        batch_counter += 1
+                        temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
+                        save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
+                        temp_files.append(temp_filename)
+                        current_batch_results = []
+
+            # 合併 temp 檔案
+            all_simulation_results = []
+            for temp_file in tqdm(temp_files, desc="Merging Files"):
+                with open(temp_file, 'r') as f:
+                    all_simulation_results.extend(json.load(f))
+                os.remove(temp_file)
+            if all_simulation_results:
+                save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True, custom_card_levels=custom_card_levels)
             else:
-                chunksize = 500
-            results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize)
+                logger.warning("[WARN] 沒有任何模擬結果可保存")
 
-            for result in tqdm(results_iterator, total=total_decks_to_simulate):
-                current_score = result['final_score']
-                original_index = result['original_deck_index']
-                current_log = result["cards_played_log"]
-                deck_card_ids = result['deck_card_ids']
-                center_card = result['center_card']
+        else:
+            # ==================== 優化版 Pipeline (Min-Heap top-K) ====================
+            # 保留與 legacy 相同的 task 結構（run_game_simulation + chunksize）
+            # 僅將結果收集從 batch temp files 改為 Min-Heap，消除「越跑越慢」問題
+            TOP_K = yaml_config.get_optimizer_top_n() if (use_yaml_config and yaml_config) else 50000
+            simulation_tasks_generator = task_generator_func(
+                decks_generator, pre_initialized_chart, mastery_level, leader_designation, custom_card_levels, FAST_FORWARD
+            )
+            logger.info(f"Starting parallel simulations using {num_processes} processes (heap pipeline, top_k={TOP_K})...")
 
-                # 记录当前卡组的得分、卡牌、C位卡牌、助戰卡，添加到结果列表中
-                current_batch_results.append({
-                    "deck_card_ids": deck_card_ids,  # 使用卡牌ID列表
-                    "center_card": center_card,
-                    "friend_card": result.get('friend_card'),  # 助戰卡 (可能為 None)
-                    "score": current_score,
-                })
-                results_processed_count += 1
+            # Min-Heap: (score, counter, result_dict)
+            top_k_heap = []
+            heap_counter = 0
+            heap_border = -1
 
-                if current_score > highest_score_overall:
-                    highest_score_overall = current_score
-                    highest_score_deck_info = {
-                        "original_index": original_index,
-                        "deck_card_ids": deck_card_ids,
-                        "score": current_score
-                    }
-                    best_log = current_log
-                    logger.info(f"\nNEW HI-SCORE! Deck: {original_index}, Score: {current_score:,}")
-                    logger.info(f"  Deck: {deck_card_ids}")
+            with multiprocessing.Pool(processes=num_processes) as pool:
+                if pypy_impl:
+                    chunksize = 7500
+                else:
+                    chunksize = 500
+                results_iterator = pool.imap_unordered(run_game_simulation, simulation_tasks_generator, chunksize)
 
-                if len(current_batch_results) >= BATCH_SIZE:
-                    batch_counter += 1
-                    temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
-                    save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
-                    temp_files.append(temp_filename)
-                    current_batch_results = []  # 清空当前批次列表
+                try:
+                    _last_progress_log = time.time()
+                    _pipeline_start = _last_progress_log
+                    for result in tqdm(results_iterator, total=total_decks_to_simulate):
+                        current_score = result['final_score']
+                        results_processed_count += 1
 
-            # --- 处理最后一批可能不满BATCH_SIZE的结果 ---
-            if current_batch_results:
-                batch_counter += 1
-                temp_filename = os.path.join(TEMP_OUTPUT_DIR, f"temp_batch_{batch_counter:0>3}.json")
-                save_simulation_results(current_batch_results, temp_filename, calc_pt=False, custom_card_levels=custom_card_levels)
-                temp_files.append(temp_filename)
-                current_batch_results = []  # 清空
+                        # 每分鐘輸出一次進度訊息
+                        _now = time.time()
+                        if _now - _last_progress_log >= 60:
+                            _elapsed = _now - _pipeline_start
+                            _rate = results_processed_count / _elapsed if _elapsed > 0 else 0
+                            logger.info(
+                                f"[PROGRESS] {results_processed_count:,} results in {_elapsed:.0f}s "
+                                f"({_rate:.0f}/s), heap={len(top_k_heap)}, border={heap_border}, "
+                                f"hi={highest_score_overall:,}"
+                            )
+                            _last_progress_log = _now
+
+                        if current_score > highest_score_overall:
+                            highest_score_overall = current_score
+                            highest_score_deck_info = {
+                                "original_index": result['original_deck_index'],
+                                "deck_card_ids": result['deck_card_ids'],
+                                "center_card": result['center_card'],
+                                "friend_card": result.get('friend_card'),
+                                "score": current_score,
+                            }
+                            logger.info(f"\nNEW HI-SCORE! Deck: {result['original_deck_index']}, Score: {current_score:,}")
+                            logger.info(f"  Deck: {result['deck_card_ids']}")
+
+                        # Min-Heap top-K: O(log K) insert，O(1) border check
+                        # 只在確定要進 heap 時才建立 result_dict，避免 3.9M 次無效 dict 分配
+                        if len(top_k_heap) < TOP_K:
+                            heap_counter += 1
+                            result_dict = {
+                                "deck_card_ids": result['deck_card_ids'],
+                                "center_card": result['center_card'],
+                                "friend_card": result.get('friend_card'),
+                                "score": current_score,
+                            }
+                            heapq.heappush(top_k_heap, (current_score, heap_counter, result_dict))
+                            if len(top_k_heap) == TOP_K:
+                                heap_border = top_k_heap[0][0]
+                        elif current_score > heap_border:
+                            heap_counter += 1
+                            result_dict = {
+                                "deck_card_ids": result['deck_card_ids'],
+                                "center_card": result['center_card'],
+                                "friend_card": result.get('friend_card'),
+                                "score": current_score,
+                            }
+                            heapq.heapreplace(top_k_heap, (current_score, heap_counter, result_dict))
+                            heap_border = top_k_heap[0][0]
+
+                except (Exception, KeyboardInterrupt) as e:
+                    logger.warning(f"\n[WARN] 模擬中斷: {type(e).__name__}: {e}")
+                    logger.warning(f"[WARN] 已處理 {results_processed_count} 筆結果，嘗試保存已有資料...")
+
+            # 從 heap 提取結果，降序排列，套用 score2pt
+            final_results = [item[2] for item in sorted(top_k_heap, reverse=True)]
+            if final_results:
+                final_results = score2pt(final_results, custom_card_levels)
+                if os.path.exists(json_output_filename):
+                    with open(json_output_filename, 'r', encoding='utf-8') as f:
+                        final_results.extend(json.load(f))
+                    final_results.sort(key=lambda i: i["pt"], reverse=True)
+                try:
+                    with open(json_output_filename, 'w', encoding='utf-8') as f:
+                        json.dump(final_results, f, ensure_ascii=False, indent=0)
+                    logger.info(f"Simulation results saved to {json_output_filename}")
+                except Exception as e:
+                    logger.error(f"Error saving simulation results to JSON: {e}")
+            else:
+                logger.warning("[WARN] 沒有任何模擬結果可保存")
 
         song_end_time = time.time()
         logger.info(f"--- Song {fixed_music_id} simulation completed! ---")
         logger.info(f"Simulation time: {song_end_time - start_time:.2f} seconds")
 
-        # --- Step 4: Save all results to JSON ---
-        all_simulation_results = []
-        for temp_file in tqdm(temp_files, desc="Merging Files"):
-            with open(temp_file, 'r') as f:
-                all_simulation_results.extend(json.load(f))
-            os.remove(temp_file)
-        json_output_filename = os.path.join(FINAL_OUTPUT_DIR, f"simulation_results_{fixed_music_id}_{fixed_difficulty}.json")
-        save_simulation_results(all_simulation_results, json_output_filename, calc_pt=True, custom_card_levels=custom_card_levels)
-
-        # --- Step 5: Final Summary ---
+        # --- Final Summary ---
         logger.info(f"\n--- Final Simulation Summary for {fixed_music_id} ---")
         logger.info(f"Map: {MUSIC_DB.get_music_by_id(fixed_music_id).Title} ({fixed_difficulty})")
-        logger.info(f"Total simulations run: {total_decks_to_simulate}")
+        logger.info(f"Total results processed: {results_processed_count}")
         if highest_score_overall != -1:
             logger.info(f"Overall Highest Score: {highest_score_overall:,}")
-            logger.info(f"Highest Score Deck: {highest_score_deck_info['original_index']}")
-            logger.info(f"Cards: {highest_score_deck_info['deck_card_ids']}")
-            logger.info(f"Log: {best_log}")
+            logger.info(f"Highest Score Deck: {highest_score_deck_info.get('deck_card_ids')}")
+            logger.info(f"  Center: {highest_score_deck_info.get('center_card')}\t Friend: {highest_score_deck_info.get('friend_card')}")
         else:
             logger.info("No simulations yielded a score.")
     

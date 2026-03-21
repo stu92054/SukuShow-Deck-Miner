@@ -71,7 +71,7 @@ if __name__ == "__main__":
     d = Deck(
         db_carddata, db_skill,
         convert_deck_to_simulator_format(
-            [1043902, 1033528, 1021701, 1032530, 1032902, 1043516],
+            [1033534, 1021701, 1051511, 1033530, 1032530, 1023702],
             custom_card_levels
         )
     )
@@ -80,12 +80,12 @@ if __name__ == "__main__":
     # 指定一张助战卡 (需要同时指定练度)
     # 留空则无助战卡
     # 示例: friendcard = (1031519, [140, 14, 14])
-    friendcard = None
+    friendcard = (1043508, [140, 14, 14])
 
     # 歌曲、难度设置
     # 难度 01 / 02 / 03 / 04 对应 Normal / Hard / Expert / Master
-    fixed_music_id = "405133"
-    fixed_difficulty = "04"
+    fixed_music_id = "405131"
+    fixed_difficulty = "02"
     fixed_player_master_level = 50
 
     # 强制替换歌曲C位和颜色
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # 0: 使用第1张C位角色的卡
     # 1: 使用第2张C位角色的卡
     # -1: 测试所有C位选择并输出对比（会运行多次模拟）
-    center_card_choice = -1
+    center_card_choice = 0
 
     c = Chart(musicdb, fixed_music_id, fixed_difficulty)
     player = PlayerAttributes(fixed_player_master_level)
@@ -352,8 +352,8 @@ if __name__ == "__main__":
                     will_die = (player.mental.current_hp <= miss_damage)
 
                     if will_die:
-                        # 如果 MISS 會導致遊戲結束，改為 PERFECT
-                        player.combo_add("PERFECT")
+                        # 如果 MISS 會導致遊戲結束，改為 PERFECT+
+                        player.combo_add("PERFECT+")
                         logger.timing(f"[连击{player.combo}x]\t总分: {player.score}\t时间: {timestamp}\t{note_type} (避免血量歸零)")
                     else:
                         player.combo_add("MISS", note_type)

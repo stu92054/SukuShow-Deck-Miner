@@ -355,6 +355,119 @@ class DeckGeneratorWithDoubleCards:
                 total += count
         return total
 
+    def _generate_combos_for_distribution(self, char_distribution):
+        """
+        與 _generate_decks_for_distribution 相同的過濾邏輯，
+        但在 combo 層級停止，不展開排列。
+
+        Yields:
+            (deck_list, center_char_id, valid_friends, score_gain_ids, deck_reset_ids)
+        """
+        char_counts = {char_id: char_distribution.count(char_id) for char_id in set(char_distribution)}
+        card_choices_per_char = []
+        for char_id, count in char_counts.items():
+            card_pool = self.char_id_to_cards[char_id]
+            if count == 1:
+                card_choices_per_char.append([(card_id,) for card_id in card_pool])
+            elif count == 2:
+                card_choices_per_char.append(list(itertools.combinations(card_pool, 2)))
+            else:
+                raise ValueError("角色数量超过2，不符合规则")
+
+        for combo in itertools.product(*card_choices_per_char):
+            deck = []
+            for item in combo:
+                deck.extend(item)
+            if tuple(sorted(deck)) in self.simulated_decks:
+                continue
+            if self.mustcards[0]:
+                if not all(card in deck for card in self.mustcards[0]):
+                    continue
+            if self.mustcards[1]:
+                if not any(card in deck for card in self.mustcards[1]):
+                    continue
+            if has_card_conflict(set(deck)):
+                continue
+            if self.check_skill_tags(count_skill_tags(deck), self.force_dr):
+                # 預計算排列過濾用的卡片集合
+                score_gain_ids = set()
+                deck_reset_ids = set()
+                for card_id in deck:
+                    tags = DB_TAG[card_id]
+                    if SkillEffectType.ScoreGain in tags:
+                        score_gain_ids.add(card_id)
+                    if SkillEffectType.DeckReset in tags:
+                        deck_reset_ids.add(card_id)
+
+                # 預計算有效助戰卡
+                if self.friend_card:
+                    valid_friends = [f for f in self.friend_card if f not in deck]
+                    if not valid_friends:
+                        valid_friends = [None]
+                else:
+                    valid_friends = [None]
+
+                yield (deck, self.center_char, valid_friends, score_gain_ids, deck_reset_ids)
+
+    def iter_combos(self):
+        """
+        與 __iter__ 對應的 combo 層級迭代器。
+        每個 yield 代表一個 6 張牌的組合（不展開排列），供 worker 內部處理。
+        """
+        min_chars_required = 6 if not self.allow_double_cards else 3
+        if len(self.all_available_chars) < min_chars_required:
+            return
+        for char_distribution in generate_role_distributions(self.all_available_chars, self.allow_double_cards):
+            if self.center_char and self.center_char not in char_distribution:
+                continue
+            yield from self._generate_combos_for_distribution(char_distribution)
+
+    def compute_total_combo_count(self):
+        """
+        計算 combo 總數（不展開排列），用於 tqdm 進度條。
+        """
+        total = 0
+        min_chars_required = 6 if not self.allow_double_cards else 3
+        if len(self.all_available_chars) < min_chars_required:
+            return 0
+        for char_distribution in generate_role_distributions(self.all_available_chars, self.allow_double_cards):
+            if self.center_char and self.center_char not in char_distribution:
+                continue
+            total += self._count_combos_for_distribution(char_distribution)
+        return total
+
+    def _count_combos_for_distribution(self, char_distribution):
+        """計算單一角色分布下的 combo 數量。"""
+        char_counts = {char_id: char_distribution.count(char_id) for char_id in set(char_distribution)}
+        card_choices_per_char = []
+        for char_id, count in char_counts.items():
+            card_pool = self.char_id_to_cards[char_id]
+            if count == 1:
+                card_choices_per_char.append([(card_id,) for card_id in card_pool])
+            elif count == 2:
+                card_choices_per_char.append(list(itertools.combinations(card_pool, 2)))
+            else:
+                raise ValueError("角色数量超过2，不符合规则")
+
+        total = 0
+        for combo in itertools.product(*card_choices_per_char):
+            deck = []
+            for item in combo:
+                deck.extend(item)
+            if tuple(sorted(deck)) in self.simulated_decks:
+                continue
+            if self.mustcards[0]:
+                if not all(card in deck for card in self.mustcards[0]):
+                    continue
+            if self.mustcards[1]:
+                if not any(card in deck for card in self.mustcards[1]):
+                    continue
+            if has_card_conflict(set(deck)):
+                continue
+            if self.check_skill_tags(count_skill_tags(deck), self.force_dr):
+                total += 1
+        return total
+
     def compute_total_count(self):
         total = 0
         min_chars_required = 6 if not self.allow_double_cards else 3

@@ -143,7 +143,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    # 嘗試讀取配置管理器以取得正確的 log 目錄
+    # 嘗試讀取配置管理器以獲取正確的 log 目錄和優化器設定
+    song_banned_cards = {}  # 每首歌的禁卡字典: {(music_id, difficulty): [banned_card_ids]}
+
     try:
         from src.config.config_manager import get_config
         if args.config:
@@ -156,16 +158,90 @@ if __name__ == "__main__":
         LOG_DIR = config.get_log_dir()
         logger.info(f"log 目錄: {LOG_DIR}")
 
-        # 讀取優化器配置
+        # 從配置讀取優化器設定（覆蓋全局常量）
         TOP_N = config.get_optimizer_top_n()
         SHOWNAME = config.get_optimizer_show_names()
         FORBIDDEN_CARD = config.get_forbidden_cards()
+
+        # 優先使用 optimizer.songs 配置，如果沒有則使用主 songs 配置
+        optimizer_songs = config.get_optimizer_songs()
+        if optimizer_songs:
+            # 使用優化器專屬的歌曲配置
+            CHALLENGE_SONGS = [(s["music_id"], s["difficulty"]) for s in optimizer_songs]
+            for song in optimizer_songs:
+                music_id = song.get("music_id")
+                difficulty = song.get("difficulty")
+                banned_cards = song.get("banned_cards", [])
+                if music_id and difficulty:
+                    song_banned_cards[(music_id, difficulty)] = banned_cards
+            logger.info(f"使用優化器專屬歌曲配置: {len(optimizer_songs)} 首歌")
+        else:
+            # 使用主 songs 配置讀取歌曲列表和禁卡
+            songs_config = config.get_songs_config()
+            CHALLENGE_SONGS = [(s["music_id"], s["difficulty"]) for s in songs_config]
+            for song in songs_config:
+                music_id = song.get("music_id")
+                difficulty = song.get("difficulty")
+                banned_cards = song.get("banned_cards", [])
+                if music_id and difficulty:
+                    song_banned_cards[(music_id, difficulty)] = banned_cards
+            logger.info(f"使用主 songs 配置: {len(songs_config)} 首歌")
+
         logger.info(f"優化器配置: TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
-                   f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
+                   f"FORBIDDEN_CARD(全局)={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
+        if song_banned_cards:
+            logger.info(f"每首歌的禁卡配置:")
+            for (mid, diff), banned in song_banned_cards.items():
+                if banned:
+                    logger.info(f"  {mid}_{diff}: {banned}")
+
     except (ImportError, ValueError, FileNotFoundError) as e:
-        LOG_DIR = "log"
-        logger.info(f"配置管理器不可用或找不到配置檔 ({e})，使用預設 log 目錄: {LOG_DIR}")
-        logger.info(f"使用預設優化器配置: TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
+        # 獨立運行模式：直接讀取 YAML 配置檔
+        logger.info(f"配置管理器不可用 ({e})，嘗試直接讀取配置檔...")
+
+        if args.config and os.path.exists(args.config):
+            try:
+                import yaml
+                with open(args.config, 'r', encoding='utf-8') as f:
+                    raw_config = yaml.safe_load(f) or {}
+
+                # 從檔名推導 member_name 和 LOG_DIR
+                config_basename = os.path.splitext(os.path.basename(args.config))[0]
+                # 從 config 路徑推導專案根目錄 (config/ 的上層)
+                project_root = os.path.dirname(os.path.dirname(os.path.abspath(args.config)))
+                if config_basename.startswith("member-"):
+                    member_name = config_basename[len("member-"):]
+                    LOG_DIR = os.path.join(project_root, "log", member_name)
+                else:
+                    LOG_DIR = os.path.join(project_root, "log")
+
+                # 讀取 optimizer 設定
+                opt = raw_config.get("optimizer", {})
+                TOP_N = opt.get("top_n", TOP_N)
+                SHOWNAME = opt.get("show_card_names", SHOWNAME)
+                FORBIDDEN_CARD = opt.get("forbidden_cards", FORBIDDEN_CARD)
+
+                # 讀取歌曲配置（優先 optimizer.songs，否則用主 songs）
+                opt_songs = opt.get("songs")
+                main_songs = raw_config.get("songs", [])
+                songs_list = opt_songs if opt_songs else main_songs
+                if songs_list:
+                    CHALLENGE_SONGS = [(s["music_id"], s["difficulty"]) for s in songs_list]
+                    for song in songs_list:
+                        mid = song.get("music_id")
+                        diff = song.get("difficulty")
+                        banned = song.get("banned_cards", [])
+                        if mid and diff:
+                            song_banned_cards[(mid, diff)] = banned
+
+                logger.info(f"直接讀取配置檔成功: {args.config}")
+            except (yaml.YAMLError, IOError, KeyError, TypeError, ValueError) as e2:
+                LOG_DIR = "log"
+                logger.warning(f"直接讀取配置檔失敗 ({e2})，使用默認值")
+        else:
+            LOG_DIR = "log"
+
+        logger.info(f"log 目錄: {LOG_DIR}, TOP_N={TOP_N}, SHOWNAME={SHOWNAME}, "
                    f"FORBIDDEN_CARD={FORBIDDEN_CARD if FORBIDDEN_CARD else '[]'}")
 
     level_files = []
@@ -190,19 +266,27 @@ if __name__ == "__main__":
             total = len(data)
             data.sort(key=lambda x: x["pt"], reverse=True)
 
-            # 過濾禁卡
-            if FORBIDDEN_CARD:
+            song_id, difficulty = CHALLENGE_SONGS[i]
+
+            # 合併全局禁卡和該首歌的禁卡
+            combined_forbidden = set(FORBIDDEN_CARD) if FORBIDDEN_CARD else set()
+            song_specific_banned = song_banned_cards.get((song_id, difficulty), [])
+            if song_specific_banned:
+                combined_forbidden.update(song_specific_banned)
+
+            # 在切片前先過濾禁卡，確保 TOP_N 是有效的卡組
+            if combined_forbidden:
                 original_count = len(data)
-                data = [deck for deck in data if not any(cid in deck["deck_card_ids"] for cid in FORBIDDEN_CARD)]
+                data = [d for d in data if not any(cid in d["deck_card_ids"] for cid in combined_forbidden)]
                 filtered_count = len(data)
                 if original_count != filtered_count:
-                    logger.info(f"  Filtered {original_count - filtered_count} decks containing forbidden cards")
+                    logger.info(f"  {song_id}_{difficulty}: 過濾了 {original_count - filtered_count} 個包含禁卡的卡組")
 
             data = data[:TOP_N]
             levels_raw.append(data)
             for deck in data:
                 all_cards.update(deck["deck_card_ids"])
-        song_id, difficulty = CHALLENGE_SONGS[i]
+
         song_title = get_song_title(song_id, music_db)
         logger.info(f"Loaded top {TOP_N} of {total} results for {song_id}_{difficulty} ({song_title})")
 
@@ -244,7 +328,7 @@ if __name__ == "__main__":
     # === 建立卡牌ID到bit位的映射 ===
     card_to_bit = {cid: i for i, cid in enumerate(sorted(all_cards))}
     logger.info(f"Loaded {len(card_to_bit)} unique cards")
-    assert len(card_to_bit) <= 64, "卡牌種類超過64張時需使用更複雜的bitarray方案"
+    assert len(card_to_bit) <= 63, "Cython 版使用 int64_t，卡牌種類超過 63 張時請使用普通版"
     assert len(card_to_bit) >= 6 * len(working_songs), "可用卡牌過少，必定出現重複卡牌"
 
     # === 轉換deck為bitmask ===
@@ -258,12 +342,15 @@ if __name__ == "__main__":
     for data in levels_raw:
         decks = []
         for i, deck in enumerate(data, start=1):
+            # 禁卡已在載入時過濾，此處無需再次檢查
             decks.append({
                 "mask": deck_to_mask(deck),
                 "rank": i,
                 "score": deck["score"],
                 "pt": deck["pt"],
-                "deck": deck["deck_card_ids"]
+                "deck": deck["deck_card_ids"],
+                "friend_card": deck.get("friend_card"),
+                "center_card": deck.get("center_card")
             })
         levels.append(decks)
 
@@ -412,10 +499,22 @@ if __name__ == "__main__":
                 output.append(f"  Score: {d['score']:,}")
                 output.append(f"  Pt: {d['pt']:,}  (Rank: #{d['rank']})")
                 output.append(f"  Deck:")
-                if SHOWNAME:
-                    output.append(format_deck_with_names(d['deck']))
-                else:
-                    output.append(f"      {d['deck']}")
+
+                # 顯示隊長（如果有）
+                if d.get('center_card'):
+                    cc_id = d['center_card']
+                    cc_char, cc_name = get_card_full_info(cc_id)
+                    output.append(f"    Leader: {cc_id}: {cc_char} - {cc_name}")
+
+                # 使用新的格式化函數顯示卡組
+                output.append(format_deck_with_names(d['deck']))
+
+                # 顯示朋友卡片（如果有）
+                if d.get('friend_card'):
+                    fc_id = d['friend_card']
+                    fc_char, fc_name = get_card_full_info(fc_id)
+                    output.append(f"  Friend Card: {fc_id}: {fc_char} - {fc_name}")
+
                 output.append("")
 
         output = "\n".join(output)
