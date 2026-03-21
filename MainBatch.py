@@ -185,7 +185,7 @@ def parse_arguments(unified_config):
     parser.add_argument('--no-fast-forward', action='store_true',
                        help='關閉快轉優化（預設開啟）')
     parser.add_argument('--legacy-pipeline', action='store_true',
-                       help='使用舊版 per-permutation pipeline（預設使用優化版 combo pipeline）')
+                       help='使用舊版 pipeline（結果批次寫入暫存檔再合併，預設使用 min-heap 記憶體收集）')
 
     args = parser.parse_args()
 
@@ -992,12 +992,13 @@ if __name__ == "__main__":
                         if current_score > highest_score_overall:
                             highest_score_overall = current_score
                             highest_score_deck_info = {
+                                "original_index": result['original_deck_index'],
                                 "deck_card_ids": result['deck_card_ids'],
                                 "center_card": result['center_card'],
                                 "friend_card": result.get('friend_card'),
                                 "score": current_score,
                             }
-                            logger.info(f"\nNEW HI-SCORE! Score: {current_score:,}")
+                            logger.info(f"\nNEW HI-SCORE! Deck: {result['original_deck_index']}, Score: {current_score:,}")
                             logger.info(f"  Deck: {result['deck_card_ids']}")
 
                         # Min-Heap top-K: O(log K) insert，O(1) border check
