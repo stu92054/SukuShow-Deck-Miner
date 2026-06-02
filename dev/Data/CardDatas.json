@@ -2536,6 +2536,45 @@
       30217024
     ]
   },
+  "1021703": {
+    "CardSeriesId": 1021703,
+    "Name": "不思議と君とライブラリー",
+    "Description": "乙宗 梢",
+    "CharactersId": 1021,
+    "Rarity": 7,
+    "CenterSkillSeriesId": 10217030,
+    "CenterAttributeSeriesId": 20217030,
+    "MaxSmile": [
+      4865,
+      6950,
+      7645,
+      8340
+    ],
+    "MaxPure": [
+      3990,
+      5700,
+      6270,
+      6840
+    ],
+    "MaxCool": [
+      2485,
+      3550,
+      3905,
+      4260
+    ],
+    "MaxMental": [
+      350,
+      500,
+      500,
+      500
+    ],
+    "RhythmGameSkillSeriesId": [
+      30217030,
+      30217032,
+      30217033,
+      30217034
+    ]
+  },
   "1021801": {
     "CardSeriesId": 1021801,
     "Name": "Prism Echo",
@@ -2612,6 +2651,45 @@
       30218022,
       30218023,
       30218024
+    ]
+  },
+  "1021803": {
+    "CardSeriesId": 1021803,
+    "Name": "Oracle Étude",
+    "Description": "乙宗 梢",
+    "CharactersId": 1021,
+    "Rarity": 8,
+    "CenterSkillSeriesId": 10218030,
+    "CenterAttributeSeriesId": 20218030,
+    "MaxSmile": [
+      4970,
+      7100,
+      7810,
+      8520
+    ],
+    "MaxPure": [
+      3850,
+      5500,
+      6050,
+      6600
+    ],
+    "MaxCool": [
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxMental": [
+      406,
+      580,
+      580,
+      580
+    ],
+    "RhythmGameSkillSeriesId": [
+      30218030,
+      30218032,
+      30218033,
+      30218034
     ]
   },
   "1021901": {
@@ -5019,6 +5097,45 @@
       30227024
     ]
   },
+  "1022703": {
+    "CardSeriesId": 1022703,
+    "Name": "アイシイ",
+    "Description": "夕霧 綴理",
+    "CharactersId": 1022,
+    "Rarity": 7,
+    "CenterSkillSeriesId": 10227030,
+    "CenterAttributeSeriesId": 20227030,
+    "MaxSmile": [
+      3430,
+      4900,
+      5390,
+      5880
+    ],
+    "MaxPure": [
+      3220,
+      4600,
+      5060,
+      5520
+    ],
+    "MaxCool": [
+      4900,
+      7000,
+      7700,
+      8400
+    ],
+    "MaxMental": [
+      329,
+      470,
+      470,
+      470
+    ],
+    "RhythmGameSkillSeriesId": [
+      30227030,
+      30227032,
+      30227033,
+      30227034
+    ]
+  },
   "1022801": {
     "CardSeriesId": 1022801,
     "Name": "Prism Echo",
@@ -5095,6 +5212,45 @@
       30228022,
       30228023,
       30228024
+    ]
+  },
+  "1022803": {
+    "CardSeriesId": 1022803,
+    "Name": "Oracle Étude",
+    "Description": "夕霧 綴理",
+    "CharactersId": 1022,
+    "Rarity": 8,
+    "CenterSkillSeriesId": 10228030,
+    "CenterAttributeSeriesId": 20228030,
+    "MaxSmile": [
+      4200,
+      6000,
+      6600,
+      7200
+    ],
+    "MaxPure": [
+      2800,
+      4000,
+      4400,
+      4800
+    ],
+    "MaxCool": [
+      5110,
+      7300,
+      8030,
+      8760
+    ],
+    "MaxMental": [
+      413,
+      590,
+      590,
+      590
+    ],
+    "RhythmGameSkillSeriesId": [
+      30228030,
+      30228032,
+      30228033,
+      30228034
     ]
   },
   "1022901": {
@@ -7062,6 +7218,45 @@
       30237024
     ]
   },
+  "1023703": {
+    "CardSeriesId": 1023703,
+    "Name": "トモダチになれる場所",
+    "Description": "藤島 慈",
+    "CharactersId": 1023,
+    "Rarity": 7,
+    "CenterSkillSeriesId": 10237030,
+    "CenterAttributeSeriesId": 20237030,
+    "MaxSmile": [
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxPure": [
+      5005,
+      7150,
+      7865,
+      8580
+    ],
+    "MaxCool": [
+      3325,
+      4750,
+      5225,
+      5700
+    ],
+    "MaxMental": [
+      357,
+      510,
+      510,
+      510
+    ],
+    "RhythmGameSkillSeriesId": [
+      30237030,
+      30237032,
+      30237033,
+      30237034
+    ]
+  },
   "1023801": {
     "CardSeriesId": 1023801,
     "Name": "Prism Echo",
@@ -7140,6 +7335,45 @@
       30238024
     ]
   },
+  "1023803": {
+    "CardSeriesId": 1023803,
+    "Name": "Oracle Étude",
+    "Description": "藤島 慈",
+    "CharactersId": 1023,
+    "Rarity": 8,
+    "CenterSkillSeriesId": 10238030,
+    "CenterAttributeSeriesId": 20238030,
+    "MaxSmile": [
+      4060,
+      5800,
+      6380,
+      6960
+    ],
+    "MaxPure": [
+      3150,
+      4500,
+      4950,
+      5400
+    ],
+    "MaxCool": [
+      4900,
+      7000,
+      7700,
+      8400
+    ],
+    "MaxMental": [
+      413,
+      590,
+      590,
+      590
+    ],
+    "RhythmGameSkillSeriesId": [
+      30238030,
+      30238032,
+      30238033,
+      30238034
+    ]
+  },
   "1023901": {
     "CardSeriesId": 1023901,
     "Name": "18th Birthday",
@@ -7177,6 +7411,50 @@
       30239012,
       30239013,
       30239014
+    ]
+  },
+  "1030501": {
+    "CardSeriesId": 1030501,
+    "Name": "蓮ノ空女学院スクールアイドルクラブ103期生",
+    "Description": "日野下 花帆＆村野 さやか＆大沢 瑠璃乃",
+    "CharactersId": 1030,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 0,
+    "CenterAttributeSeriesId": 0,
+    "MaxSmile": [
+      2400,
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxPure": [
+      2400,
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxCool": [
+      2400,
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30305010,
+      30305010,
+      30305012,
+      30305013,
+      30305014
     ]
   },
   "1031301": {
@@ -10034,6 +10312,94 @@
       30315374
     ]
   },
+  "1031538": {
+    "CardSeriesId": 1031538,
+    "Name": "不思議と君とライブラリー",
+    "Description": "日野下 花帆",
+    "CharactersId": 1031,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10315380,
+    "CenterAttributeSeriesId": 20315380,
+    "MaxSmile": [
+      2475,
+      3465,
+      4950,
+      5445,
+      5940
+    ],
+    "MaxPure": [
+      3025,
+      4235,
+      6050,
+      6655,
+      7260
+    ],
+    "MaxCool": [
+      1700,
+      2380,
+      3400,
+      3740,
+      4080
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30315380,
+      30315380,
+      30315382,
+      30315383,
+      30315384
+    ]
+  },
+  "1031539": {
+    "CardSeriesId": 1031539,
+    "Name": "今、過去、未来の三原色",
+    "Description": "日野下 花帆",
+    "CharactersId": 1031,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10315390,
+    "CenterAttributeSeriesId": 20315390,
+    "MaxSmile": [
+      2100,
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxPure": [
+      3300,
+      4620,
+      6600,
+      7260,
+      7920
+    ],
+    "MaxCool": [
+      1800,
+      2520,
+      3600,
+      3960,
+      4320
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30315390,
+      30315390,
+      30315392,
+      30315393,
+      30315394
+    ]
+  },
   "1031801": {
     "CardSeriesId": 1031801,
     "Name": "Prism Echo",
@@ -10121,28 +10487,28 @@
     "CenterSkillSeriesId": 10318030,
     "CenterAttributeSeriesId": 20318030,
     "MaxSmile": [
-      0,
-      0,
-      0,
-      0
+      4970,
+      7100,
+      7810,
+      8520
     ],
     "MaxPure": [
-      0,
-      0,
-      0,
-      0
+      3850,
+      5500,
+      6050,
+      6600
     ],
     "MaxCool": [
-      0,
-      0,
-      0,
-      0
+      3360,
+      4800,
+      5280,
+      5760
     ],
     "MaxMental": [
-      0,
-      0,
-      0,
-      0
+      406,
+      580,
+      580,
+      580
     ],
     "RhythmGameSkillSeriesId": [
       30318030,
@@ -13045,6 +13411,138 @@
       30325344
     ]
   },
+  "1032535": {
+    "CardSeriesId": 1032535,
+    "Name": "拝啓、未来の君へ",
+    "Description": "村野 さやか",
+    "CharactersId": 1032,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10325350,
+    "CenterAttributeSeriesId": 20325350,
+    "MaxSmile": [
+      2275,
+      3185,
+      4550,
+      5005,
+      5460
+    ],
+    "MaxPure": [
+      2750,
+      3850,
+      5500,
+      6050,
+      6600
+    ],
+    "MaxCool": [
+      2175,
+      3045,
+      4350,
+      4785,
+      5220
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30325350,
+      30325350,
+      30325352,
+      30325353,
+      30325354
+    ]
+  },
+  "1032536": {
+    "CardSeriesId": 1032536,
+    "Name": "アイシイ",
+    "Description": "村野 さやか",
+    "CharactersId": 1032,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10325360,
+    "CenterAttributeSeriesId": 20325360,
+    "MaxSmile": [
+      1950,
+      2730,
+      3900,
+      4290,
+      4680
+    ],
+    "MaxPure": [
+      2000,
+      2800,
+      4000,
+      4400,
+      4800
+    ],
+    "MaxCool": [
+      3300,
+      4620,
+      6600,
+      7260,
+      7920
+    ],
+    "MaxMental": [
+      235,
+      329,
+      470,
+      470,
+      470
+    ],
+    "RhythmGameSkillSeriesId": [
+      30325360,
+      30325360,
+      30325362,
+      30325363,
+      30325364
+    ]
+  },
+  "1032537": {
+    "CardSeriesId": 1032537,
+    "Name": "今、過去、未来の三原色",
+    "Description": "村野 さやか",
+    "CharactersId": 1032,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10325370,
+    "CenterAttributeSeriesId": 20325370,
+    "MaxSmile": [
+      2000,
+      2800,
+      4000,
+      4400,
+      4800
+    ],
+    "MaxPure": [
+      3225,
+      4515,
+      6450,
+      7095,
+      7740
+    ],
+    "MaxCool": [
+      1975,
+      2765,
+      3950,
+      4345,
+      4740
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30325370,
+      30325370,
+      30325372,
+      30325373,
+      30325374
+    ]
+  },
   "1032801": {
     "CardSeriesId": 1032801,
     "Name": "Prism Echo",
@@ -14206,6 +14704,50 @@
       30334162,
       30334163,
       30334164
+    ]
+  },
+  "1033417": {
+    "CardSeriesId": 1033417,
+    "Name": "拝啓、未来の君へ",
+    "Description": "大沢 瑠璃乃",
+    "CharactersId": 1033,
+    "Rarity": 4,
+    "CenterSkillSeriesId": 10334170,
+    "CenterAttributeSeriesId": 20334170,
+    "MaxSmile": [
+      2025,
+      2835,
+      4050,
+      4455,
+      4860
+    ],
+    "MaxPure": [
+      2325,
+      3255,
+      4650,
+      5115,
+      5580
+    ],
+    "MaxCool": [
+      1900,
+      2660,
+      3800,
+      4180,
+      4560
+    ],
+    "MaxMental": [
+      215,
+      301,
+      430,
+      430,
+      430
+    ],
+    "RhythmGameSkillSeriesId": [
+      30334170,
+      30334170,
+      30334172,
+      30334173,
+      30334174
     ]
   },
   "1033501": {
@@ -15743,6 +16285,50 @@
       30335354
     ]
   },
+  "1033536": {
+    "CardSeriesId": 1033536,
+    "Name": "今、過去、未来の三原色",
+    "Description": "大沢 瑠璃乃",
+    "CharactersId": 1033,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10335360,
+    "CenterAttributeSeriesId": 20335360,
+    "MaxSmile": [
+      2050,
+      2870,
+      4100,
+      4510,
+      4920
+    ],
+    "MaxPure": [
+      3400,
+      4760,
+      6800,
+      7480,
+      8160
+    ],
+    "MaxCool": [
+      1750,
+      2450,
+      3500,
+      3850,
+      4200
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30335360,
+      30335360,
+      30335362,
+      30335363,
+      30335364
+    ]
+  },
   "1033801": {
     "CardSeriesId": 1033801,
     "Name": "Prism Echo",
@@ -16332,6 +16918,50 @@
       30414052,
       30414053,
       30414054
+    ]
+  },
+  "1041406": {
+    "CardSeriesId": 1041406,
+    "Name": "拝啓、未来の君へ",
+    "Description": "百生 吟子",
+    "CharactersId": 1041,
+    "Rarity": 4,
+    "CenterSkillSeriesId": 10414060,
+    "CenterAttributeSeriesId": 20414060,
+    "MaxSmile": [
+      1975,
+      2765,
+      3950,
+      4345,
+      4740
+    ],
+    "MaxPure": [
+      2375,
+      3325,
+      4750,
+      5225,
+      5700
+    ],
+    "MaxCool": [
+      1950,
+      2730,
+      3900,
+      4290,
+      4680
+    ],
+    "MaxMental": [
+      210,
+      294,
+      420,
+      420,
+      420
+    ],
+    "RhythmGameSkillSeriesId": [
+      30414060,
+      30414060,
+      30414062,
+      30414063,
+      30414064
     ]
   },
   "1041501": {
@@ -17295,6 +17925,50 @@
       30415222,
       30415223,
       30415224
+    ]
+  },
+  "1041523": {
+    "CardSeriesId": 1041523,
+    "Name": "不思議と君とライブラリー",
+    "Description": "百生 吟子",
+    "CharactersId": 1041,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10415230,
+    "CenterAttributeSeriesId": 20415230,
+    "MaxSmile": [
+      2500,
+      3500,
+      5000,
+      5500,
+      6000
+    ],
+    "MaxPure": [
+      3050,
+      4270,
+      6100,
+      6710,
+      7320
+    ],
+    "MaxCool": [
+      1650,
+      2310,
+      3300,
+      3630,
+      3960
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30415230,
+      30415230,
+      30415232,
+      30415233,
+      30415234
     ]
   },
   "1041801": {
@@ -18900,6 +19574,50 @@
       30425234
     ]
   },
+  "1042524": {
+    "CardSeriesId": 1042524,
+    "Name": "アイシイ",
+    "Description": "徒町 小鈴",
+    "CharactersId": 1042,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10425240,
+    "CenterAttributeSeriesId": 20425240,
+    "MaxSmile": [
+      1925,
+      2695,
+      3850,
+      4235,
+      4620
+    ],
+    "MaxPure": [
+      2125,
+      2975,
+      4250,
+      4675,
+      5100
+    ],
+    "MaxCool": [
+      3200,
+      4480,
+      6400,
+      7040,
+      7680
+    ],
+    "MaxMental": [
+      235,
+      329,
+      470,
+      470,
+      470
+    ],
+    "RhythmGameSkillSeriesId": [
+      30425240,
+      30425240,
+      30425242,
+      30425243,
+      30425244
+    ]
+  },
   "1042801": {
     "CardSeriesId": 1042801,
     "Name": "Ether Aria",
@@ -19015,6 +19733,45 @@
       30429012,
       30429013,
       30429014
+    ]
+  },
+  "1042902": {
+    "CardSeriesId": 1042902,
+    "Name": "17th Birthday",
+    "Description": "徒町 小鈴",
+    "CharactersId": 1042,
+    "Rarity": 9,
+    "CenterSkillSeriesId": 10429020,
+    "CenterAttributeSeriesId": 20429020,
+    "MaxSmile": [
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxPure": [
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxCool": [
+      3360,
+      4800,
+      5280,
+      5760
+    ],
+    "MaxMental": [
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30429020,
+      30429022,
+      30429023,
+      30429024
     ]
   },
   "1043301": {
@@ -21446,6 +22203,50 @@
       30515114
     ]
   },
+  "1051512": {
+    "CardSeriesId": 1051512,
+    "Name": "EdelinieN",
+    "Description": "桂城 泉",
+    "CharactersId": 1051,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10515120,
+    "CenterAttributeSeriesId": 20515120,
+    "MaxSmile": [
+      2700,
+      3780,
+      5400,
+      5940,
+      6480
+    ],
+    "MaxPure": [
+      2300,
+      3220,
+      4600,
+      5060,
+      5520
+    ],
+    "MaxCool": [
+      2200,
+      3080,
+      4400,
+      4840,
+      5280
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30515120,
+      30515120,
+      30515122,
+      30515123,
+      30515124
+    ]
+  },
   "1051801": {
     "CardSeriesId": 1051801,
     "Name": "Oracle Étude",
@@ -22272,6 +23073,50 @@
       30525114
     ]
   },
+  "1052512": {
+    "CardSeriesId": 1052512,
+    "Name": "EdelinieN",
+    "Description": "セラス 柳田 リリエンフェルト",
+    "CharactersId": 1052,
+    "Rarity": 5,
+    "CenterSkillSeriesId": 10525120,
+    "CenterAttributeSeriesId": 20525120,
+    "MaxSmile": [
+      2675,
+      3745,
+      5350,
+      5885,
+      6420
+    ],
+    "MaxPure": [
+      2275,
+      3185,
+      4550,
+      5005,
+      5460
+    ],
+    "MaxCool": [
+      2250,
+      3150,
+      4500,
+      4950,
+      5400
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      30525120,
+      30525120,
+      30525122,
+      30525123,
+      30525124
+    ]
+  },
   "1052801": {
     "CardSeriesId": 1052801,
     "Name": "Oracle Étude",
@@ -22348,6 +23193,754 @@
       30529012,
       30529013,
       30529014
+    ]
+  },
+  "1921501": {
+    "CardSeriesId": 1921501,
+    "Name": "今、過去、未来の三原色",
+    "Description": "乙宗 梢",
+    "CharactersId": 1021,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19215010,
+    "CenterAttributeSeriesId": 29215010,
+    "MaxSmile": [
+      2075,
+      2905,
+      4150,
+      4565,
+      4980
+    ],
+    "MaxPure": [
+      3200,
+      4480,
+      6400,
+      7040,
+      7680
+    ],
+    "MaxCool": [
+      1875,
+      2625,
+      3750,
+      4125,
+      4500
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      39215010,
+      39215010,
+      39215012,
+      39215013,
+      39215014
+    ]
+  },
+  "1921502": {
+    "CardSeriesId": 1921502,
+    "Name": "ハナ咲けばユメ駆ける",
+    "Description": "乙宗 梢",
+    "CharactersId": 1021,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19215020,
+    "CenterAttributeSeriesId": 29215020,
+    "MaxSmile": [
+      2875,
+      4025,
+      5750,
+      6325,
+      6900
+    ],
+    "MaxPure": [
+      2550,
+      3570,
+      5100,
+      5610,
+      6120
+    ],
+    "MaxCool": [
+      1775,
+      2485,
+      3550,
+      3905,
+      4260
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39215020,
+      39215020,
+      39215022,
+      39215023,
+      39215024
+    ]
+  },
+  "1922501": {
+    "CardSeriesId": 1922501,
+    "Name": "今、過去、未来の三原色",
+    "Description": "夕霧 綴理",
+    "CharactersId": 1022,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19225010,
+    "CenterAttributeSeriesId": 29225010,
+    "MaxSmile": [
+      1950,
+      2730,
+      3900,
+      4290,
+      4680
+    ],
+    "MaxPure": [
+      3300,
+      4620,
+      6600,
+      7260,
+      7920
+    ],
+    "MaxCool": [
+      1900,
+      2660,
+      3800,
+      4180,
+      4560
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      39225010,
+      39225010,
+      39225012,
+      39225013,
+      39225014
+    ]
+  },
+  "1923401": {
+    "CardSeriesId": 1923401,
+    "Name": "今、過去、未来の三原色",
+    "Description": "藤島 慈",
+    "CharactersId": 1023,
+    "Rarity": 94,
+    "CenterSkillSeriesId": 19234010,
+    "CenterAttributeSeriesId": 29234010,
+    "MaxSmile": [
+      2000,
+      2800,
+      4000,
+      4400,
+      4800
+    ],
+    "MaxPure": [
+      2600,
+      3640,
+      5200,
+      5720,
+      6240
+    ],
+    "MaxCool": [
+      1650,
+      2310,
+      3300,
+      3630,
+      3960
+    ],
+    "MaxMental": [
+      215,
+      301,
+      430,
+      430,
+      430
+    ],
+    "RhythmGameSkillSeriesId": [
+      39234010,
+      39234010,
+      39234012,
+      39234013,
+      39234014
+    ]
+  },
+  "1923501": {
+    "CardSeriesId": 1923501,
+    "Name": "ハナ咲けばユメ駆ける",
+    "Description": "藤島 慈",
+    "CharactersId": 1023,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19235010,
+    "CenterAttributeSeriesId": 29235010,
+    "MaxSmile": [
+      2950,
+      4130,
+      5900,
+      6490,
+      7080
+    ],
+    "MaxPure": [
+      2500,
+      3500,
+      5000,
+      5500,
+      6000
+    ],
+    "MaxCool": [
+      1700,
+      2380,
+      3400,
+      3740,
+      4080
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      39235010,
+      39235010,
+      39235012,
+      39235013,
+      39235014
+    ]
+  },
+  "1931501": {
+    "CardSeriesId": 1931501,
+    "Name": "ペレニアル",
+    "Description": "日野下 花帆",
+    "CharactersId": 1031,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19315010,
+    "CenterAttributeSeriesId": 29315010,
+    "MaxSmile": [
+      2100,
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxPure": [
+      2500,
+      3500,
+      5000,
+      5500,
+      6000
+    ],
+    "MaxCool": [
+      2600,
+      3640,
+      5200,
+      5720,
+      6240
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39315010,
+      39315010,
+      39315012,
+      39315013,
+      39315014
+    ]
+  },
+  "1931502": {
+    "CardSeriesId": 1931502,
+    "Name": "光の中で花咲いて",
+    "Description": "日野下 花帆",
+    "CharactersId": 1031,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19315020,
+    "CenterAttributeSeriesId": 29315020,
+    "MaxSmile": [
+      2250,
+      3150,
+      4500,
+      4950,
+      5400
+    ],
+    "MaxPure": [
+      3000,
+      4200,
+      6000,
+      6600,
+      7200
+    ],
+    "MaxCool": [
+      1900,
+      2660,
+      3800,
+      4180,
+      4560
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      39315020,
+      39315020,
+      39315022,
+      39315023,
+      39315024
+    ]
+  },
+  "1932501": {
+    "CardSeriesId": 1932501,
+    "Name": "ペレニアル",
+    "Description": "村野 さやか",
+    "CharactersId": 1032,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19325010,
+    "CenterAttributeSeriesId": 29325010,
+    "MaxSmile": [
+      2000,
+      2800,
+      4000,
+      4400,
+      4800
+    ],
+    "MaxPure": [
+      2550,
+      3570,
+      5100,
+      5610,
+      6120
+    ],
+    "MaxCool": [
+      2650,
+      3710,
+      5300,
+      5830,
+      6360
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39325010,
+      39325010,
+      39325012,
+      39325013,
+      39325014
+    ]
+  },
+  "1933501": {
+    "CardSeriesId": 1933501,
+    "Name": "ペレニアル",
+    "Description": "大沢 瑠璃乃",
+    "CharactersId": 1033,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19335010,
+    "CenterAttributeSeriesId": 29335010,
+    "MaxSmile": [
+      2200,
+      3080,
+      4400,
+      4840,
+      5280
+    ],
+    "MaxPure": [
+      2450,
+      3430,
+      4900,
+      5390,
+      5880
+    ],
+    "MaxCool": [
+      2550,
+      3570,
+      5100,
+      5610,
+      6120
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39335010,
+      39335010,
+      39335012,
+      39335013,
+      39335014
+    ]
+  },
+  "1941501": {
+    "CardSeriesId": 1941501,
+    "Name": "今、過去、未来の三原色",
+    "Description": "百生 吟子",
+    "CharactersId": 1041,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19415010,
+    "CenterAttributeSeriesId": 29415010,
+    "MaxSmile": [
+      2150,
+      3010,
+      4300,
+      4730,
+      5160
+    ],
+    "MaxPure": [
+      3250,
+      4550,
+      6500,
+      7150,
+      7800
+    ],
+    "MaxCool": [
+      1800,
+      2520,
+      3600,
+      3960,
+      4320
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39415010,
+      39415010,
+      39415012,
+      39415013,
+      39415014
+    ]
+  },
+  "1942501": {
+    "CardSeriesId": 1942501,
+    "Name": "今、過去、未来の三原色",
+    "Description": "徒町 小鈴",
+    "CharactersId": 1042,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19425010,
+    "CenterAttributeSeriesId": 29425010,
+    "MaxSmile": [
+      2150,
+      3010,
+      4300,
+      4730,
+      5160
+    ],
+    "MaxPure": [
+      3225,
+      4515,
+      6450,
+      7095,
+      7740
+    ],
+    "MaxCool": [
+      1825,
+      2555,
+      3650,
+      4015,
+      4380
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39425010,
+      39425010,
+      39425012,
+      39425013,
+      39425014
+    ]
+  },
+  "1942502": {
+    "CardSeriesId": 1942502,
+    "Name": "ハナ咲けばユメ駆ける",
+    "Description": "徒町 小鈴",
+    "CharactersId": 1042,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19425020,
+    "CenterAttributeSeriesId": 29425020,
+    "MaxSmile": [
+      2800,
+      3920,
+      5600,
+      6160,
+      6720
+    ],
+    "MaxPure": [
+      2600,
+      3640,
+      5200,
+      5720,
+      6240
+    ],
+    "MaxCool": [
+      1800,
+      2520,
+      3600,
+      3960,
+      4320
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39425020,
+      39425020,
+      39425022,
+      39425023,
+      39425024
+    ]
+  },
+  "1943401": {
+    "CardSeriesId": 1943401,
+    "Name": "今、過去、未来の三原色",
+    "Description": "安養寺 姫芽",
+    "CharactersId": 1043,
+    "Rarity": 94,
+    "CenterSkillSeriesId": 19434010,
+    "CenterAttributeSeriesId": 29434010,
+    "MaxSmile": [
+      2125,
+      2975,
+      4250,
+      4675,
+      5100
+    ],
+    "MaxPure": [
+      2575,
+      3605,
+      5150,
+      5665,
+      6180
+    ],
+    "MaxCool": [
+      1600,
+      2240,
+      3200,
+      3520,
+      3840
+    ],
+    "MaxMental": [
+      210,
+      294,
+      420,
+      420,
+      420
+    ],
+    "RhythmGameSkillSeriesId": [
+      39434010,
+      39434010,
+      39434012,
+      39434013,
+      39434014
+    ]
+  },
+  "1943501": {
+    "CardSeriesId": 1943501,
+    "Name": "光の中で花咲いて",
+    "Description": "安養寺 姫芽",
+    "CharactersId": 1043,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19435010,
+    "CenterAttributeSeriesId": 29435010,
+    "MaxSmile": [
+      2375,
+      3325,
+      4750,
+      5225,
+      5700
+    ],
+    "MaxPure": [
+      2875,
+      4025,
+      5750,
+      6325,
+      6900
+    ],
+    "MaxCool": [
+      1900,
+      2660,
+      3800,
+      4180,
+      4560
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      39435010,
+      39435010,
+      39435012,
+      39435013,
+      39435014
+    ]
+  },
+  "1951501": {
+    "CardSeriesId": 1951501,
+    "Name": "ハナ咲けばユメ駆ける",
+    "Description": "桂城 泉",
+    "CharactersId": 1051,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19515010,
+    "CenterAttributeSeriesId": 29515010,
+    "MaxSmile": [
+      2750,
+      3850,
+      5500,
+      6050,
+      6600
+    ],
+    "MaxPure": [
+      2650,
+      3710,
+      5300,
+      5830,
+      6360
+    ],
+    "MaxCool": [
+      1800,
+      2520,
+      3600,
+      3960,
+      4320
+    ],
+    "MaxMental": [
+      240,
+      336,
+      480,
+      480,
+      480
+    ],
+    "RhythmGameSkillSeriesId": [
+      39515010,
+      39515010,
+      39515012,
+      39515013,
+      39515014
+    ]
+  },
+  "1952501": {
+    "CardSeriesId": 1952501,
+    "Name": "光の中で花咲いて",
+    "Description": "セラス 柳田 リリエンフェルト",
+    "CharactersId": 1052,
+    "Rarity": 95,
+    "CenterSkillSeriesId": 19525010,
+    "CenterAttributeSeriesId": 29525010,
+    "MaxSmile": [
+      2300,
+      3220,
+      4600,
+      5060,
+      5520
+    ],
+    "MaxPure": [
+      2900,
+      4060,
+      5800,
+      6380,
+      6960
+    ],
+    "MaxCool": [
+      1950,
+      2730,
+      3900,
+      4290,
+      4680
+    ],
+    "MaxMental": [
+      245,
+      343,
+      490,
+      490,
+      490
+    ],
+    "RhythmGameSkillSeriesId": [
+      39525010,
+      39525010,
+      39525012,
+      39525013,
+      39525014
+    ]
+  },
+  "1953401": {
+    "CardSeriesId": 1953401,
+    "Name": "B.G.P. 撮影係",
+    "Description": "錦上 マイカ＆令沢 葵",
+    "CharactersId": 1053,
+    "Rarity": 94,
+    "CenterSkillSeriesId": 0,
+    "CenterAttributeSeriesId": 0,
+    "MaxSmile": [
+      2100,
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxPure": [
+      2100,
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxCool": [
+      2100,
+      2940,
+      4200,
+      4620,
+      5040
+    ],
+    "MaxMental": [
+      210,
+      294,
+      420,
+      420,
+      420
+    ],
+    "RhythmGameSkillSeriesId": [
+      39534010,
+      39534010,
+      39534012,
+      39534013,
+      39534014
     ]
   }
 }
